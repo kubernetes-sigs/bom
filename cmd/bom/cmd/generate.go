@@ -79,6 +79,7 @@ type generateOptions struct {
 	license        string
 	images         []string
 	imageArchives  []string
+	archives       []string
 	files          []string
 	directories    []string
 	ignorePatterns []string
@@ -90,6 +91,7 @@ func (opts *generateOptions) Validate() error {
 		len(opts.images) == 0 &&
 		len(opts.files) == 0 &&
 		len(opts.imageArchives) == 0 &&
+		len(opts.archives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
 	}
@@ -154,6 +156,13 @@ func init() {
 		"image-archive",
 		[]string{},
 		"list of docker archive tarballs to include in the manifest",
+	)
+
+	generateCmd.PersistentFlags().StringSliceVar(
+		&genOpts.archives,
+		"archive",
+		[]string{},
+		"list of archives to add as packages (supports tar, tar.gz)",
 	)
 
 	generateCmd.PersistentFlags().StringSliceVarP(
@@ -242,6 +251,7 @@ func generateBOM(opts *generateOptions) error {
 	builder := spdx.NewDocBuilder()
 	builderOpts := &spdx.DocGenerateOptions{
 		Tarballs:         opts.imageArchives,
+		Archives:         opts.archives,
 		Files:            opts.files,
 		Images:           opts.images,
 		Directories:      opts.directories,
