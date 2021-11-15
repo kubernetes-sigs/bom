@@ -78,7 +78,7 @@ type generateOptions struct {
 	configFile     string
 	license        string
 	images         []string
-	tarballs       []string
+	imageArchives  []string
 	files          []string
 	directories    []string
 	ignorePatterns []string
@@ -89,7 +89,7 @@ func (opts *generateOptions) Validate() error {
 	if opts.configFile == "" &&
 		len(opts.images) == 0 &&
 		len(opts.files) == 0 &&
-		len(opts.tarballs) == 0 &&
+		len(opts.imageArchives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
 	}
@@ -136,9 +136,22 @@ func init() {
 	)
 
 	generateCmd.PersistentFlags().StringSliceVarP(
-		&genOpts.tarballs,
+		&genOpts.imageArchives,
 		"tarball",
 		"t",
+		[]string{},
+		"list of docker archive tarballs to include in the manifest",
+	)
+
+	if err := generateCmd.PersistentFlags().MarkDeprecated(
+		"tarball", "tarball has been renamed to image-archive",
+	); err != nil {
+		logrus.Fatal(errors.Wrap(err, "marking flag as deprecated"))
+	}
+
+	generateCmd.PersistentFlags().StringSliceVar(
+		&genOpts.imageArchives,
+		"image-archive",
 		[]string{},
 		"list of docker archive tarballs to include in the manifest",
 	)
@@ -228,7 +241,7 @@ func generateBOM(opts *generateOptions) error {
 
 	builder := spdx.NewDocBuilder()
 	builderOpts := &spdx.DocGenerateOptions{
-		Tarballs:         opts.tarballs,
+		Tarballs:         opts.imageArchives,
 		Files:            opts.files,
 		Images:           opts.images,
 		Directories:      opts.directories,
