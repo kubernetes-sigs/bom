@@ -21,8 +21,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"k8s.io/release/pkg/spdx"
-	"k8s.io/release/pkg/spdx/spdxfakes"
+
+	"sigs.k8s.io/bom/pkg/spdx"
+	"sigs.k8s.io/bom/pkg/spdx/spdxfakes"
 )
 
 var err = errors.New("synthetic error")

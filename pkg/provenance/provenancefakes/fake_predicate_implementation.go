@@ -21,7 +21,8 @@ import (
 	"sync"
 
 	"github.com/in-toto/in-toto-golang/in_toto"
-	"k8s.io/release/pkg/provenance"
+
+	"sigs.k8s.io/bom/pkg/provenance"
 )
 
 type FakePredicateImplementation struct {

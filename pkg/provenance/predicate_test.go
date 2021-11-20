@@ -21,8 +21,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"k8s.io/release/pkg/provenance"
-	"k8s.io/release/pkg/provenance/provenancefakes"
+
+	"sigs.k8s.io/bom/pkg/provenance"
+	"sigs.k8s.io/bom/pkg/provenance/provenancefakes"
 )
 
 // getPredicateSUT returns a predicate loaded with the test implementation

@@ -36,7 +36,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"k8s.io/release/pkg/license"
+
+	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/util"
 )
 

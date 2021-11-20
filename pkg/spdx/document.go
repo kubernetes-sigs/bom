@@ -37,7 +37,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
-	"k8s.io/release/pkg/provenance"
+
+	"sigs.k8s.io/bom/pkg/provenance"
 	"sigs.k8s.io/release-utils/hash"
 )
 
@@ -160,7 +161,7 @@ func NewDocument() *Document {
 		}{
 			Person:       defaultDocumentAuthor,
 			Organization: "Kubernetes Release Engineering",
-			Tool:         []string{"k8s.io/release/pkg/spdx"},
+			Tool:         []string{"sigs.k8s.io/bom/pkg/spdx"},
 		},
 	}
 }

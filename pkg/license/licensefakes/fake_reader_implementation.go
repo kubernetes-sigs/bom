@@ -20,7 +20,7 @@ package licensefakes
 import (
 	"sync"
 
-	"k8s.io/release/pkg/license"
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 type FakeReaderImplementation struct {

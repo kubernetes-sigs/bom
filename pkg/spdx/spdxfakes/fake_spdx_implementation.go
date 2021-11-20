@@ -21,8 +21,9 @@ import (
 	"sync"
 
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
-	"k8s.io/release/pkg/license"
-	"k8s.io/release/pkg/spdx"
+
+	"sigs.k8s.io/bom/pkg/license"
+	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 type FakeSpdxImplementation struct {

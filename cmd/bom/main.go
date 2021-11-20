@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"k8s.io/release/cmd/bom/cmd"
+	"sigs.k8s.io/bom/cmd/bom/cmd"
 )
 
 func main() {

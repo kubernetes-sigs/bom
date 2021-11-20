@@ -29,7 +29,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/vcs"
-	"k8s.io/release/pkg/license"
+
+	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/util"
 )

@@ -22,8 +22,9 @@ import (
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/stretchr/testify/require"
-	"k8s.io/release/pkg/provenance"
-	"k8s.io/release/pkg/provenance/provenancefakes"
+
+	"sigs.k8s.io/bom/pkg/provenance"
+	"sigs.k8s.io/bom/pkg/provenance/provenancefakes"
 )
 
 func getStatementSUT() *provenance.Statement {
