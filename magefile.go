@@ -1,3 +1,4 @@
+//go:build mage
 // +build mage
 
 /*
@@ -68,12 +69,12 @@ func Verify() error {
 	}
 
 	fmt.Println("Running copyright header checks...")
-	if err := mage.VerifyBoilerplate("", binDir, boilerplateDir, false); err != nil {
+	if err := mage.VerifyBoilerplate("v0.2.3", binDir, boilerplateDir, false); err != nil {
 		return err
 	}
 
 	fmt.Println("Running external dependency checks...")
-	if err := mage.VerifyDeps("", "", "", true); err != nil {
+	if err := mage.VerifyDeps("v0.3.0", "", "", true); err != nil {
 		return err
 	}
 
@@ -83,7 +84,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running golangci-lint...")
-	if err := mage.RunGolangCILint("", false); err != nil {
+	if err := mage.RunGolangCILint("v1.43.0", false); err != nil {
 		return err
 	}
 
