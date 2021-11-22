@@ -68,10 +68,13 @@ func Verify() error {
 		return err
 	}
 
-	fmt.Println("Running copyright header checks...")
-	if err := mage.VerifyBoilerplate("v0.2.3", binDir, boilerplateDir, false); err != nil {
-		return err
-	}
+	// TODO(lint): Re-enable boilerplate checks
+	/*
+		fmt.Println("Running copyright header checks...")
+		if err := mage.VerifyBoilerplate("v0.2.3", binDir, boilerplateDir, false); err != nil {
+			return err
+		}
+	*/
 
 	fmt.Println("Running external dependency checks...")
 	if err := mage.VerifyDeps("v0.3.0", "", "", true); err != nil {
