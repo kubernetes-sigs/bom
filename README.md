@@ -1,6 +1,10 @@
 # bom (Bill of Materials)
 
-Create SPDX compliant Bill of Materials
+[![PkgGoDev](https://pkg.go.dev/badge/sigs.k8s.io/bom)](https://pkg.go.dev/sigs.k8s.io/bom)
+[![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/bom)](https://goreportcard.com/report/sigs.k8s.io/bom)
+[![Slack](https://img.shields.io/badge/Slack-%23release--management-blueviolet)](https://kubernetes.slack.com/archives/C2C40FMNF)
+
+Create SPDX-compliant Bill of Materials
 
 `bom` is a utility that leverages the code written for the Kubernetes
 Bill of Materials project. It enables software authors to generate an
@@ -31,8 +35,7 @@ other sources to your SBOM.
   - [Generate a SBOM from the Current Directory](#generate-a-sbom-from-the-current-directory)
   - [Process a Container Image](#process-a-container-image)
   - [Generate a SBOM to describe files](#generate-a-sbom-to-describe-files)
-- [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
-  - [Code of conduct](#code-of-conduct)
+- [Code of conduct](#code-of-conduct)
 
 ## Installation
 
@@ -131,15 +134,6 @@ bom generate -n http://example.com/ \
   -f other/file.txt 
 ```
 
-## Community, discussion, contribution, and support
-
-Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
-
-You can reach the maintainers of this project at:
-
-- [Slack](http://slack.k8s.io/)
-- [Mailing List](https://groups.google.com/forum/#!forum/kubernetes-dev)
-
-### Code of conduct
+## Code of conduct
 
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
