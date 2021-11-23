@@ -1,29 +1,137 @@
-# Kubernetes Template Project
+# bom (Bill of Materials)
 
-The Kubernetes Template Project is a template for starting new projects in the GitHub organizations owned by Kubernetes. All Kubernetes projects, at minimum, must have the following files:
+[![PkgGoDev](https://pkg.go.dev/badge/sigs.k8s.io/bom)](https://pkg.go.dev/sigs.k8s.io/bom)
+[![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/bom)](https://goreportcard.com/report/sigs.k8s.io/bom)
+[![Slack](https://img.shields.io/badge/Slack-%23release--management-blueviolet)](https://kubernetes.slack.com/archives/C2C40FMNF)
 
-- a `README.md` outlining the project goals, sponsoring sig, and community contact information
-- an `OWNERS` with the project leads listed as approvers ([docs on `OWNERS` files][owners])
-- a `CONTRIBUTING.md` outlining how to contribute to the project
-- an unmodified copy of `code-of-conduct.md` from this repo, which outlines community behavior and the consequences of breaking the code
-- a `LICENSE` which must be Apache 2.0 for code projects, or [Creative Commons 4.0] for documentation repositories, without any custom content
-- a `SECURITY_CONTACTS` with the contact points for the Product Security Team 
-  to reach out to for triaging and handling of incoming issues. They must agree to abide by the
-  [Embargo Policy](https://git.k8s.io/security/private-distributors-list.md#embargo-policy)
-  and will be removed and replaced if they violate that agreement.
+Create SPDX-compliant Bill of Materials
 
-## Community, discussion, contribution, and support
+`bom` is a utility that leverages the code written for the Kubernetes
+Bill of Materials project. It enables software authors to generate an
+SBOM for their projects in a simple, yet powerful way.
 
-Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
+![terminal demo](/docs/cast.svg "Terminal demo")
 
-You can reach the maintainers of this project at:
+`bom` is a general-purpose tool that can generate SPDX packages from
+directories, container images, single files, and other sources. The utility
+has a built-in license classifier that recognizes the 400+ licenses in
+the SPDX catalog.
 
-- [Slack](http://slack.k8s.io/)
-- [Mailing List](https://groups.google.com/forum/#!forum/kubernetes-dev)
+Other features include Golang dependency analysis and full `.gitignore`
+support when scanning git repositories.
 
-### Code of conduct
+For more in-depth instructions on how to create an SBOM for your project, see
+["Generating a Bill of Materials for Your Project"](/docs/create-a-bill-of-materials.md).
+
+The guide includes information about what a Software Bill of Materials is,
+the SPDX standard, and instructions to add files, images, directories, and
+other sources to your SBOM.
+
+- [Installation](#installation)
+- [Usage](#usage)
+  - [`bom generate`](#bom-generate)
+  - [`bom document`](#bom-document)
+- [Examples](#examples)
+  - [Generate a SBOM from the Current Directory](#generate-a-sbom-from-the-current-directory)
+  - [Process a Container Image](#process-a-container-image)
+  - [Generate a SBOM to describe files](#generate-a-sbom-to-describe-files)
+- [Code of conduct](#code-of-conduct)
+
+## Installation
+
+To install `bom`:
+
+```console
+go install sigs.k8s.io/bom
+```
+
+## Usage
+
+- completion: generate the autocompletion script for the specified shell
+- [document](#bom-document): Work with SPDX documents
+- [generate](#bom-generate): Create SPDX manifests
+- help: Help about any command
+
+### `bom generate`
+
+`bom generate` is the `bom` subcommand to generate SPDX manifests.
+Currently supports creating SBOM for files, images, and docker
+archives (images in tarballs). Supports pulling images from
+registries.
+
+bom can take a deeper look into images using a growing number
+of analyzers designed to add more sense to common base images.
+
+```console
+Usage:
+  bom generate [flags]
+
+Flags:
+  -a, --analyze-images     go deeper into images using the available analyzers
+  -c, --config string      path to yaml SBOM configuration file
+  -d, --dirs strings       list of directories to include in the manifest as packages
+  -f, --file strings       list of files to include
+  -h, --help               help for generate
+      --ignore strings     list of regexp patterns to ignore when scanning directories
+  -i, --image strings      list of images
+  -l, --license string     SPDX license identifier to declare in the SBOM
+  -n, --namespace string   an URI that servers as namespace for the SPDX doc
+      --no-gitignore       don't use exclusions from .gitignore files
+      --no-gomod           don't perform go.mod analysis, sbom will not include data about go packages
+      --no-transient       don't include transient go dependencies, only direct deps from go.mod
+  -o, --output string      path to the file where the document will be written (defaults to STDOUT)
+  -t, --tarball strings    list of docker archive tarballs to include in the manifest
+```
+
+### `bom document`
+
+`bom document` → Work with SPDX documents
+
+```console
+Usage:
+  bom document [command]
+
+Available Commands:
+  outline     bom document outline → Draw structure of a SPDX document
+```
+
+## Examples
+
+The following examples show how bom can process different sources to generate
+an SPDX Bill of Materials. Multiple sources can be combined to get a document
+describing different packages.
+
+### Generate a SBOM from the Current Directory
+
+To process a directory as a source for your SBOM, use the `-d` flag or simply pass
+the path as the first argument to `bom`:
+
+```bash
+bom generate -n http://example.com/ .
+```
+
+### Process a Container Image
+
+This example pulls the `kube-apiserver` image, analyzes it, and describes in the
+SBOM. Each of its layers are then expressed as a subpackage in the resulting
+document:
+
+```console
+bom generate -n http://example.com/ --image k8s.gcr.io/kube-apiserver:v1.21.0 
+```
+
+### Generate a SBOM to describe files
+
+You can create an SBOM with just files in the manifest. For that, use `-f`:
+
+```console
+bom generate -n http://example.com/ \
+  -f Makefile \
+  -f file1.exe \
+  -f document.md \
+  -f other/file.txt 
+```
+
+## Code of conduct
 
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
-
-[owners]: https://git.k8s.io/community/contributors/guide/owners.md
-[Creative Commons 4.0]: https://git.k8s.io/website/LICENSE

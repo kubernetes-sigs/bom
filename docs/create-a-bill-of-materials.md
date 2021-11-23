@@ -19,16 +19,16 @@
 
 ## Introduction
 
-To generate a Bill of Materials for your project, download `bom`, our utility 
+To generate a Bill of Materials for your project, download `bom`, our utility
 that leverages the code found in this repo and point it to your project:
 
-```
+```console
 cd gitrepo/
 bom -n 'http://mybom.com/' . 
 ```
 
 All of the tool's options are explained on its page. Keep reading
-for more information about our tools, SBOMs, and the SPDX standard. 
+for more information about our tools, SBOMs, and the SPDX standard.
 
 ### What is a Bill of Materials?
 
@@ -48,7 +48,7 @@ information for their project as a whole, but also for individual pieces
 and it's dependencies. You can release your project under the Apache 2.0
 license but have its documentation published under Creative Commons. Then,
 there are all of your dependencies' original licenses. A well-written
-SBOM can express all of them in the same document. 
+SBOM can express all of them in the same document.
 
 ### bom: A tool to generate SBOMs for your Project
 
@@ -74,12 +74,12 @@ classifier supports detection of all the SPDX recognized licenses.
 
 [SPDX](https://spdx.dev/) or _Software Package Data Exchange_ is an open standard to create
 bills of materials. It has been in the works for 10+ years, coordinated
-by the SPDX Workgroup, a project of the Linux Foundation. 
+by the SPDX Workgroup, a project of the Linux Foundation.
 
 As of June 2020, [the SPDX specification](https://spdx.github.io/spdx-spec/) is
 in version 2.2. The current version allows software authors to include metadata about
 their project describing its contents, relationships among them, and other
-components and licensing. 
+components and licensing.
 
 ### Files and Packages
 
@@ -151,7 +151,7 @@ But the main focus should be the consumers of the BOM. How is your document goin
 used? Is it for checking the completeness of your release? Is someone trying to check
 for vulnerabilities in your dependencies? Perhaps your compliance person needs to check
 the licenses that interact with your project. Think about these and other use cases and
-create one or more SPDX documents which are useful for your consumers. 
+create one or more SPDX documents which are useful for your consumers.
 
 As the name implies, open source software releases include a snapshot of the source code
 in time: the state of your repo when a git tag was cut, for example. Do you want to include
@@ -177,9 +177,10 @@ In the simplest case, you can feed `bom` a source and build a single package SBO
 For example, to generate SBOM from your git repository run the following (note the
 dot at the end):
 
-```
+```console
 bom generate -n http://example.com/ .
 ```
+
 This command will traverse your repository directory structure, listing everything it finds,
 scanning license files. If your repository is a Go module, it will process the dependencies.
 `bom` will use your `.gitignore` file and skip any patterns listed in it.
@@ -187,7 +188,7 @@ scanning license files. If your repository is a Go module, it will process the d
 After bom runs, all your source code will be expressed as `File`s in an SPDX `Package`. `bom`
 will do some determinations to complete the data it needs to produce the document such as
 generating names for packages and files.
- 
+
 #### Adding Additional Sources
 
 Generally, an SPDX bill of materials will include more than one package. you can pass `bom`
@@ -211,25 +212,26 @@ Let us say you want to generate a bill of materials for etcd, which is at versio
 as I write this. If you only want to build an SBOM describing only the source in the
 repository, do the following:
 
-```
+```console
 git clone https://github.com/etcd-io/etcd
 cd etcd
 bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
-   --directory=.
+  --directory=.
 ```
 
-This will produce a manifest describing the repo and its golang dependencied 
+This will produce a manifest describing the repo and its golang dependencies
 in `etcd-v3.4.16.spdx`.
 
 Now, to make your SBOM more complete, you may want to include a container image.
 To do that run the same invocation, but this time adding the image with the
 `--image` flag:
 
-```
+```console
 bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
-   --directory=.\
-   --image=quay.io/coreos/etcd:v3.4.16
+  --directory=.\
+  --image=quay.io/coreos/etcd:v3.4.16
 ```
+
 This command will fetch the container image from the coreos repo and add it as a
 package. At this point, your bom will contain two top-level Packages: the directory
 and the image. If you inspect it, you will see the image's layers as subpackages too.
@@ -237,15 +239,15 @@ and the image. If you inspect it, you will see the image's layers as subpackages
 Finally, perhaps you want to add a binary distribution file. Download the compressed
 artifact from Github and add it to the SBOM:
 
-```
+```console
 curl -L https://github.com/etcd-io/etcd/releases/download/v3.4.16/etcd-v3.4.16-darwin-amd64.zip \
-     -O /tmp/etcd-v3.4.16-darwin-amd64.zip
+  -O /tmp/etcd-v3.4.16-darwin-amd64.zip
 
 bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
-    --dirs=.  \
-    --image=quay.io/coreos/etcd:v3.4.16 \
-    --file=/tmp/etcd-v3.4.16-darwin-amd64.zip
-``` 
+  --dirs=. \
+  --image=quay.io/coreos/etcd:v3.4.16 \
+  --file=/tmp/etcd-v3.4.16-darwin-amd64.zip
+```
 
 The resulting sbom from the last invocation will include at the top level of the SBOM
 three things: two `Package`s (the directory and the image) and one `File`: the binary
