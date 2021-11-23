@@ -8,15 +8,10 @@ Create SPDX compliant Bill of Materials
   - [Available Commands](#available-commands)
   - [Command line flags](#command-line-flags)
 - [Generate your own Bill of Materials](#generate-your-own-bill-of-materials)
-- [Compiling bom](#compiling-bom)
 - [Examples](#examples)
   - [Generate an SBOM from the Current Directory](#generate-an-sbom-from-the-current-directory)
   - [Process a Container Image](#process-a-container-image)
   - [Generate a BOM to describe files](#generate-a-bom-to-describe-files)
-- [Summary](#summary-1)
-- [Installation](#installation-1)
-- [Usage](#usage-1)
-  - [Command Line Flags](#command-line-flags-1)
 - [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
   - [Code of conduct](#code-of-conduct)
 
@@ -34,6 +29,16 @@ projects to use.
 
 For a more in depth instructions on how to create an SBOM see
 [Generating a Bill of Materials for Your Project](create-a-bill-of-materials.md)
+
+---
+
+`bom generate` is the subcommand to generate SPDX manifests.
+Currently supports creating SBOM for files, images, and docker
+archives (images in tarballs). Supports pulling images from
+registries.
+
+`bom` can take a deeper look into images using a growing number
+of analyzers designed to add more sense to common base images.
 
 ## Installation
 
@@ -62,8 +67,19 @@ cd release
 
 ```console
 Flags:
-  -h, --help               help for bom
-      --log-level string   the logging verbosity, either 'panic', 'fatal', 'error', 'warning', 'info', 'debug', 'trace' (default "info")
+  -a, --analyze-images     go deeper into images using the available analyzers
+  -c, --config string      path to yaml SBOM configuration file
+  -d, --dirs strings       list of directories to include in the manifest as packages
+  -f, --file strings       list of files to include
+  -h, --help               help for generate
+      --ignore strings     list of regexp patterns to ignore when scanning directories
+  -i, --image strings      list of images
+  -n, --namespace string   an URI that servers as namespace for the SPDX doc
+      --no-gitignore       don't use exclusions from .gitignore files
+      --no-gomod           don't perform go.mod analysis, sbom will not include data about go packages
+      --no-transient       don't include transient go dependencies, only direct deps from go.mod
+  -o, --output string      path to the file where the document will be written (defaults to STDOUT)
+  -t, --tarball strings    list of docker archive tarballs to include in the manifest
 ```
 
 ---
@@ -93,17 +109,6 @@ The guide includes information about
 [the SPDX standard](../../docs/bom/create-a-bill-of-materials.md#spdx-software-package-data-exchange),
 and instructions to add files, images, directories, and
 other sources to your BOM.
-
-## Compiling bom
-
-To compile bom, clone the Kubernetes Release Engineering repository and
-run the `compile-tools` script:
-
-```console
-git clone git@github.com:kubernetes/release.git
-cd release
-./compile-release-tools
-```
 
 ## Examples
 
@@ -140,50 +145,6 @@ bom generate -n http://example.com/ \
   -f file1.exe \
   -f document.md \
   -f other/file.txt 
-```
-
----
-
-# bom generate
-
-## Summary
-
-`bom generate` is the subcommand to generate SPDX manifests.
-Currently supports creating SBOM for files, images, and docker
-archives (images in tarballs). Supports pulling images from
-registries.
-
-`bom` can take a deeper look into images using a growing number
-of analyzers designed to add more sense to common base images.
-
-## Installation
-
-Simply [install bom](README.md).
-
-## Usage
-
-```console
-  bom generate [flags]
-```
-
-### Command Line Flags
-
-```console
-Flags:
-  -a, --analyze-images     go deeper into images using the available analyzers
-  -c, --config string      path to yaml SBOM configuration file
-  -d, --dirs strings       list of directories to include in the manifest as packages
-  -f, --file strings       list of files to include
-  -h, --help               help for generate
-      --ignore strings     list of regexp patterns to ignore when scanning directories
-  -i, --image strings      list of images
-  -n, --namespace string   an URI that servers as namespace for the SPDX doc
-      --no-gitignore       don't use exclusions from .gitignore files
-      --no-gomod           don't perform go.mod analysis, sbom will not include data about go packages
-      --no-transient       don't include transient go dependencies, only direct deps from go.mod
-  -o, --output string      path to the file where the document will be written (defaults to STDOUT)
-  -t, --tarball strings    list of docker archive tarballs to include in the manifest
-
 ```
 
 ---
