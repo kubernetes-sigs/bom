@@ -2,43 +2,37 @@
 
 Create SPDX compliant Bill of Materials
 
-- [Summary](#summary)
+`bom` is a utility that leverages the code written for the Kubernetes
+Bill of Materials project. It enables software authors to generate an
+SBOM for their projects in a simple, yet powerful way.
+
+![terminal demo](/docs/cast.svg "Terminal demo")
+
+`bom` is a general-purpose tool that can generate SPDX packages from
+directories, container images, single files, and other sources. The utility
+has a built-in license classifier that recognizes the 400+ licenses in
+the SPDX catalog.
+
+Other features include Golang dependency analysis and full `.gitignore`
+support when scanning git repositories.
+
+For more in-depth instructions on how to create an SBOM for your project, see
+["Generating a Bill of Materials for Your Project"](/docs/create-a-bill-of-materials.md).
+
+The guide includes information about what a Software Bill of Materials is,
+the SPDX standard, and instructions to add files, images, directories, and
+other sources to your SBOM.
+
 - [Installation](#installation)
 - [Usage](#usage)
   - [`bom generate`](#bom-generate)
   - [`bom document`](#bom-document)
-- [Generate your own Bill of Materials](#generate-your-own-bill-of-materials)
 - [Examples](#examples)
-  - [Generate an SBOM from the Current Directory](#generate-an-sbom-from-the-current-directory)
+  - [Generate a SBOM from the Current Directory](#generate-a-sbom-from-the-current-directory)
   - [Process a Container Image](#process-a-container-image)
-  - [Generate a BOM to describe files](#generate-a-bom-to-describe-files)
+  - [Generate a SBOM to describe files](#generate-a-sbom-to-describe-files)
 - [Community, discussion, contribution, and support](#community-discussion-contribution-and-support)
   - [Code of conduct](#code-of-conduct)
-
-## Summary
-
-bom is a little utility that lets software authors generate
-SPDX manifests to describe the contents of a release. The
-SPDX manifests provide a way to list and verify all items
-contained in packages, images, and individual files while
-packing the data along with licensing information.
-
-bom is still in its early stages and it is an effort to open
-the libraries developed for the Kubernetes SBOM for other
-projects to use.
-
-For a more in depth instructions on how to create an SBOM see
-[Generating a Bill of Materials for Your Project](create-a-bill-of-materials.md)
-
----
-
-`bom generate` is the subcommand to generate SPDX manifests.
-Currently supports creating SBOM for files, images, and docker
-archives (images in tarballs). Supports pulling images from
-registries.
-
-`bom` can take a deeper look into images using a growing number
-of analyzers designed to add more sense to common base images.
 
 ## Installation
 
@@ -100,41 +94,13 @@ Available Commands:
   outline     bom document outline → Draw structure of a SPDX document
 ```
 
----
-
-`bom` is a tiny utility that leverages the code written for the Kubernetes
-Bill of Materials project. It enables software authors to generate an
-SBOM for their projects in a simple, yet powerful way.
-
-![terminal demo](../../docs/bom/cast.svg "Terminal demo")
-
-`bom` is a general-purpose tool that can generate SPDX packages from
-directories, container images, single files, and other sources. The utility
-has a built-in license classifier that recognizes the 400+ licenses in
-the SPDX catalog.
-
-Other features include Golang dependency analysis and full `.gitignore`
-support when scanning git repositories.
-
-## Generate your own Bill of Materials
-
-If you are looking for a way to create a bill of materials for your project, we
-have created a
-[HOWTO guide to generating an SBOM](../../docs/bom/create-a-bill-of-materials.md).
-
-The guide includes information about
-[what a Bill of Materials is](../../docs/bom/create-a-bill-of-materials.md#what-is-a-bill-of-materials),
-[the SPDX standard](../../docs/bom/create-a-bill-of-materials.md#spdx-software-package-data-exchange),
-and instructions to add files, images, directories, and
-other sources to your BOM.
-
 ## Examples
 
 The following examples show how bom can process different sources to generate
 an SPDX Bill of Materials. Multiple sources can be combined to get a document
 describing different packages.
 
-### Generate an SBOM from the Current Directory
+### Generate a SBOM from the Current Directory
 
 To process a directory as a source for your SBOM, use the `-d` flag or simply pass
 the path as the first argument to `bom`:
@@ -145,7 +111,7 @@ bom generate -n http://example.com/ .
 
 ### Process a Container Image
 
-This example pulls the kube-apiserver image, analyzes it, and describes in the
+This example pulls the `kube-apiserver` image, analyzes it, and describes in the
 SBOM. Each of its layers are then expressed as a subpackage in the resulting
 document:
 
@@ -153,7 +119,7 @@ document:
 bom generate -n http://example.com/ --image k8s.gcr.io/kube-apiserver:v1.21.0 
 ```
 
-### Generate a BOM to describe files
+### Generate a SBOM to describe files
 
 You can create an SBOM with just files in the manifest. For that, use `-f`:
 
@@ -164,8 +130,6 @@ bom generate -n http://example.com/ \
   -f document.md \
   -f other/file.txt 
 ```
-
----
 
 ## Community, discussion, contribution, and support
 
