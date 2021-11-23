@@ -5,8 +5,8 @@ Create SPDX compliant Bill of Materials
 - [Summary](#summary)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Available Commands](#available-commands)
-  - [Command line flags](#command-line-flags)
+  - [`bom generate`](#bom-generate)
+  - [`bom document`](#bom-document)
 - [Generate your own Bill of Materials](#generate-your-own-bill-of-materials)
 - [Examples](#examples)
   - [Generate an SBOM from the Current Directory](#generate-an-sbom-from-the-current-directory)
@@ -52,20 +52,25 @@ cd release
 
 ## Usage
 
+- completion: generate the autocompletion script for the specified shell
+- [document](#bom-document): Work with SPDX documents
+- [generate](#bom-generate): Create SPDX manifests
+- help: Help about any command
+
+### `bom generate`
+
+`bom generate` is the `bom` subcommand to generate SPDX manifests.
+Currently supports creating SBOM for files, images, and docker
+archives (images in tarballs). Supports pulling images from
+registries.
+
+bom can take a deeper look into images using a growing number
+of analyzers designed to add more sense to common base images.
+
 ```console
-  bom [subcommand]
-```
+Usage:
+  bom generate [flags]
 
-### Available Commands
-
-```console
-  generate    bom generate → Create SPDX manifests
-  help        Help about any command
-```
-
-### Command line flags
-
-```console
 Flags:
   -a, --analyze-images     go deeper into images using the available analyzers
   -c, --config string      path to yaml SBOM configuration file
@@ -74,12 +79,25 @@ Flags:
   -h, --help               help for generate
       --ignore strings     list of regexp patterns to ignore when scanning directories
   -i, --image strings      list of images
+  -l, --license string     SPDX license identifier to declare in the SBOM
   -n, --namespace string   an URI that servers as namespace for the SPDX doc
       --no-gitignore       don't use exclusions from .gitignore files
       --no-gomod           don't perform go.mod analysis, sbom will not include data about go packages
       --no-transient       don't include transient go dependencies, only direct deps from go.mod
   -o, --output string      path to the file where the document will be written (defaults to STDOUT)
   -t, --tarball strings    list of docker archive tarballs to include in the manifest
+```
+
+### `bom document`
+
+`bom document` → Work with SPDX documents
+
+```console
+Usage:
+  bom document [command]
+
+Available Commands:
+  outline     bom document outline → Draw structure of a SPDX document
 ```
 
 ---
