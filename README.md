@@ -39,12 +39,10 @@ other sources to your SBOM.
 
 ## Installation
 
-To use bom generate, compile the release engineering tools:
+To install `bom`:
 
 ```console
-git clone git@github.com:kubernetes/release.git
-cd release
-./compile-release-tools bom
+go install sigs.k8s.io/bom
 ```
 
 ## Usage
