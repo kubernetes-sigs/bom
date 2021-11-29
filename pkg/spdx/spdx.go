@@ -18,13 +18,14 @@ package spdx
 
 import (
 	"encoding/base64"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
-	"github.com/nozzle/throttler"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -38,7 +39,6 @@ const (
 	spdxLicenseData         = spdxTempDir + "/licenses"
 	spdxLicenseDlCache      = spdxTempDir + "/downloadCache"
 	gitIgnoreFile           = ".gitignore"
-	validIDCharsRe          = `[^a-zA-Z0-9-.]+` // https://spdx.github.io/spdx-spec/3-package-information/#32-package-spdx-identifier
 
 	// Consts of some SPDX expressions
 	NONE        = "NONE"
@@ -48,6 +48,9 @@ const (
 LyBfYCBcIFwvIC8KXF9fIFwgfF8pIHwgKF98IHw+ICA8IAp8X19fLyAuX18vIFxfXyxfL18vXF9c
 CiAgICB8X3wgICAgICAgICAgICAgICAK`
 )
+
+// https://spdx.github.io/spdx-spec/3-package-information/#32-package-spdx-identifier
+var validIDCharsRe = regexp.MustCompile(`[^a-zA-Z0-9-.]+`)
 
 type SPDX struct {
 	impl    spdxImplementation
@@ -71,6 +74,7 @@ type Options struct {
 	ProcessGoModules bool     // If true, spdx will check if dirs are go modules and analize the packages
 	OnlyDirectDeps   bool     // Only include direct dependencies from go.mod
 	ScanLicenses     bool     // Scan licenses from everypossible place unless false
+	AddTarFiles      bool     // Scan and add files inside of tarfiles
 	LicenseCacheDir  string   // Directory to cache SPDX license downloads
 	LicenseData      string   // Directory to store the SPDX licenses
 	IgnorePatterns   []string // Patterns to ignore when scanning file
@@ -98,6 +102,7 @@ type ArchiveManifest struct {
 // ImageOptions set of options for processing tar files
 type TarballOptions struct {
 	ExtractDir string // Directory where the docker tar archive will be extracted
+	AddFiles   bool
 }
 
 // buildIDString takes a list of seed strings and builds a
@@ -106,13 +111,20 @@ type TarballOptions struct {
 func buildIDString(seeds ...string) string {
 	validSeeds := []string{}
 	numValidSeeds := 0
-	reg := regexp.MustCompile(validIDCharsRe)
 	for _, s := range seeds {
 		// Replace some chars with - to keep the sense of the ID
 		for _, r := range []string{"/", ":"} {
 			s = strings.ReplaceAll(s, r, "-")
 		}
-		s = reg.ReplaceAllString(s, "")
+		// Replace invalid chars with unicode numbers to avoid collisions
+		s = validIDCharsRe.ReplaceAllStringFunc(s, func(s string) string {
+			r := ""
+			for i := 0; i < len(s); i++ {
+				uc, _ := utf8.DecodeRuneInString(string(s[i]))
+				r = fmt.Sprintf("%sC%d", r, uc)
+			}
+			return r
+		})
 		if s != "" {
 			validSeeds = append(validSeeds, s)
 			if !strings.HasPrefix(s, "SPDXRef-") {
@@ -139,88 +151,13 @@ func buildIDString(seeds ...string) string {
 // PackageFromDirectory indexes all files in a directory and builds a
 // SPDX package describing its contents
 func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error) {
-	dirPath, err = filepath.Abs(dirPath)
+	pkg, err = spdx.impl.PackageFromDirectory(spdx.options, dirPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting absolute directory path")
-	}
-	fileList, err := spdx.impl.GetDirectoryTree(dirPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "building directory tree")
-	}
-	reader, err := spdx.impl.LicenseReader(spdx.Options())
-	if err != nil {
-		return nil, errors.Wrap(err, "creating license reader")
-	}
-	licenseTag := ""
-	lic, err := spdx.impl.GetDirectoryLicense(reader, dirPath, spdx.Options())
-	if err != nil {
-		return nil, errors.Wrap(err, "scanning directory for licenses")
-	}
-	if lic != nil {
-		licenseTag = lic.LicenseID
+		return nil, errors.Wrap(err, "generating SPDX package from directory")
 	}
 
-	// Build a list of patterns from those found in the .gitignore file and
-	// posssibly others passed in the options:
-	patterns, err := spdx.impl.IgnorePatterns(
-		dirPath, spdx.Options().IgnorePatterns, spdx.Options().NoGitignore,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "building ignore patterns list")
-	}
-
-	// Apply the ignore patterns to the list of files
-	fileList = spdx.impl.ApplyIgnorePatterns(fileList, patterns)
-	logrus.Infof("Scanning %d files and adding them to the SPDX package", len(fileList))
-
-	pkg = NewPackage()
-	pkg.FilesAnalyzed = true
-	pkg.Name = filepath.Base(dirPath)
-	if pkg.Name == "" {
-		pkg.Name = uuid.NewString()
-	}
-	pkg.LicenseConcluded = licenseTag
-
-	t := throttler.New(5, len(fileList))
-
-	processDirectoryFile := func(path string, pkg *Package) {
-		defer t.Done(err)
-		f := NewFile()
-		f.FileName = path
-		f.SourceFile = filepath.Join(dirPath, path)
-		lic, err = reader.LicenseFromFile(f.SourceFile)
-		if err != nil {
-			err = errors.Wrap(err, "scanning file for license")
-			return
-		}
-		f.LicenseInfoInFile = NONE
-		if lic == nil {
-			f.LicenseConcluded = licenseTag
-		} else {
-			f.LicenseInfoInFile = lic.LicenseID
-		}
-
-		if err = f.ReadSourceFile(filepath.Join(dirPath, path)); err != nil {
-			err = errors.Wrap(err, "checksumming file")
-			return
-		}
-		f.Name = strings.TrimPrefix(path, dirPath+string(filepath.Separator))
-		if err = pkg.AddFile(f); err != nil {
-			err = errors.Wrapf(err, "adding %s as file to the spdx package", path)
-			return
-		}
-	}
-
-	// Read the files in parallel
-	for _, path := range fileList {
-		go processDirectoryFile(path, pkg)
-		t.Throttle()
-	}
-
-	if err := t.Err(); err != nil {
-		return nil, err
-	}
-
+	// Scan the directory contents and if it is a go module, process the
+	// dependencies
 	if util.Exists(filepath.Join(dirPath, GoModFileName)) && spdx.Options().ProcessGoModules {
 		logrus.Info("Directory contains a go module. Scanning go packages")
 		deps, err := spdx.impl.GetGoDependencies(dirPath, spdx.Options())
@@ -235,13 +172,24 @@ func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error)
 		}
 	}
 
-	// Add files into the package
 	return pkg, nil
 }
 
 // PackageFromImageTarball returns a SPDX package from a tarball
 func (spdx *SPDX) PackageFromImageTarball(tarPath string) (imagePackage *Package, err error) {
-	return spdx.impl.PackageFromImageTarball(tarPath, spdx.Options())
+	return spdx.impl.PackageFromImageTarball(spdx.Options(), tarPath)
+}
+
+// PackageFromArchive returns a SPDX package from a tarball
+func (spdx *SPDX) PackageFromArchive(archivePath string) (imagePackage *Package, err error) {
+	if strings.HasSuffix(archivePath, "tar") || strings.HasSuffix(archivePath, "tar.gz") {
+		return spdx.impl.PackageFromTarball(
+			spdx.Options(), &TarballOptions{
+				AddFiles: true,
+			}, archivePath,
+		)
+	}
+	return nil, errors.Wrap(err, "unable to create spdx package from archive, only tar archives are supported")
 }
 
 // FileFromPath creates a File object from a path

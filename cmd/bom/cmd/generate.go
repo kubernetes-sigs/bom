@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/pkg/errors"
@@ -78,7 +77,8 @@ type generateOptions struct {
 	configFile     string
 	license        string
 	images         []string
-	tarballs       []string
+	imageArchives  []string
+	archives       []string
 	files          []string
 	directories    []string
 	ignorePatterns []string
@@ -89,30 +89,10 @@ func (opts *generateOptions) Validate() error {
 	if opts.configFile == "" &&
 		len(opts.images) == 0 &&
 		len(opts.files) == 0 &&
-		len(opts.tarballs) == 0 &&
+		len(opts.imageArchives) == 0 &&
+		len(opts.archives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
-	}
-
-	// A namespace URL is required
-	if opts.configFile == "" && opts.namespace == "" {
-		msg := "Error. No namespace defined\n\n"
-		msg += "You did not specify a namespace for your document. This is an error.\n"
-		msg += "To produce a valid SPDX SBOM, the document has to have an URI as its\n"
-		msg += "namespace.\n\nIf you are testing, you can use http://example.com/ for now but your\n"
-		msg += "final document must have a namespace URI pointing to the location where\n"
-		msg += "your SBOM will be referenced in the future.\n\n"
-		msg += "For more details, check the SPDX documentation here:\n"
-		msg += "https://spdx.github.io/spdx-spec/2-document-creation-information/#25-spdx-document-namespace\n\n"
-		msg += "Hint: --namespace is your friend here\n\n"
-		logrus.Info(msg)
-
-		return errors.New("A namespace URI must be defined to have a compliant SPDX BOM")
-	}
-
-	// Check namespace is a valid URL
-	if _, err := url.Parse(opts.namespace); err != nil {
-		return errors.Wrap(err, "parsing the namespace URL")
 	}
 
 	return nil
@@ -136,11 +116,31 @@ func init() {
 	)
 
 	generateCmd.PersistentFlags().StringSliceVarP(
-		&genOpts.tarballs,
+		&genOpts.imageArchives,
 		"tarball",
 		"t",
 		[]string{},
 		"list of docker archive tarballs to include in the manifest",
+	)
+
+	if err := generateCmd.PersistentFlags().MarkDeprecated(
+		"tarball", "tarball has been renamed to image-archive",
+	); err != nil {
+		logrus.Fatal(errors.Wrap(err, "marking flag as deprecated"))
+	}
+
+	generateCmd.PersistentFlags().StringSliceVar(
+		&genOpts.imageArchives,
+		"image-archive",
+		[]string{},
+		"list of docker archive tarballs to include in the manifest",
+	)
+
+	generateCmd.PersistentFlags().StringSliceVar(
+		&genOpts.archives,
+		"archive",
+		[]string{},
+		"list of archives to add as packages (supports tar, tar.gz)",
 	)
 
 	generateCmd.PersistentFlags().StringSliceVarP(
@@ -228,7 +228,8 @@ func generateBOM(opts *generateOptions) error {
 
 	builder := spdx.NewDocBuilder()
 	builderOpts := &spdx.DocGenerateOptions{
-		Tarballs:         opts.tarballs,
+		Tarballs:         opts.imageArchives,
+		Archives:         opts.archives,
 		Files:            opts.files,
 		Images:           opts.images,
 		Directories:      opts.directories,

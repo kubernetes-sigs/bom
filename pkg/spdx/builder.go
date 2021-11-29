@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -96,7 +97,8 @@ type DocGenerateOptions struct {
 	Namespace           string                // Namespace for the document (a unique URI)
 	CreatorPerson       string                // Document creator information
 	License             string                // Main license of the document
-	Tarballs            []string              // A slice of tar paths
+	Tarballs            []string              // A slice of docker archives (tar)
+	Archives            []string              // A list of archive files to add as packages
 	Files               []string              // A slice of naked files to include in the bom
 	Images              []string              // A slice of docker images
 	Directories         []string              // A slice of directories to convert into packages
@@ -105,7 +107,11 @@ type DocGenerateOptions struct {
 }
 
 func (o *DocGenerateOptions) Validate() error {
-	if len(o.Tarballs) == 0 && len(o.Files) == 0 && len(o.Images) == 0 && len(o.Directories) == 0 {
+	if len(o.Tarballs) == 0 &&
+		len(o.Files) == 0 &&
+		len(o.Images) == 0 &&
+		len(o.Directories) == 0 &&
+		len(o.Archives) == 0 {
 		return errors.New(
 			"to build a document at least an image, tarball, directory or a file has to be specified",
 		)
@@ -164,13 +170,17 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	// Create the new document
 	doc = NewDocument()
 	doc.Name = genopts.Name
-	doc.Namespace = genopts.Namespace
+
+	// If we do not have a namespace, we generate one
+	// under the public SPDX URL defined in the spec.
+	// (ref https://spdx.github.io/spdx-spec/document-creation-information/#65-spdx-document-namespace-field)
+	if genopts.Namespace == "" {
+		doc.Namespace = "https://spdx.org/spdxdocs/k8s-releng-bom-" + uuid.NewString()
+	} else {
+		doc.Namespace = genopts.Namespace
+	}
 	doc.Creator.Person = genopts.CreatorPerson
 	doc.ExternalDocRefs = genopts.ExternalDocumentRef
-
-	if genopts.Namespace == "" {
-		return nil, errors.New("unable to generate doc, namespace URI is not defined")
-	}
 
 	for _, i := range genopts.Directories {
 		logrus.Infof("Processing directory %s", i)
@@ -196,12 +206,24 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 		}
 	}
 
-	// Porcess OCI image archives
+	// Process OCI image archives
 	for _, tb := range genopts.Tarballs {
 		logrus.Infof("Processing tarball %s", tb)
 		p, err := spdx.PackageFromImageTarball(tb)
 		if err != nil {
 			return nil, errors.Wrap(err, "generating tarball package")
+		}
+		if err := doc.AddPackage(p); err != nil {
+			return nil, errors.Wrap(err, "adding package to document")
+		}
+	}
+
+	// Add archive files as packages
+	for _, tf := range genopts.Archives {
+		logrus.Infof("Adding archive file as package: %s", tf)
+		p, err := spdx.PackageFromArchive(tf)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating spdx package from archive")
 		}
 		if err := doc.AddPackage(p); err != nil {
 			return nil, errors.Wrap(err, "adding package to document")

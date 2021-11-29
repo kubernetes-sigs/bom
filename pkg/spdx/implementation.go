@@ -21,6 +21,7 @@ package spdx
 import (
 	"archive/tar"
 	"bufio"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -34,6 +35,8 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/google/uuid"
+	"github.com/nozzle/throttler"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -52,8 +55,9 @@ type spdxImplementation interface {
 		Arch      string
 		OS        string
 	}, error)
-	PackageFromImageTarball(string, *Options) (*Package, error)
-	PackageFromLayerTarball(string, *TarballOptions) (*Package, error)
+	PackageFromImageTarball(*Options, string) (*Package, error)
+	PackageFromTarball(*Options, *TarballOptions, string) (*Package, error)
+	PackageFromDirectory(*Options, string) (*Package, error)
 	GetDirectoryTree(string) ([]string, error)
 	IgnorePatterns(string, []string, bool) ([]gitignore.Pattern, error)
 	ApplyIgnorePatterns([]string, []gitignore.Pattern) []string
@@ -78,16 +82,26 @@ func (di *spdxDefaultImplementation) ExtractTarballTmp(tarPath string) (tmpDir s
 	if err != nil {
 		return tmpDir, errors.Wrap(err, "opening tarball")
 	}
+	defer f.Close()
 
-	tr := tar.NewReader(f)
+	var tr *tar.Reader
+	if strings.HasSuffix(tarPath, ".gz") || strings.HasSuffix(tarPath, ".tgz") {
+		gzipReader, err := gzip.NewReader(f)
+		if err != nil {
+			return "", err
+		}
+		tr = tar.NewReader(gzipReader)
+	} else {
+		tr = tar.NewReader(f)
+	}
 	numFiles := 0
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
-			break // End of archive
+			break
 		}
 		if err != nil {
-			return tmpDir, errors.Wrap(err, "reading the image tarfile")
+			return tmpDir, errors.Wrapf(err, "reading tarfile %s", tarPath)
 		}
 
 		if hdr.FileInfo().IsDir() {
@@ -113,15 +127,16 @@ func (di *spdxDefaultImplementation) ExtractTarballTmp(tarPath string) (tmpDir s
 		if err != nil {
 			return tmpDir, errors.Wrap(err, "creating image layer file")
 		}
-		defer f.Close()
 
 		if _, err := io.CopyN(f, tr, hdr.Size); err != nil {
+			f.Close()
 			if err == io.EOF {
 				break
 			}
 
 			return tmpDir, errors.Wrap(err, "extracting image data")
 		}
+		f.Close()
 
 		numFiles++
 	}
@@ -361,21 +376,33 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	return images, nil
 }
 
-// PackageFromLayerTarball builds a SPDX package from an image
-// tarball
-func (di *spdxDefaultImplementation) PackageFromLayerTarball(
-	layerFile string, opts *TarballOptions,
-) (*Package, error) {
-	logrus.Infof("Generating SPDX package from layer in %s", layerFile)
+// PackageFromTarball builds a SPDX package from the contents of a tarball
+func (di *spdxDefaultImplementation) PackageFromTarball(
+	opts *Options, tarOpts *TarballOptions, tarFile string,
+) (pkg *Package, err error) {
+	logrus.Infof("Generating SPDX package from tarball %s", tarFile)
 
-	pkg := NewPackage()
-	pkg.Options().WorkDir = opts.ExtractDir
-	if err := pkg.ReadSourceFile(filepath.Join(opts.ExtractDir, layerFile)); err != nil {
-		return nil, errors.Wrap(err, "reading source file")
+	if tarOpts.AddFiles {
+		// Estract the tarball
+		tmp, err := di.ExtractTarballTmp(tarFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "extracting tarball to temporary archive")
+		}
+		defer os.RemoveAll(tmp)
+		pkg, err = di.PackageFromDirectory(opts, tmp)
+		if err != nil {
+			return nil, errors.Wrap(err, "generating package from tar contents")
+		}
+	} else {
+		pkg = NewPackage()
 	}
-	pkg.BuildID(layerFile)
-	pkg.Name = layerFile
-	pkg.FileName = layerFile
+	// Set the extract dir option. This makes the package to remove
+	// the tempdir prefix from the document paths:
+	pkg.Options().WorkDir = tarOpts.ExtractDir
+	if err := pkg.ReadSourceFile(tarFile); err != nil {
+		return nil, errors.Wrapf(err, "reading source file %s", tarFile)
+	}
+	// Build the ID and the filename from the tarball name
 	return pkg, nil
 }
 
@@ -552,7 +579,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	// If we just got one image and that image is exactly the same
 	// reference, return a single package:
 	if len(imgs) == 1 && imgs[0].Reference == ref {
-		return di.PackageFromImageTarball(imgs[0].Archive, opts)
+		return di.PackageFromImageTarball(opts, imgs[0].Archive)
 	}
 
 	// Create the package representing the image tag:
@@ -563,7 +590,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 
 	// Now, cycle each image in the index and generate a package from it
 	for _, img := range imgs {
-		subpkg, err := di.PackageFromImageTarball(img.Archive, opts)
+		subpkg, err := di.PackageFromImageTarball(opts, img.Archive)
 		if err != nil {
 			return nil, errors.Wrap(err, "adding image variant package")
 		}
@@ -598,12 +625,19 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 // PackageFromImageTarball reads an OCI image archive and produces a SPDX
 // packafe describing its layers
 func (di *spdxDefaultImplementation) PackageFromImageTarball(
-	tarPath string, spdxOpts *Options,
+	spdxOpts *Options, tarPath string,
 ) (imagePackage *Package, err error) {
 	logrus.Infof("Generating SPDX package from image tarball %s", tarPath)
 
 	// Extract all files from tarfile
 	tarOpts := &TarballOptions{}
+
+	// If specified, add individual files from the tarball to the
+	// spdx package, unless AnalyzeLayers is set because in that
+	// case the individual analyzers decide to do that.
+	if spdxOpts.AddTarFiles && !spdxOpts.AnalyzeLayers {
+		tarOpts.AddFiles = true
+	}
 	tarOpts.ExtractDir, err = di.ExtractTarballTmp(tarPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "extracting tarball to temp dir")
@@ -641,7 +675,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 	// Cycle all the layers from the manifest and add them as packages
 	for _, layerFile := range manifest.LayerFiles {
 		// Generate a package from a layer
-		pkg, err := di.PackageFromLayerTarball(layerFile, tarOpts)
+		pkg, err := di.PackageFromTarball(spdxOpts, tarOpts, filepath.Join(tarOpts.ExtractDir, layerFile))
 		if err != nil {
 			return nil, errors.Wrap(err, "building package from layer")
 		}
@@ -670,4 +704,97 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 
 func (di *spdxDefaultImplementation) AnalyzeImageLayer(layerPath string, pkg *Package) error {
 	return NewImageAnalyzer().AnalyzeLayer(layerPath, pkg)
+}
+
+// PackageFromDirectory scans a directory and returns its contents as a
+// SPDX package, optionally determining the licenses found
+func (di *spdxDefaultImplementation) PackageFromDirectory(opts *Options, dirPath string) (pkg *Package, err error) {
+	dirPath, err = filepath.Abs(dirPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting absolute directory path")
+	}
+	fileList, err := di.GetDirectoryTree(dirPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "building directory tree")
+	}
+	reader, err := di.LicenseReader(opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating license reader")
+	}
+	licenseTag := ""
+	lic, err := di.GetDirectoryLicense(reader, dirPath, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning directory for licenses")
+	}
+	if lic != nil {
+		licenseTag = lic.LicenseID
+	}
+
+	// Build a list of patterns from those found in the .gitignore file and
+	// posssibly others passed in the options:
+	patterns, err := di.IgnorePatterns(
+		dirPath, opts.IgnorePatterns, opts.NoGitignore,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "building ignore patterns list")
+	}
+
+	// Apply the ignore patterns to the list of files
+	fileList = di.ApplyIgnorePatterns(fileList, patterns)
+	logrus.Infof("Scanning %d files and adding them to the SPDX package", len(fileList))
+
+	pkg = NewPackage()
+	pkg.FilesAnalyzed = true
+	pkg.Name = filepath.Base(dirPath)
+	if pkg.Name == "" {
+		pkg.Name = uuid.NewString()
+	}
+	pkg.LicenseConcluded = licenseTag
+
+	// Set the working directory of the package:
+	pkg.Options().WorkDir = filepath.Dir(dirPath)
+
+	t := throttler.New(5, len(fileList))
+
+	processDirectoryFile := func(path string, pkg *Package) {
+		defer t.Done(err)
+		f := NewFile()
+		f.Options().WorkDir = dirPath
+		f.Options().Prefix = pkg.Name
+
+		lic, err = reader.LicenseFromFile(filepath.Join(dirPath, path))
+		if err != nil {
+			err = errors.Wrap(err, "scanning file for license")
+			return
+		}
+		f.LicenseInfoInFile = NONE
+		if lic == nil {
+			f.LicenseConcluded = licenseTag
+		} else {
+			f.LicenseInfoInFile = lic.LicenseID
+		}
+
+		if err = f.ReadSourceFile(filepath.Join(dirPath, path)); err != nil {
+			err = errors.Wrap(err, "checksumming file")
+			return
+		}
+		if err = pkg.AddFile(f); err != nil {
+			err = errors.Wrapf(err, "adding %s as file to the spdx package", path)
+			return
+		}
+	}
+
+	// Read the files in parallel
+	for _, path := range fileList {
+		go processDirectoryFile(path, pkg)
+		t.Throttle()
+	}
+
+	// If the throttler picked an error, fail here
+	if err := t.Err(); err != nil {
+		return nil, err
+	}
+
+	// Add files into the package
+	return pkg, nil
 }
