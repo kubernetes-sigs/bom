@@ -42,7 +42,7 @@ other sources to your SBOM.
 To install `bom`:
 
 ```console
-go install sigs.k8s.io/bom
+go install sigs.k8s.io/bom/cmd/bom
 ```
 
 ## Usage
