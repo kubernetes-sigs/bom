@@ -19,6 +19,9 @@ package spdx
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -36,6 +39,12 @@ var fileTemplate = `{{ if .Name }}FileName: {{ .Name }}
 {{ end -}}
 {{- end -}}
 {{- end -}}
+{{- if .FileType -}}
+{{- range $key, $value := .FileType -}}
+{{ if . }}FileType: {{ $value }}
+{{ end -}}
+{{- end -}}
+{{- end -}}
 LicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ else }}NOASSERTION{{ end }}
 LicenseInfoInFile: {{ if .LicenseInfoInFile }}{{ .LicenseInfoInFile }}{{ else }}NOASSERTION{{ end }}
 FileCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
@@ -46,6 +55,7 @@ FileCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
 // File abstracts a file contained in a package
 type File struct {
 	Entity
+	FileType          []string
 	LicenseInfoInFile string // GPL-3.0-or-later
 }
 
@@ -116,5 +126,67 @@ func (f *File) ReadSourceFile(path string) error {
 	if f.SPDXID() == "" {
 		f.BuildID()
 	}
+
+	f.FileType = getFileTypes(path)
+
 	return nil
+}
+
+func getFileTypes(path string) []string {
+	fileExtension := strings.TrimLeft(filepath.Ext(path), ".")
+
+	if fileExtension == "" {
+		mineType, err := getFileContentType(path)
+		if err != nil {
+			return []string{"OTHER"}
+		}
+		splited := strings.Split(mineType, "/")
+
+		fileExtension = splited[0]
+		if splited[0] == "application" {
+			fileExtension = splited[1]
+		}
+	}
+
+	switch fileExtension {
+	case "go", "java", "rs", "rb", "c", "cgi", "class", "cpp", "cs", "h",
+		"php", "py", "sh", "swift", "vb", "css":
+		return []string{"SOURCE"}
+	case "txt", "text", "pdf", "md", "doc", "docx", "epub",
+		"ppt", "pptx", "pps", "odp", "xls", "xlsm", "xlsx":
+		return []string{"TEXT", "DOCUMENTATION"}
+	case "yml", "yaml", "json":
+		return []string{"TEXT"}
+	case "exe", "a", "o", "octet-stream", "apk", "bat",
+		"bin", "pl", "com", "gadget", "jar", "msi", "wsf":
+		return []string{"BINARY", "APPLICATION"}
+	case "jpeg", "jpg", "png", "svg", "ai", "bmp", "gif", "ico",
+		"ps", "psd", "tif", "tiff":
+		return []string{"IMAGE"}
+	case "mp3", "wav", "aif", "cda", "mid", "midi",
+		"mpa", "ogg", "wma", "wpl":
+		return []string{"AUDIO"}
+	case "zip", "tar", "tar.gz", "tar.bz2", "7z", "arj",
+		"deb", "pkg", "rar", "rpm", "z":
+		return []string{"ARCHIVE"}
+	default:
+		return []string{"OTHER"}
+	}
+}
+
+func getFileContentType(path string) (string, error) {
+	// Only the first 512 bytes are used to sniff the content type.
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	contentType := http.DetectContentType(buffer)
+	return contentType, nil
 }
