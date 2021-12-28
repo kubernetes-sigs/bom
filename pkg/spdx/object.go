@@ -231,7 +231,7 @@ mloop:
 				for _, relt := range rels {
 					// If rel is excluded, we can ignore
 					if exclusion == "exclude" && relt == rel.Type {
-						logrus.Infof("Relationships of type %s are excluded from provenance", rel.Type)
+						logrus.Debugf("Relationships of type %s are excluded from provenance", rel.Type)
 						continue mloop
 					}
 
