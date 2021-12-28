@@ -21,11 +21,12 @@ import (
 	"os"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	"github.com/pkg/errors"
 )
 
 type Predicate struct {
-	intoto.ProvenancePredicate
+	slsa.ProvenancePredicate
 	impl PredicateImplementation
 }
 
@@ -35,7 +36,7 @@ func (p *Predicate) SetImplementation(impl PredicateImplementation) {
 }
 
 // AddMaterial adds an entry to the listo of materials
-func (p *Predicate) AddMaterial(uri string, ds intoto.DigestSet) {
+func (p *Predicate) AddMaterial(uri string, ds slsa.DigestSet) {
 	p.impl.AddMaterial(p, uri, ds)
 }
 
@@ -46,7 +47,7 @@ func (p *Predicate) Write(path string) error {
 
 //counterfeiter:generate . PredicateImplementation
 type PredicateImplementation interface {
-	AddMaterial(*Predicate, string, intoto.DigestSet)
+	AddMaterial(*Predicate, string, slsa.DigestSet)
 	Write(*Predicate, string) error
 }
 
@@ -65,7 +66,7 @@ func (pi *defaultPredicateImplementation) Write(p *Predicate, path string) error
 }
 
 // AddMaterial adds a material to the entry
-func (pi *defaultPredicateImplementation) AddMaterial(p *Predicate, uri string, ds intoto.DigestSet) {
+func (pi *defaultPredicateImplementation) AddMaterial(p *Predicate, uri string, ds slsa.DigestSet) {
 	if p.Materials == nil {
 		p.Materials = []intoto.ProvenanceMaterial{}
 	}

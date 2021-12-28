@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/release-utils/hash"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 )
 
 // Statement is the middle layer of the attestation, binding it to a particular subject and
@@ -64,7 +65,7 @@ func (s *Statement) ReadSubjectsFromDir(path string) (err error) {
 }
 
 // AddSubject adds an entry to the listo of materials
-func (s *Statement) AddSubject(uri string, ds intoto.DigestSet) {
+func (s *Statement) AddSubject(uri string, ds slsa.DigestSet) {
 	s.impl.AddSubject(s, uri, ds)
 }
 
@@ -106,7 +107,7 @@ func (s *Statement) VerifySubjects(path string) (err error) {
 
 //counterfeiter:generate . StatementImplementation
 type StatementImplementation interface {
-	AddSubject(*Statement, string, intoto.DigestSet)
+	AddSubject(*Statement, string, slsa.DigestSet)
 	ReadSubjectsFromDir(*Statement, string) error
 	SubjectFromFile(string) (intoto.Subject, error)
 	Write(*Statement, string) error
@@ -119,7 +120,7 @@ type defaultStatementImplementation struct{}
 
 // AddSubject adds a material to the entry
 func (si *defaultStatementImplementation) AddSubject(
-	s *Statement, name string, ds intoto.DigestSet,
+	s *Statement, name string, ds slsa.DigestSet,
 ) {
 	if s.Subject == nil {
 		s.Subject = []intoto.Subject{}
@@ -150,7 +151,7 @@ func (si *defaultStatementImplementation) ReadSubjectsFromDir(
 		if err != nil {
 			return errors.Wrapf(err, "hashing file %s", path)
 		}
-		s.AddSubject(path, intoto.DigestSet{"sha256": hashVal})
+		s.AddSubject(path, slsa.DigestSet{"sha256": hashVal})
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "buiding directory tree")
