@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"os"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	"github.com/pkg/errors"
 )
@@ -68,9 +67,9 @@ func (pi *defaultPredicateImplementation) Write(p *Predicate, path string) error
 // AddMaterial adds a material to the entry
 func (pi *defaultPredicateImplementation) AddMaterial(p *Predicate, uri string, ds slsa.DigestSet) {
 	if p.Materials == nil {
-		p.Materials = []intoto.ProvenanceMaterial{}
+		p.Materials = []slsa.ProvenanceMaterial{}
 	}
-	p.Materials = append(p.Materials, intoto.ProvenanceMaterial{
+	p.Materials = append(p.Materials, slsa.ProvenanceMaterial{
 		URI:    uri,
 		Digest: ds,
 	})
