@@ -36,6 +36,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/magefile/mage v1.12.1 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
