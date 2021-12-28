@@ -31,16 +31,23 @@ import (
 var genOpts = &generateOptions{}
 
 var generateCmd = &cobra.Command{
-	Short: "bom generate → Create SPDX manifests",
-	Long: `bom → Create SPDX manifests
+	Short: "bom generate → Create SPDX SBOMs",
+	Long: `bom → Create SPDX SBOMs
 
 generate is the bom subcommand to generate SPDX manifests.
-Currently supports creating SBOM for files, images, and docker
-archives (images in tarballs). Supports pulling images from
-registries.
+
+Currently supports creating SBOM from files, images, and docker
+archives (images in tarballs). It supports pulling images from
+remote registries for analysis.
 
 bom can take a deeper look into images using a growing number
 of analyzers designed to add more sense to common base images.
+
+The SBOM data can also be exported to an in-toto provenance
+attestation. The output will produce a provenance statement listing all
+the SPDX data as in-toto subjects, but otherwise ready to be
+completed by a later stage in your CI/CD pipeline. See the 
+--provenance flag for more details. 
 
 `,
 	Use:               "generate",
@@ -76,6 +83,7 @@ type generateOptions struct {
 	outputFile     string
 	configFile     string
 	license        string
+	provenancePath string // Path to export the SBOM as provenance statement
 	images         []string
 	imageArchives  []string
 	archives       []string
@@ -218,6 +226,13 @@ func init() {
 		"",
 		"path to yaml SBOM configuration file",
 	)
+
+	generateCmd.PersistentFlags().StringVar(
+		&genOpts.provenancePath,
+		"provenance",
+		"",
+		"path to export the SBOM as an in-toto provenance statement",
+	)
 }
 
 func generateBOM(opts *generateOptions) error {
@@ -258,5 +273,15 @@ func generateBOM(opts *generateOptions) error {
 		}
 		fmt.Println(markup)
 	}
+
+	// Export the SBOM as in-toto provenance
+	if opts.provenancePath != "" {
+		if err := doc.WriteProvenanceStatement(
+			spdx.DefaultProvenanceOptions, opts.provenancePath,
+		); err != nil {
+			return errors.Wrap(err, "writing SBOM as provenance statement")
+		}
+	}
+
 	return nil
 }
