@@ -30,11 +30,8 @@ func TestReadStatment(t *testing.T) {
 	require.NotNil(t, s)
 
 	require.NotNil(t, s.Predicate)
-	require.NotNil(t, s.Predicate.Recipe)
 	require.Equal(t, 461, len(s.Subject))
 	require.Equal(t, s.Predicate.Builder.ID, "pkg:github/puerco/release@provenance")
-	require.Equal(t, s.Predicate.Recipe.Type, "https://cloudbuild.googleapis.com/CloudBuildYaml@v1")
-	require.Equal(t, 3, len(s.Predicate.Recipe.Arguments.(map[string]interface{})))
 	require.Equal(t, "94db9bed6b7c56420e722d1b15db4610c9cacd3f", s.Predicate.Materials[0].Digest["sha1"])
 	require.Equal(t, "git+https://github.com/kubernetes/kubernetes", s.Predicate.Materials[0].URI)
 }
