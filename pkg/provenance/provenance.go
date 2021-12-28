@@ -65,12 +65,12 @@ func NewSLSAPredicate() Predicate {
 			Builder: slsa.ProvenanceBuilder{
 				ID: "",
 			},
-			Recipe: intoto.ProvenanceRecipe{
-				Type:              "",
-				DefinedInMaterial: new(int),
-				EntryPoint:        "",
-				Arguments:         nil,
-				Environment:       nil,
+			Invocation: slsa.ProvenanceInvocation{
+				ConfigSource: slsa.ConfigSource{
+					Digest: map[string]string{},
+				},
+				Parameters:  nil,
+				Environment: nil,
 			},
 			Metadata: &slsa.ProvenanceMetadata{
 				Completeness: slsa.ProvenanceComplete{},
