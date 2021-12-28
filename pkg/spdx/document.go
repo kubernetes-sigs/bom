@@ -25,6 +25,7 @@ package spdx
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -383,4 +384,17 @@ func (d *Document) ToProvenanceStatement(opts *ProvenanceOptions) *provenance.St
 	}
 	statement.Subject = subs
 	return statement
+}
+
+//  WriteProvenanceStatement writes the sbom as an in-toto provenance statement
+func (d *Document) WriteProvenanceStatement(opts *ProvenanceOptions, path string) error {
+	statement := d.ToProvenanceStatement(opts)
+	data, err := json.Marshal(statement)
+	if err != nil {
+		return errors.Wrap(err, "serializing statement to json")
+	}
+	return errors.Wrap(
+		os.WriteFile(path, data, os.FileMode(0o644)),
+		"writing sbom as provenance statement",
+	)
 }
