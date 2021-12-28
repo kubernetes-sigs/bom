@@ -20,18 +20,17 @@ package provenancefakes
 import (
 	"sync"
 
-	"github.com/in-toto/in-toto-golang/in_toto"
-
+	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	"sigs.k8s.io/bom/pkg/provenance"
 )
 
 type FakePredicateImplementation struct {
-	AddMaterialStub        func(*provenance.Predicate, string, in_toto.DigestSet)
+	AddMaterialStub        func(*provenance.Predicate, string, v02.DigestSet)
 	addMaterialMutex       sync.RWMutex
 	addMaterialArgsForCall []struct {
 		arg1 *provenance.Predicate
 		arg2 string
-		arg3 in_toto.DigestSet
+		arg3 v02.DigestSet
 	}
 	WriteStub        func(*provenance.Predicate, string) error
 	writeMutex       sync.RWMutex
@@ -49,12 +48,12 @@ type FakePredicateImplementation struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePredicateImplementation) AddMaterial(arg1 *provenance.Predicate, arg2 string, arg3 in_toto.DigestSet) {
+func (fake *FakePredicateImplementation) AddMaterial(arg1 *provenance.Predicate, arg2 string, arg3 v02.DigestSet) {
 	fake.addMaterialMutex.Lock()
 	fake.addMaterialArgsForCall = append(fake.addMaterialArgsForCall, struct {
 		arg1 *provenance.Predicate
 		arg2 string
-		arg3 in_toto.DigestSet
+		arg3 v02.DigestSet
 	}{arg1, arg2, arg3})
 	stub := fake.AddMaterialStub
 	fake.recordInvocation("AddMaterial", []interface{}{arg1, arg2, arg3})
@@ -70,13 +69,13 @@ func (fake *FakePredicateImplementation) AddMaterialCallCount() int {
 	return len(fake.addMaterialArgsForCall)
 }
 
-func (fake *FakePredicateImplementation) AddMaterialCalls(stub func(*provenance.Predicate, string, in_toto.DigestSet)) {
+func (fake *FakePredicateImplementation) AddMaterialCalls(stub func(*provenance.Predicate, string, v02.DigestSet)) {
 	fake.addMaterialMutex.Lock()
 	defer fake.addMaterialMutex.Unlock()
 	fake.AddMaterialStub = stub
 }
 
-func (fake *FakePredicateImplementation) AddMaterialArgsForCall(i int) (*provenance.Predicate, string, in_toto.DigestSet) {
+func (fake *FakePredicateImplementation) AddMaterialArgsForCall(i int) (*provenance.Predicate, string, v02.DigestSet) {
 	fake.addMaterialMutex.RLock()
 	defer fake.addMaterialMutex.RUnlock()
 	argsForCall := fake.addMaterialArgsForCall[i]

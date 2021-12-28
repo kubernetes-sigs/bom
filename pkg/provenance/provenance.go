@@ -23,6 +23,7 @@ import (
 	"os"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	"github.com/pkg/errors"
 )
 
@@ -48,7 +49,7 @@ func NewSLSAStatement() *Statement {
 
 		StatementHeader: intoto.StatementHeader{
 			Type:          intoto.StatementInTotoV01,
-			PredicateType: intoto.PredicateSLSAProvenanceV01,
+			PredicateType: slsa.PredicateSLSAProvenance,
 			Subject:       []intoto.Subject{},
 		},
 		Predicate: NewSLSAPredicate(),
@@ -60,21 +61,21 @@ func NewSLSAStatement() *Statement {
 // NewSLSAPredicate returns a new SLSA provenance predicate
 func NewSLSAPredicate() Predicate {
 	return Predicate{
-		ProvenancePredicate: intoto.ProvenancePredicate{
-			Builder: intoto.ProvenanceBuilder{
+		ProvenancePredicate: slsa.ProvenancePredicate{
+			Builder: slsa.ProvenanceBuilder{
 				ID: "",
 			},
-			Recipe: intoto.ProvenanceRecipe{
-				Type:              "",
-				DefinedInMaterial: new(int),
-				EntryPoint:        "",
-				Arguments:         nil,
-				Environment:       nil,
+			Invocation: slsa.ProvenanceInvocation{
+				ConfigSource: slsa.ConfigSource{
+					Digest: map[string]string{},
+				},
+				Parameters:  nil,
+				Environment: nil,
 			},
-			Metadata: &intoto.ProvenanceMetadata{
-				Completeness: intoto.ProvenanceComplete{},
+			Metadata: &slsa.ProvenanceMetadata{
+				Completeness: slsa.ProvenanceComplete{},
 			},
-			Materials: []intoto.ProvenanceMaterial{},
+			Materials: []slsa.ProvenanceMaterial{},
 		},
 		impl: &defaultPredicateImplementation{},
 	}
