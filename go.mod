@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/carolynvs/magex v0.6.0
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/google/go-containerregistry v0.7.0
+	github.com/google/go-containerregistry v0.8.0
 	github.com/google/licenseclassifier/v2 v2.0.0-alpha.1
 	github.com/google/uuid v1.3.0
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
@@ -20,6 +20,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.3.0
 )
+
+require github.com/mitchellh/go-homedir v1.1.0 // indirect
 
 require (
 	github.com/acomagu/bufpipe v1.0.3 // indirect
