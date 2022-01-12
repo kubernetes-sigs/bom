@@ -71,7 +71,7 @@ func TestCacheData(t *testing.T) {
 
 func TestFindLicenseFiles(t *testing.T) {
 	files := []string{
-		"LICENSE", "LICENSE.txt", "LICENSE-APACHE2", "APACHE2-LICENSE", "license",
+		"LICENSE", "LICENSE.txt", "LICENSE-APACHE2", "APACHE2-LICENSE",
 		"license.go", "README.md",
 	}
 
@@ -80,7 +80,7 @@ func TestFindLicenseFiles(t *testing.T) {
 	defer func() { require.Nil(t, os.RemoveAll(tempdir)) }()
 
 	require.Nil(t, os.MkdirAll(filepath.Join(tempdir, "/some/sub/dir"), os.FileMode(0o755)))
-	fileData := []byte("bleh")
+	fileData := []byte("some license")
 	for _, sub := range []string{"", "/some/sub/dir"} {
 		for _, filename := range files {
 			require.Nil(t, os.WriteFile(
@@ -92,7 +92,7 @@ func TestFindLicenseFiles(t *testing.T) {
 	impl := ReaderDefaultImpl{}
 	res, err := impl.FindLicenseFiles(tempdir)
 	require.Nil(t, err)
-	require.Equal(t, 10, len(res), fmt.Sprintf("%+v", res))
+	require.Equal(t, 8, len(res), fmt.Sprintf("%+v", res))
 	require.NotContains(t, res, filepath.Join(tempdir, "license.go"))
 	require.NotContains(t, res, filepath.Join(tempdir, "README.md"))
 }

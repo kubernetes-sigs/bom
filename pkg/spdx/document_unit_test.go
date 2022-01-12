@@ -13,27 +13,29 @@ import (
 	"sigs.k8s.io/release-utils/hash"
 )
 
-func generateProvenanceSUT(t *testing.T) *Document {
+func generateProvenanceSUT(t *testing.T) (doc *Document, tmpDir string) {
 	s := NewSPDX()
-	doc := NewDocument()
-	dir, err := os.MkdirTemp("", "test-files-")
+	doc = NewDocument()
+	tmpDir, err := os.MkdirTemp("", "test-files-")
 	require.NoError(t, err)
-	defer os.RemoveAll(dir)
+
 	for i, d := range []string{"abc", "cde", "xyz"} {
 		require.NoError(t, os.WriteFile(
-			filepath.Join(dir, fmt.Sprintf("file%d.txt", i)),
+			filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i)),
 			[]byte(d), os.FileMode(0o644),
 		))
-		f, err := s.FileFromPath(filepath.Join(dir, fmt.Sprintf("file%d.txt", i)))
+		f, err := s.FileFromPath(filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i)))
 		f.FileName = fmt.Sprintf("file%d.txt", i)
 		require.NoError(t, err)
 		require.NoError(t, doc.AddFile(f))
 	}
-	return doc
+
+	return doc, tmpDir
 }
 
 func TestToProvenance(t *testing.T) {
-	doc := generateProvenanceSUT(t)
+	doc, tmpDir := generateProvenanceSUT(t)
+	defer os.RemoveAll(tmpDir)
 
 	statement := provenance.NewSLSAStatement()
 	statement.Subject = append(statement.Subject,
@@ -68,8 +70,10 @@ func TestToProvenance(t *testing.T) {
 }
 
 func TestWriteProvenance(t *testing.T) {
-	doc := generateProvenanceSUT(t)
-	tfile, err := os.CreateTemp("", "test-provenance-*.json")
+	doc, tmpDir := generateProvenanceSUT(t)
+	defer os.RemoveAll(tmpDir)
+
+	tfile, err := os.CreateTemp(tmpDir, "test-provenance-*.json")
 	require.NoError(t, err)
 	defer os.Remove(tfile.Name())
 	// Write the peovenance
