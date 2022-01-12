@@ -31,6 +31,7 @@ import (
 	"strings"
 
 	gitignore "github.com/go-git/go-git/v5/plumbing/format/gitignore"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -188,7 +189,7 @@ func getImageReferences(referenceString string) ([]struct {
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing image reference %s", referenceString)
 	}
-	descr, err := remote.Get(ref)
+	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching remote descriptor")
 	}
@@ -300,7 +301,7 @@ func PullImageToArchive(referenceString, path string) error {
 	}
 
 	// Get the image from the reference:
-	img, err := remote.Image(ref)
+	img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return errors.Wrap(err, "getting image")
 	}
@@ -347,7 +348,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		}
 
 		// Get the reference image
-		img, err := remote.Image(ref)
+		img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 		if err != nil {
 			return nil, errors.Wrap(err, "getting image")
 		}
