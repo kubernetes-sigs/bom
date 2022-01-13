@@ -172,7 +172,7 @@ func OpenDoc(path string) (*Document, error) {
 					break
 				}
 			}
-			if have {
+			if !have {
 				currentObject.(*Package).LicenseInfoFromFiles = append(currentObject.(*Package).LicenseInfoFromFiles, value)
 			}
 		case "LicenseInfoInFile":
