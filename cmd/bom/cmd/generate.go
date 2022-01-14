@@ -32,7 +32,7 @@ var genOpts = &generateOptions{}
 
 var generateCmd = &cobra.Command{
 	Short: "bom generate → Create SPDX SBOMs",
-	Long: `bom → Create SPDX SBOMs
+	Long: `bom generate → Create SPDX SBOMs
 
 generate is the bom subcommand to generate SPDX manifests.
 
@@ -46,8 +46,8 @@ of analyzers designed to add more sense to common base images.
 The SBOM data can also be exported to an in-toto provenance
 attestation. The output will produce a provenance statement listing all
 the SPDX data as in-toto subjects, but otherwise ready to be
-completed by a later stage in your CI/CD pipeline. See the 
---provenance flag for more details. 
+completed by a later stage in your CI/CD pipeline. See the
+--provenance flag for more details.
 
 `,
 	Use:               "generate",

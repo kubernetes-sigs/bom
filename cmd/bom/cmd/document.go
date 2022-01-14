@@ -28,11 +28,7 @@ import (
 var outlineOpts = &spdx.DrawingOptions{}
 
 var documentCmd = &cobra.Command{
-	Short: "bom document → Work with SPDX documents",
-	Long: `bom document → Work with SPDX documents",
-
-
-`,
+	Short:             "bom document → Work with SPDX documents",
 	Use:               "document",
 	SilenceUsage:      false,
 	SilenceErrors:     true,
@@ -43,13 +39,13 @@ var outlineCmd = &cobra.Command{
 	Short: "bom document outline → Draw structure of a SPDX document",
 	Long: `bom document outline → Draw structure of a SPDX document",
 
-This subcommand draws a tree-like outline to help the user visualize 
-the structure of the bom. Even when an SBOM represents a graph structure, 
+This subcommand draws a tree-like outline to help the user visualize
+the structure of the bom. Even when an SBOM represents a graph structure,
 drawing a tree helps a lot to understand what is contained in the document.
 
 You can define a level of depth to limit the expansion of the entities.
 For example set --depth=1 to only visualize only the files and packages
-attached directly to the root of the document. 
+attached directly to the root of the document.
 
 bom will try to add useful information to the oultine but, if needed, you can
 set the --spdx-ids to only output the IDs of the entities.

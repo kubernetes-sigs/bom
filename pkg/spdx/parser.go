@@ -172,7 +172,7 @@ func OpenDoc(path string) (*Document, error) {
 					break
 				}
 			}
-			if have {
+			if !have {
 				currentObject.(*Package).LicenseInfoFromFiles = append(currentObject.(*Package).LicenseInfoFromFiles, value)
 			}
 		case "LicenseInfoInFile":
@@ -275,6 +275,9 @@ func OpenDoc(path string) (*Document, error) {
 		i++
 	}
 
+	if currentEntity == nil {
+		return nil, errors.Errorf("invalid file %s", path)
+	}
 	// Add the last object from the doc
 	currentObject.SetEntity(currentEntity)
 	if _, ok := objects[currentObject.SPDXID()]; ok {
