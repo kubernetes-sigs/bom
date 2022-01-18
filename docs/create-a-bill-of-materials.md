@@ -138,7 +138,7 @@ in a public repository and are available in machine-readable formats such as JSO
 
 ## Create your Bill of Materials
 
-There are a couple of factors to take into consideration whe drafting your Bill
+There are a couple of factors to take into consideration when drafting your Bill
 of Materials.
 
 ### Thinking about your Release
