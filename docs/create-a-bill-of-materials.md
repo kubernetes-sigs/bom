@@ -216,7 +216,7 @@ repository, do the following:
 git clone https://github.com/etcd-io/etcd
 cd etcd
 bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
-  --directory=.
+  --dirs=.
 ```
 
 This will produce a manifest describing the repo and its golang dependencies
@@ -228,7 +228,7 @@ To do that run the same invocation, but this time adding the image with the
 
 ```console
 bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
-  --directory=.\
+  --dirs=.\
   --image=quay.io/coreos/etcd:v3.4.16
 ```
 
