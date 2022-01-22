@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/carolynvs/magex/pkg"
+	"github.com/magefile/mage/sh"
 
 	"sigs.k8s.io/release-utils/mage"
 )
@@ -91,10 +92,31 @@ func Verify() error {
 		return err
 	}
 
+	if err := Build(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Build runs go build
+func Build() error {
 	fmt.Println("Running go build...")
 	if err := mage.VerifyBuild(scriptDir); err != nil {
 		return err
 	}
 
+	fmt.Println("Binaries available in the output directory.")
 	return nil
+}
+
+func Clean() {
+	fmt.Println("Cleaning workspace...")
+	toClean := []string{"output"}
+
+	for _, clean := range toClean {
+		sh.Rm(clean)
+	}
+
+	fmt.Println("Done.")
 }
