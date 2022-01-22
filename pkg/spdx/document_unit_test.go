@@ -8,6 +8,7 @@ import (
 
 	"github.com/in-toto/in-toto-golang/in_toto"
 	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/bom/pkg/provenance"
 	"sigs.k8s.io/release-utils/hash"
@@ -30,13 +31,13 @@ func generateProvenanceSUT(t *testing.T) (doc *Document, tmpDir string) {
 		require.NoError(t, doc.AddFile(f))
 	}
 
+	logrus.Infof("Files written to %s", tmpDir)
+
 	return doc, tmpDir
 }
 
 func TestToProvenance(t *testing.T) {
-	doc, tmpDir := generateProvenanceSUT(t)
-	defer os.RemoveAll(tmpDir)
-
+	// Create a statement with the known digests
 	statement := provenance.NewSLSAStatement()
 	statement.Subject = append(statement.Subject,
 		in_toto.Subject{
@@ -65,8 +66,24 @@ func TestToProvenance(t *testing.T) {
 		},
 	)
 
+	// Create a second statement by writing known files
+	doc, tmpDir := generateProvenanceSUT(t)
+	defer os.RemoveAll(tmpDir)
+
 	statement2 := doc.ToProvenanceStatement(DefaultProvenanceOptions)
-	require.Equal(t, statement, statement2)
+
+	// Compare the statements manually to ensure they are equivalent
+	for _, s1 := range statement.Subject {
+		for _, s2 := range statement2.Subject {
+			if s1.Name == s2.Name {
+				for _, algo := range []string{"sha1", "sha256", "sha512"} {
+					require.Equal(
+						t, s1.Digest[algo], s2.Digest[algo], fmt.Sprintf("matching %s hash in %s", algo, s1.Name),
+					)
+				}
+			}
+		}
+	}
 }
 
 func TestWriteProvenance(t *testing.T) {
