@@ -11,6 +11,7 @@ import (
 	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
 	"sigs.k8s.io/bom/pkg/provenance"
 )
 
