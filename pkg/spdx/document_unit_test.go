@@ -1,6 +1,7 @@
 package spdx
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,9 +9,9 @@ import (
 
 	"github.com/in-toto/in-toto-golang/in_toto"
 	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/bom/pkg/provenance"
-	"sigs.k8s.io/release-utils/hash"
 )
 
 func generateProvenanceSUT(t *testing.T) (doc *Document, tmpDir string) {
@@ -30,13 +31,14 @@ func generateProvenanceSUT(t *testing.T) (doc *Document, tmpDir string) {
 		require.NoError(t, doc.AddFile(f))
 	}
 
+	logrus.Infof("Files written to %s", tmpDir)
+
 	return doc, tmpDir
 }
 
-func TestToProvenance(t *testing.T) {
-	doc, tmpDir := generateProvenanceSUT(t)
-	defer os.RemoveAll(tmpDir)
-
+// testStatement returns a predictable statement that we can use to
+// compare generating functions
+func testStatement() *provenance.Statement {
 	statement := provenance.NewSLSAStatement()
 	statement.Subject = append(statement.Subject,
 		in_toto.Subject{
@@ -64,21 +66,54 @@ func TestToProvenance(t *testing.T) {
 			},
 		},
 	)
+	return statement
+}
 
-	statement2 := doc.ToProvenanceStatement(DefaultProvenanceOptions)
-	require.Equal(t, statement, statement2)
+func TestToProvenance(t *testing.T) {
+	// Create a second statement by writing known files
+	doc, tmpDir := generateProvenanceSUT(t)
+	defer os.RemoveAll(tmpDir)
+
+	statement := doc.ToProvenanceStatement(DefaultProvenanceOptions)
+	compareSubjects(t, testStatement(), statement)
 }
 
 func TestWriteProvenance(t *testing.T) {
 	doc, tmpDir := generateProvenanceSUT(t)
 	defer os.RemoveAll(tmpDir)
 
-	tfile, err := os.CreateTemp(tmpDir, "test-provenance-*.json")
+	tfile, err := os.CreateTemp("", "test-provenance-*.json")
 	require.NoError(t, err)
 	defer os.Remove(tfile.Name())
-	// Write the peovenance
+
+	// Write the provenance to a file
 	require.NoError(t, doc.WriteProvenanceStatement(DefaultProvenanceOptions, tfile.Name()))
-	s512, err := hash.SHA512ForFile(tfile.Name())
 	require.NoError(t, err)
-	require.Equal(t, "d877604a3f1abe9f339ce3de3ebde227f0d9626972387f62ee00951bd83bab12a59bbec3b440a0e74aab60263f4b1f80e8268e922d2dcf760980ed006149bf97", s512)
+
+	// Now, read it back and compare to what we know
+	data, err := os.ReadFile(tfile.Name())
+	require.NoError(t, err)
+	statement1 := &provenance.Statement{}
+	require.NoError(t, json.Unmarshal(data, statement1))
+
+	compareSubjects(t, statement1, testStatement())
+}
+
+// This function gets two provenance statements and checks their
+// subjects to be equivalent, returning an error if they do not match
+func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement) {
+	require.Equal(t, len(statement1.Subject), len(statement2.Subject))
+	// Compare the statements manually to ensure they are equivalent
+	for _, s1 := range statement1.Subject {
+		for _, s2 := range statement2.Subject {
+			require.Equal(t, len(s1.Digest), len(s2.Digest))
+			if s1.Name == s2.Name {
+				for _, algo := range []string{"sha1", "sha256", "sha512"} {
+					require.Equal(
+						t, s1.Digest[algo], s2.Digest[algo], fmt.Sprintf("matching %s hash in %s", algo, s1.Name),
+					)
+				}
+			}
+		}
+	}
 }
