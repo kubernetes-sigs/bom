@@ -30,6 +30,12 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     OS="${PLATFORM%/*}"
     ARCH=$(basename "$PLATFORM")
 
+    output_name=bom'-'$OS'-'$ARCH
+
+    if [ "$OS" = "windows" ]; then
+        output_name+='.exe'
+    fi
+
     echo "Building project for $PLATFORM"
-    GOARCH="$ARCH" GOOS="$OS" go build ./...
+    GOARCH="$ARCH" GOOS="$OS" go build -o output/$output_name ./cmd/bom/main.go
 done
