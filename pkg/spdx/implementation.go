@@ -42,6 +42,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/bom/pkg/license"
+	"sigs.k8s.io/bom/pkg/osinfo"
 	"sigs.k8s.io/release-utils/util"
 )
 
@@ -342,6 +343,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	}
 
 	for _, refData := range references {
+		logrus.Infof("Downloading %s", refData.Digest)
 		ref, err := name.ParseReference(refData.Digest)
 		if err != nil {
 			return nil, errors.Wrapf(err, "parsing reference %s", referenceString)
@@ -568,6 +570,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	if err != nil {
 		return nil, errors.Wrap(err, "creating temporary workdir in")
 	}
+	defer os.RemoveAll(tmpdir)
 	imgs, err := di.PullImagesToArchive(ref, tmpdir)
 	if err != nil {
 		return nil, errors.Wrap(err, "while downloading images to archive")
@@ -587,7 +590,14 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	pkg := &Package{}
 	pkg.Name = ref
 	pkg.BuildID(pkg.Name)
-	pkg.DownloadLocation = ref
+
+	imageReference, err := name.ParseReference(ref)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing image reference %s", ref)
+	}
+	if _, ok := imageReference.(name.Digest); ok {
+		pkg.DownloadLocation = imageReference.(name.Digest).String()
+	}
 
 	// Now, cycle each image in the index and generate a package from it
 	for _, img := range imgs {
@@ -605,7 +615,6 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 		} else {
 			subpkg.Name = img.Reference
 		}
-		subpkg.DownloadLocation = img.Reference
 
 		// Add the package
 		pkg.AddRelationship(&Relationship{
@@ -673,13 +682,32 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 
 	logrus.Infof("Image manifest lists %d layers", len(manifest.LayerFiles))
 
-	// Cycle all the layers from the manifest and add them as packages
+	// Scan the container layers for OS information:
+	ct := osinfo.ContainerScanner{}
+	layerPaths := []string{}
 	for _, layerFile := range manifest.LayerFiles {
+		layerPaths = append(layerPaths, filepath.Join(tarOpts.ExtractDir, layerFile))
+	}
+	layerNum, osPackageData, err := ct.ReadOSPackages(layerPaths)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting os data from container")
+	}
+
+	if osPackageData != nil {
+		logrus.Infof(
+			"Scan of container image returned %d OS packages in layer #%d",
+			len(*osPackageData), layerNum,
+		)
+	}
+
+	// Cycle all the layers from the manifest and add them as packages
+	for i, layerFile := range manifest.LayerFiles {
 		// Generate a package from a layer
 		pkg, err := di.PackageFromTarball(spdxOpts, tarOpts, filepath.Join(tarOpts.ExtractDir, layerFile))
 		if err != nil {
 			return nil, errors.Wrap(err, "building package from layer")
 		}
+
 		// Regenerate the BuildID to avoid clashes when handling multiple
 		// images at the same time.
 		pkg.BuildID(manifest.RepoTags[0], layerFile)
@@ -691,6 +719,19 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 			}
 		} else {
 			logrus.Info("Not performing deep image analysis (opts.AnalyzeLayers = false)")
+		}
+
+		// If we got the OS data from the scanner, add the packages:
+		if i == layerNum && osPackageData != nil {
+			for _, osPkgData := range *osPackageData {
+				ospk := NewPackage()
+				ospk.Name = osPkgData.Package + "-" + osPkgData.Version
+				ospk.Version = osPkgData.Version
+				ospk.BuildID(pkg.ID)
+				if err := pkg.AddPackage(ospk); err != nil {
+					return nil, errors.Wrap(err, "adding OS package to container layer")
+				}
+			}
 		}
 
 		// Add the layer package to the image package
