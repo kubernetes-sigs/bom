@@ -79,6 +79,7 @@ type generateOptions struct {
 	noGitignore    bool
 	noGoModules    bool
 	noGoTransient  bool
+	scanImages     bool
 	namespace      string
 	outputFile     string
 	configFile     string
@@ -233,6 +234,13 @@ func init() {
 		"",
 		"path to export the SBOM as an in-toto provenance statement",
 	)
+
+	generateCmd.PersistentFlags().BoolVar(
+		&genOpts.scanImages,
+		"scan-images",
+		true,
+		"scan container images to look for OS information (currently just debian is supported)",
+	)
 }
 
 func generateBOM(opts *generateOptions) error {
@@ -255,6 +263,7 @@ func generateBOM(opts *generateOptions) error {
 		OnlyDirectDeps:   !opts.noGoTransient,
 		ConfigFile:       opts.configFile,
 		License:          opts.license,
+		ScanImages:       opts.scanImages,
 	}
 
 	// We only replace the ignore patterns one or more where defined

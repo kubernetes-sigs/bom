@@ -75,6 +75,7 @@ type Options struct {
 	OnlyDirectDeps   bool     // Only include direct dependencies from go.mod
 	ScanLicenses     bool     // Scan licenses from everypossible place unless false
 	AddTarFiles      bool     // Scan and add files inside of tarfiles
+	ScanImages       bool     // When true, scan container images for OS information
 	LicenseCacheDir  string   // Directory to cache SPDX license downloads
 	LicenseData      string   // Directory to store the SPDX licenses
 	IgnorePatterns   []string // Patterns to ignore when scanning file
@@ -91,6 +92,7 @@ var defaultSPDXOptions = Options{
 	ProcessGoModules: true,
 	IgnorePatterns:   []string{},
 	ScanLicenses:     true,
+	ScanImages:       true,
 }
 
 type ArchiveManifest struct {

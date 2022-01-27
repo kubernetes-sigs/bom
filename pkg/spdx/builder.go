@@ -92,6 +92,7 @@ type DocGenerateOptions struct {
 	ProcessGoModules    bool                  // Analyze go.mod to include data about packages
 	OnlyDirectDeps      bool                  // Only include direct dependencies from go.mod
 	ScanLicenses        bool                  // Try to look into files to determine their license
+	ScanImages          bool                  // When true, scan images for OS information
 	ConfigFile          string                // Path to SBOM configuration file
 	OutputFile          string                // Output location
 	Name                string                // Name to use in the resulting document
