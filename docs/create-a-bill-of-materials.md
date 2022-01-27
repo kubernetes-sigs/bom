@@ -201,10 +201,11 @@ to your bill of materials:
 
 | Short | Long Flag | Description |
 | --- | --- | --- |
+|    | --archive | list of archives to add as packages (supports tar, tar.gz) |
 | -d | --dirs | List of directories to include in the manifest as packages |
 | -f | --file | List of files to include |
 | -i | --image | List of image references |
-| -t | --tarball | List of container archive tarballs to include in the manifest
+|    | --image-archive | list of docker archive tarballs to include in the manifest
 
 #### Example: Generate an SBOM for etcd
 
