@@ -80,6 +80,7 @@ type generateOptions struct {
 	noGoModules    bool
 	noGoTransient  bool
 	scanImages     bool
+	name           string // Name to use in the document
 	namespace      string
 	outputFile     string
 	configFile     string
@@ -239,7 +240,14 @@ func init() {
 		&genOpts.scanImages,
 		"scan-images",
 		true,
-		"scan container images to look for OS information (currently just debian is supported)",
+		"scan container images to look for OS information (currently debian only)",
+	)
+
+	generateCmd.PersistentFlags().StringVar(
+		&genOpts.name,
+		"name",
+		"",
+		"name for the document, in contrast to URLs, intended for humans",
 	)
 }
 
@@ -264,6 +272,7 @@ func generateBOM(opts *generateOptions) error {
 		ConfigFile:       opts.configFile,
 		License:          opts.license,
 		ScanImages:       opts.scanImages,
+		Name:             opts.name,
 	}
 
 	// We only replace the ignore patterns one or more where defined
