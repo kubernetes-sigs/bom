@@ -684,13 +684,19 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 
 	// Scan the container layers for OS information:
 	ct := osinfo.ContainerScanner{}
+	var osPackageData *[]osinfo.PackageDBEntry
+	var layerNum int
 	layerPaths := []string{}
 	for _, layerFile := range manifest.LayerFiles {
 		layerPaths = append(layerPaths, filepath.Join(tarOpts.ExtractDir, layerFile))
 	}
-	layerNum, osPackageData, err := ct.ReadOSPackages(layerPaths)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting os data from container")
+
+	// Scan for package data if option is set
+	if spdxOpts.ScanImages {
+		layerNum, osPackageData, err = ct.ReadOSPackages(layerPaths)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting os data from container")
+		}
 	}
 
 	if osPackageData != nil {
