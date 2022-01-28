@@ -10,7 +10,7 @@ Create SPDX-compliant Bill of Materials
 Bill of Materials project. It enables software authors to generate an
 SBOM for their projects in a simple, yet powerful way.
 
-![terminal demo](/docs/cast.svg "Terminal demo")
+[![terminal demo](https://asciinema.org/a/418528.svg)](https://asciinema.org/a/418528?autoplay=1)
 
 `bom` is a general-purpose tool that can generate SPDX packages from
 directories, container images, single files, and other sources. The utility
