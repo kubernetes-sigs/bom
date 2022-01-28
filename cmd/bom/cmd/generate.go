@@ -70,6 +70,12 @@ completed by a later stage in your CI/CD pipeline. See the
 				}
 			}
 		}
+
+		if err := genOpts.Validate(); err != nil {
+			cmd.Help() // nolint:errcheck // We already errored
+			return errors.Wrap(err, "validating command line options")
+		}
+
 		return generateBOM(genOpts)
 	},
 }
@@ -101,10 +107,28 @@ func (opts *generateOptions) Validate() error {
 		len(opts.files) == 0 &&
 		len(opts.imageArchives) == 0 &&
 		len(opts.archives) == 0 &&
+		len(opts.archives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
 	}
 
+	// Check if specified local files exist
+	for _, col := range []struct {
+		Items []string
+		Name  string
+	}{
+		{opts.imageArchives, "image archive"},
+		{opts.files, "file"},
+		{opts.directories, "directory"},
+		{opts.archives, "archive"},
+	} {
+		// Check if image archives exist
+		for i, iPath := range col.Items {
+			if !util.Exists(iPath) {
+				return errors.Errorf("%s #%d not found (%s)", col.Name, i+1, iPath)
+			}
+		}
+	}
 	return nil
 }
 
@@ -252,9 +276,6 @@ func init() {
 }
 
 func generateBOM(opts *generateOptions) error {
-	if err := opts.Validate(); err != nil {
-		return errors.Wrap(err, "validating command line options")
-	}
 	logrus.Info("Generating SPDX Bill of Materials")
 
 	builder := spdx.NewDocBuilder()
