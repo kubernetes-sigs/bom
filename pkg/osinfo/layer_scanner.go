@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	gzExt        = ".gz"
 	OSDebian     = "debian"
 	OSFedora     = "fedora"
 	OSAlpine     = "alpine"
@@ -117,12 +116,27 @@ func (loss *LayerScanner) extractFileFromTar(tarPath, filePath, destPath string)
 	}
 	defer f.Close()
 
+	// Read the first bytes to determine if the file is compressed
+	var sample [3]byte
+	var gzipped bool
+	if _, err := io.ReadFull(f, sample[:]); err != nil {
+		return errors.Wrap(err, "sampling bytes from file header")
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return errors.Wrap(err, "rewinding read pointer")
+	}
+
+	// From: https://github.com/golang/go/blob/1fadc392ccaefd76ef7be5b685fb3889dbee27c6/src/compress/gzip/gunzip.go#L185
+	if sample[0] == 0x1f && sample[1] == 0x8b && sample[2] == 0x08 {
+		gzipped = true
+	}
+
 	const dotSl = "./"
 	filePath = strings.TrimPrefix(filePath, dotSl)
 
 	var tr *tar.Reader
 	tr = tar.NewReader(f)
-	if filepath.Ext(tarPath) == gzExt {
+	if gzipped {
 		gzf, err := gzip.NewReader(f)
 		if err != nil {
 			return errors.Wrap(err, "creating gzip reader")

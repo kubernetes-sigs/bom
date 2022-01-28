@@ -86,8 +86,22 @@ func (di *spdxDefaultImplementation) ExtractTarballTmp(tarPath string) (tmpDir s
 	}
 	defer f.Close()
 
+	// Read the first bytes to determine if the file is compressed
+	var sample [3]byte
+	var gzipped bool
+	if _, err := io.ReadFull(f, sample[:]); err != nil {
+		return "", errors.Wrap(err, "sampling bytes from file header")
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return "", errors.Wrap(err, "rewinding read pointer")
+	}
+
+	if sample[0] == 0x1f && sample[1] == 0x8b && sample[2] == 0x08 {
+		gzipped = true
+	}
+
 	var tr *tar.Reader
-	if strings.HasSuffix(tarPath, ".gz") || strings.HasSuffix(tarPath, ".tgz") {
+	if gzipped {
 		gzipReader, err := gzip.NewReader(f)
 		if err != nil {
 			return "", err
