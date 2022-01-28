@@ -273,6 +273,15 @@ func init() {
 		"",
 		"name for the document, in contrast to URLs, intended for humans",
 	)
+
+	if err := generateCmd.MarkPersistentFlagDirname("dirs"); err != nil {
+		logrus.Error("error marking flag as directory")
+	}
+	for _, fl := range []string{"config", "image-archive", "file", "archive"} {
+		if err := generateCmd.MarkPersistentFlagFilename(fl); err != nil {
+			logrus.Error("error marking flag as file")
+		}
+	}
 }
 
 func generateBOM(opts *generateOptions) error {
