@@ -162,6 +162,7 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	}
 	spdx.Options().AnalyzeLayers = genopts.AnalyseLayers
 	spdx.Options().ProcessGoModules = genopts.ProcessGoModules
+	spdx.Options().ScanImages = genopts.ScanImages
 
 	if !util.Exists(opts.WorkDir) {
 		if err := os.MkdirAll(opts.WorkDir, os.FileMode(0o755)); err != nil {
