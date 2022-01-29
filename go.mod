@@ -18,13 +18,22 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.9
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.4.1-0.20220204055400-90cc83d1e838
+	sigs.k8s.io/release-utils v0.5.0
 )
 
 require (
+	github.com/andybalholm/brotli v1.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
+	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/golang/snappy v0.0.3 // indirect
+	github.com/klauspost/pgzip v1.2.4 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/mholt/archiver/v3 v3.5.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/nwaples/rardecode v1.1.0 // indirect
+	github.com/pierrec/lz4/v4 v4.0.3 // indirect
+	github.com/ulikunitz/xz v0.5.7 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 )
 
 require (

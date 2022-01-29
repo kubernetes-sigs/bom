@@ -1,0 +1,27 @@
+# See https://cloud.google.com/cloud-build/docs/build-config
+timeout: 3600s
+options:
+  substitution_option: ALLOW_LOOSE
+steps:
+  - name: 'gcr.io/k8s-staging-releng/releng-ci:latest-go1.17'
+    dir: "go/src/sigs.k8s.io/bom"
+    env:
+    - DOCKER_CLI_EXPERIMENTAL=enabled
+    - TAG=$_GIT_TAG
+    - PULL_BASE_REF=$_PULL_BASE_REF
+    - KO_DOCKER_REPO=gcr.io/k8s-staging-bom
+    args:
+    - mage
+    - buildStaging
+
+artifacts:
+  objects:
+    location: 'gs://k8s-staging-bom-artifacts/${_PULL_BASE_REF}'
+    paths:
+    - "go/src/sigs.k8s.io/bom/output/*"
+
+substitutions:
+  # _GIT_TAG will be filled with a git-based tag for the image, of the form vYYYYMMDD-hash, and
+  # can be used as a substitution
+  _GIT_TAG: '12345'
+  _PULL_BASE_REF: 'dev'

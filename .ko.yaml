@@ -1,0 +1,13 @@
+defaultBaseImage: gcr.io/distroless/static-debian11
+
+builds:
+- id: bom
+  dir: .
+  main: ./cmd/bom
+  env:
+  - CGO_ENABLED=0
+  flags:
+  - -trimpath
+  ldflags:
+  - -extldflags "-static"
+  - "{{ .Env.BOM_LDFLAGS }}"
