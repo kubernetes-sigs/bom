@@ -49,8 +49,11 @@ LyBfYCBcIFwvIC8KXF9fIFwgfF8pIHwgKF98IHw+ICA8IAp8X19fLyAuX18vIFxfXyxfL18vXF9c
 CiAgICB8X3wgICAgICAgICAgICAgICAK`
 )
 
-// https://spdx.github.io/spdx-spec/3-package-information/#32-package-spdx-identifier
-var validIDCharsRe = regexp.MustCompile(`[^a-zA-Z0-9-.]+`)
+var (
+	// https://spdx.github.io/spdx-spec/3-package-information/#32-package-spdx-identifier
+	validIDCharsRe          = regexp.MustCompile(`[^a-zA-Z0-9-.]+`)
+	SupportedHashAlgorithms = []string{"SHA1", "SHA256", "SHA25"}
+)
 
 type SPDX struct {
 	impl    spdxImplementation
