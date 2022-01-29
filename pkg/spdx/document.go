@@ -41,6 +41,7 @@ import (
 
 	"sigs.k8s.io/bom/pkg/provenance"
 	"sigs.k8s.io/release-utils/hash"
+	"sigs.k8s.io/release-utils/util"
 )
 
 var docTemplate = `{{ if .Version }}SPDXVersion: {{.Version}}
@@ -71,8 +72,9 @@ ExternalDocumentRef:{{ extDocFormat $value }}
 `
 
 const (
-	connectorL = "└"
-	connectorT = "├"
+	connectorL          = "└"
+	connectorT          = "├"
+	MessageHashMismatch = "Hash mismatch"
 )
 
 // Document abstracts the SPDX document
@@ -471,4 +473,96 @@ func (d *Document) GetElementByID(id string) Object {
 		}
 	}
 	return nil
+}
+
+type ValidationResults struct {
+	Success          bool
+	Message          string
+	FileName         string
+	FailedAlgorithms []string
+}
+
+// ValidateFiles gets a list of paths and checks the files in the document
+// to make sure their integrity is known
+func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error) {
+	results := []ValidationResults{}
+	if len(filePaths) == 0 {
+		logrus.Warn("ValidateFiles called with 0 paths")
+	}
+	if len(d.Files) == 0 {
+		return results, errors.New("document has no files")
+	}
+	spdxObject := NewSPDX()
+	var e error
+	for _, path := range filePaths {
+		res := ValidationResults{
+			FailedAlgorithms: []string{},
+		}
+		if !util.Exists(path) {
+			res.FileName = path
+			res.Message = "File not found"
+			results = append(results, res)
+			e = errors.New("some files were not found")
+			continue
+		}
+
+		// Create a new SPDX file from the path
+		testFile, err := spdxObject.FileFromPath(path)
+		if err != nil {
+			e := errors.Wrap(err, "unable to create SPDX File from path")
+			res.Message = e.Error()
+			continue
+		}
+
+		// Look for the file in the document
+		valid := false
+		message := "file path not found in document"
+		res.FileName = path
+
+		for _, docFile := range d.Files {
+			if docFile.FileName != path {
+				continue
+			}
+
+			if len(docFile.Checksum) == 0 {
+				valid = false
+				message = "no hashes found for file in SBOM"
+				break
+			}
+
+			// File found, check it
+			checks := 0
+			for algo, documentHashValue := range docFile.Checksum {
+				if artifactHashValue, ok := testFile.Checksum[algo]; ok {
+					if artifactHashValue == documentHashValue {
+						checks++
+						valid = true
+					} else {
+						message = MessageHashMismatch
+						res.FailedAlgorithms = append(res.FailedAlgorithms, algo)
+					}
+				} else {
+					logrus.Warnf("document has hash in %s, which is not supported yet", algo)
+				}
+			}
+			if checks == 0 {
+				res.Message = "unable to find compatible algorithm in document"
+				break
+			}
+			if len(res.FailedAlgorithms) > 0 {
+				message = "some hash values don't match"
+				valid = false
+				break
+			}
+
+			res.Success = valid
+			if valid {
+				message = "File validated successfully"
+			}
+		}
+		res.Message = message
+		res.Success = valid
+		results = append(results, res)
+	}
+	return results, e
 }
