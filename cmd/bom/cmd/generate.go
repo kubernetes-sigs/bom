@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/bom/pkg/spdx"
+	"sigs.k8s.io/bom/pkg/version"
 	"sigs.k8s.io/release-utils/util"
 )
 
@@ -285,7 +286,10 @@ func init() {
 }
 
 func generateBOM(opts *generateOptions) error {
-	logrus.Info("Generating SPDX Bill of Materials")
+	logrus.Infof(
+		"bom %s: Generating SPDX Bill of Materials",
+		version.GetVersionInfo().GitVersion,
+	)
 
 	builder := spdx.NewDocBuilder()
 	builderOpts := &spdx.DocGenerateOptions{
