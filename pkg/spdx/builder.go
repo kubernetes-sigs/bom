@@ -304,6 +304,8 @@ func (builder *defaultDocBuilderImpl) ReadYamlConfiguration(
 			opts.Tarballs = append(opts.Tarballs, artifact.Source)
 		case "file":
 			opts.Files = append(opts.Files, artifact.Source)
+		case "archive":
+			opts.Archives = append(opts.Archives, artifact.Source)
 		}
 	}
 
