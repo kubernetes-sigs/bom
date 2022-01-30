@@ -37,5 +37,5 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     fi
 
     echo "Building project for $PLATFORM"
-    GOARCH="$ARCH" GOOS="$OS" go build -trimpath -ldflags "${BOM_LDFLAGS}" -o output/$output_name ./cmd/bom/main.go
+    CGO_ENABLED=0 GOARCH="$ARCH" GOOS="$OS" go build -trimpath -ldflags "${BOM_LDFLAGS}" -o output/$output_name ./cmd/bom/main.go
 done
