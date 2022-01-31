@@ -69,6 +69,7 @@ func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 			return nil, errors.Wrap(err, "parsing configuration file")
 		}
 	}
+
 	// Create the SPDX document
 	doc, err := db.impl.GenerateDoc(db.options, genopts)
 	if err != nil {
@@ -87,18 +88,19 @@ func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 }
 
 type DocGenerateOptions struct {
-	AnalyseLayers       bool                  // A flag that controls if deep layer analysis should be performed
-	NoGitignore         bool                  // Do not read exclusions from gitignore file
-	ProcessGoModules    bool                  // Analyze go.mod to include data about packages
-	OnlyDirectDeps      bool                  // Only include direct dependencies from go.mod
-	ScanLicenses        bool                  // Try to look into files to determine their license
-	ScanImages          bool                  // When true, scan images for OS information
-	ConfigFile          string                // Path to SBOM configuration file
-	OutputFile          string                // Output location
-	Name                string                // Name to use in the resulting document
-	Namespace           string                // Namespace for the document (a unique URI)
-	CreatorPerson       string                // Document creator information
-	License             string                // Main license of the document
+	AnalyseLayers       bool   // A flag that controls if deep layer analysis should be performed
+	NoGitignore         bool   // Do not read exclusions from gitignore file
+	ProcessGoModules    bool   // Analyze go.mod to include data about packages
+	OnlyDirectDeps      bool   // Only include direct dependencies from go.mod
+	ScanLicenses        bool   // Try to look into files to determine their license
+	ScanImages          bool   // When true, scan images for OS information
+	ConfigFile          string // Path to SBOM configuration file
+	OutputFile          string // Output location
+	Name                string // Name to use in the resulting document
+	Namespace           string // Namespace for the document (a unique URI)
+	CreatorPerson       string // Document creator information
+	License             string // Main license of the document
+	WorkDir             string
 	Tarballs            []string              // A slice of docker archives (tar)
 	Archives            []string              // A list of archive files to add as packages
 	Files               []string              // A slice of naked files to include in the bom
@@ -163,6 +165,7 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	spdx.Options().AnalyzeLayers = genopts.AnalyseLayers
 	spdx.Options().ProcessGoModules = genopts.ProcessGoModules
 	spdx.Options().ScanImages = genopts.ScanImages
+	spdx.Options().WorkDir = genopts.WorkDir
 
 	if !util.Exists(opts.WorkDir) {
 		if err := os.MkdirAll(opts.WorkDir, os.FileMode(0o755)); err != nil {

@@ -92,6 +92,7 @@ type generateOptions struct {
 	configFile     string
 	license        string
 	provenancePath string // Path to export the SBOM as provenance statement
+	workDir        string
 	images         []string
 	imageArchives  []string
 	archives       []string
@@ -129,6 +130,13 @@ func (opts *generateOptions) Validate() error {
 			}
 		}
 	}
+
+	if opts.workDir != "" {
+		if _, err := os.Stat(opts.workDir); os.IsNotExist(err) {
+			return errors.Errorf("directory %s not found", opts.workDir)
+		}
+	}
+
 	return nil
 }
 
@@ -147,6 +155,14 @@ func init() {
 		"f",
 		[]string{},
 		"list of files to include",
+	)
+
+	generateCmd.PersistentFlags().StringVarP(
+		&genOpts.workDir,
+		"workDir",
+		"C",
+		"",
+		"Base working directory",
 	)
 
 	generateCmd.PersistentFlags().StringSliceVarP(
@@ -303,6 +319,7 @@ func generateBOM(opts *generateOptions) error {
 		License:          opts.license,
 		ScanImages:       opts.scanImages,
 		Name:             opts.name,
+		WorkDir:          opts.workDir,
 	}
 
 	// We only replace the ignore patterns one or more where defined

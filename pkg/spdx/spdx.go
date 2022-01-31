@@ -70,14 +70,15 @@ func (spdx *SPDX) SetImplementation(impl spdxImplementation) {
 
 type Options struct {
 	AnalyzeLayers    bool
-	NoGitignore      bool     // Do not read exclusions from gitignore file
-	ProcessGoModules bool     // If true, spdx will check if dirs are go modules and analize the packages
-	OnlyDirectDeps   bool     // Only include direct dependencies from go.mod
-	ScanLicenses     bool     // Scan licenses from everypossible place unless false
-	AddTarFiles      bool     // Scan and add files inside of tarfiles
-	ScanImages       bool     // When true, scan container images for OS information
-	LicenseCacheDir  string   // Directory to cache SPDX license downloads
-	LicenseData      string   // Directory to store the SPDX licenses
+	NoGitignore      bool   // Do not read exclusions from gitignore file
+	ProcessGoModules bool   // If true, spdx will check if dirs are go modules and analize the packages
+	OnlyDirectDeps   bool   // Only include direct dependencies from go.mod
+	ScanLicenses     bool   // Scan licenses from everypossible place unless false
+	AddTarFiles      bool   // Scan and add files inside of tarfiles
+	ScanImages       bool   // When true, scan container images for OS information
+	LicenseCacheDir  string // Directory to cache SPDX license downloads
+	LicenseData      string // Directory to store the SPDX licenses
+	WorkDir          string
 	IgnorePatterns   []string // Patterns to ignore when scanning file
 }
 
@@ -200,6 +201,11 @@ func (spdx *SPDX) FileFromPath(filePath string) (*File, error) {
 		return nil, errors.New("file does not exist")
 	}
 	f := NewFile()
+
+	if spdx.Options().WorkDir != "" {
+		f.Entity.Options().WorkDir = spdx.Options().WorkDir
+	}
+
 	if err := f.ReadSourceFile(filePath); err != nil {
 		return nil, errors.Wrap(err, "creating file from path")
 	}
