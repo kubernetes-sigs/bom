@@ -51,12 +51,13 @@ bom will try to add useful information to the oultine but, if needed, you can
 set the --spdx-ids to only output the IDs of the entities.
 
 `,
-	Use:               "outline",
+	Use:               "outline SPDX_FILE",
 	SilenceUsage:      true,
 	SilenceErrors:     true,
 	PersistentPreRunE: initLogging,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
+			cmd.Help() // nolint:errcheck
 			return errors.New("You should only specify one file")
 		}
 		doc, err := spdx.OpenDoc(args[0])
