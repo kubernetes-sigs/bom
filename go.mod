@@ -18,7 +18,7 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.9
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.3.0
+	sigs.k8s.io/release-utils v0.4.0
 )
 
 require github.com/mitchellh/go-homedir v1.1.0 // indirect
