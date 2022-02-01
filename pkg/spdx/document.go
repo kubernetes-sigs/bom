@@ -175,12 +175,13 @@ func (d *Document) AddPackage(pkg *Package) error {
 
 	if pkg.SPDXID() == "" {
 		pkg.BuildID(pkg.Name)
+		d.ensureUniqueElementID(pkg)
 	}
 	if pkg.SPDXID() == "" {
-		return errors.New("package id is needed to add a new package")
+		return errors.New("package ID is needed to add a new package")
 	}
 	if _, ok := d.Packages[pkg.SPDXID()]; ok {
-		return errors.New("a package named " + pkg.SPDXID() + " already exists in the document")
+		return errors.Errorf("a package with ID %s already exists in the document", pkg.SPDXID())
 	}
 
 	d.Packages[pkg.SPDXID()] = pkg
@@ -278,6 +279,7 @@ func (d *Document) AddFile(file *File) error {
 		}
 		file.ID = "SPDXRef-File-" + fmt.Sprintf("%x", h.Sum(nil))
 	}
+	d.ensureUniqueElementID(file)
 	d.Files[file.ID] = file
 	return nil
 }
@@ -397,4 +399,56 @@ func (d *Document) WriteProvenanceStatement(opts *ProvenanceOptions, path string
 		os.WriteFile(path, data, os.FileMode(0o644)),
 		"writing sbom as provenance statement",
 	)
+}
+
+// ensureUniquePackageID takes a string and checks if
+// there is another string with the same name in the document.
+// If there is one, it will append a digit until a unique name
+// is found.
+func (d *Document) ensureUniqueElementID(o Object) {
+	newID := o.SPDXID()
+	i := 0
+	for {
+		// Check if there us already an element with the same ID
+		if el := d.GetElementByID(newID); el == nil {
+			if o.SPDXID() != newID {
+				logrus.Infof(
+					"Element name changed from %s to %s to ensure it is unique",
+					o.SPDXID(), newID,
+				)
+			}
+			o.SetSPDXID(newID)
+			break
+		}
+		i++
+		newID = fmt.Sprintf("%s-%04d", o.SPDXID(), i)
+	}
+}
+
+// ensureUniquePeerIDs gets a relationship collection and ensures all peers
+// have unique IDs
+func (d *Document) ensureUniquePeerIDs(rels *[]*Relationship) {
+	for _, rel := range *rels {
+		if rel.Peer == nil {
+			continue
+		}
+		d.ensureUniqueElementID(rel.Peer)
+	}
+}
+
+// GetPackageByID queries the packages to search for a specific entity by name
+// note that this method returns a copy of the entity if found.
+func (d *Document) GetElementByID(id string) Object {
+	seen := map[string]struct{}{}
+	for _, p := range d.Packages {
+		if sub := recursiveSearch(id, p, &seen); sub != nil {
+			return sub
+		}
+	}
+	for _, f := range d.Files {
+		if sub := recursiveSearch(id, f, &seen); sub != nil {
+			return sub
+		}
+	}
+	return nil
 }
