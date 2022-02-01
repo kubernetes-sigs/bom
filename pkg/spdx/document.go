@@ -428,6 +428,26 @@ func (d *Document) ensureUniqueElementID(o Object) {
 // ensureUniquePeerIDs gets a relationship collection and ensures all peers
 // have unique IDs
 func (d *Document) ensureUniquePeerIDs(rels *[]*Relationship) {
+	// First, ensure peer names are unique among themselves
+	seen := map[string]struct{}{}
+	for _, rel := range *rels {
+		if rel.Peer == nil || rel.Peer.SPDXID() == "" {
+			continue
+		}
+		testName := rel.Peer.SPDXID()
+		i := 0
+		for {
+			if _, ok := seen[testName]; !ok {
+				rel.Peer.SetSPDXID(testName)
+				seen[testName] = struct{}{}
+				break
+			}
+			i++
+			testName = fmt.Sprintf("%s-%04d", rel.Peer.SPDXID(), i)
+		}
+	}
+
+	// And then check against the document
 	for _, rel := range *rels {
 		if rel.Peer == nil {
 			continue
