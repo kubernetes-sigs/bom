@@ -388,6 +388,8 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 	}
 }
 
+// ReadSourceFile reads a file from the filesystem and assigns its properties
+// to the package metadata
 func (p *Package) ReadSourceFile(path string) error {
 	if err := p.Entity.ReadSourceFile(path); err != nil {
 		return err
@@ -396,4 +398,13 @@ func (p *Package) ReadSourceFile(path string) error {
 		p.BuildID()
 	}
 	return nil
+}
+
+// GetElementByID search the package and its peers looking for the specified SPDX
+// id. If found, the function returns a copy of the object
+func (p *Package) GetElementByID(id string) Object {
+	if p.SPDXID() == id {
+		return p
+	}
+	return recursiveSearch(id, p, &map[string]struct{}{})
 }

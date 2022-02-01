@@ -276,3 +276,6 @@ mloop:
 	}
 	return ret
 }
+
+// GetElementByID nil function to be overridden by package and file
+func (e *Entity) GetElementByID(string) Object { return nil }
