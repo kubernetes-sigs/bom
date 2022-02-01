@@ -169,3 +169,97 @@ func TestEnsureUniquePeerIDs(t *testing.T) {
 		seenNames[rel.Peer.SPDXID()] = struct{}{}
 	}
 }
+
+func TestValidateFiles(t *testing.T) {
+	type fileMap struct {
+		shouldFail bool
+		path       string
+		data       string
+		hashes     map[string]string
+	}
+	type testCase struct {
+		files []fileMap
+	}
+
+	for _, tc := range []testCase{
+		{
+			files: []fileMap{
+				{false, "", "abc", map[string]string{"SHA256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}},
+			},
+		},
+		{
+			// Unsupprted algo
+			files: []fileMap{
+				{true, "", "abc", map[string]string{"MD5": "900150983cd24fb0d6963f7d28e17f72"}},
+			},
+		},
+		{
+			// Two supported algos, both correct
+			files: []fileMap{
+				{false, "", "abc", map[string]string{
+					"SHA256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+					"SHA512": "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
+				}},
+			},
+		},
+		{
+			// Two supported algos, one wrong
+			files: []fileMap{
+				{true, "", "abc", map[string]string{
+					"SHA256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+					"SHA512": "WRONGdaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
+				}},
+			},
+		},
+		{
+			// No validation
+			files: []fileMap{
+				{true, "", "abc", map[string]string{}},
+			},
+		},
+	} {
+		doc := NewDocument()
+		doc.Name = "test"
+		filePaths := []string{}
+		for i, fm := range tc.files {
+			temp, err := os.CreateTemp("", "verify")
+			require.NoError(t, err)
+			defer os.Remove(temp.Name())
+			require.NoError(t, os.WriteFile(temp.Name(), []byte(fm.data), os.FileMode(0o644)))
+			tc.files[i].path = temp.Name()
+			filePaths = append(filePaths, temp.Name())
+
+			f := NewFile()
+			f.Name = temp.Name()
+			f.FileName = temp.Name()
+
+			f.Checksum = fm.hashes
+			require.NoError(t, doc.AddFile(f))
+		}
+
+		// Now cycle and check each
+		resData, err := doc.ValidateFiles(filePaths)
+		require.NoError(t, err)
+		logrus.Infof("%+v", resData)
+		for _, fdata := range tc.files {
+			require.NotEmpty(t, fdata.path)
+			found := false
+			for _, res := range resData {
+				if fdata.path == res.FileName {
+					require.Equal(t, !fdata.shouldFail, res.Success, "file: "+res.FileName)
+					found = true
+				}
+			}
+			require.True(t, found)
+		}
+	}
+
+	// Validating a non existent files must fail
+	doc := NewDocument()
+	doc.Name = "lkajlk"
+	f := NewFile()
+	f.Name = "laksjdl"
+	require.NoError(t, doc.AddFile(f))
+	_, err := doc.ValidateFiles([]string{"/tmo/lskdjflskdjf"})
+	require.Error(t, err)
+}
