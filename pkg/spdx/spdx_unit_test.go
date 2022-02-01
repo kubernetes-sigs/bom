@@ -402,3 +402,53 @@ func TestIgnorePatterns(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, p, 4)
 }
+
+func TestRecursiveSearch(t *testing.T) {
+	p := NewPackage()
+	p.SetSPDXID("p-top")
+
+	// Lets nest 3 packages
+	packages := []*Package{}
+	for i := 0; i < 3; i++ {
+		subp := NewPackage()
+		subp.SetSPDXID(fmt.Sprintf("subpackage-%d", i))
+		packages = append(packages, subp)
+	}
+	for i, sp := range packages {
+		if i > 0 {
+			require.NoError(t, packages[i-1].AddPackage(sp))
+		}
+	}
+	require.NoError(t, p.AddPackage(packages[0]))
+
+	// This functions searches 3 packages with the same prefix:
+	checkSubPackages := func(p *Package, radix string) {
+		for i := 0; i < 3; i++ {
+			require.NotNil(t, p.GetElementByID(fmt.Sprintf("%s-%d", radix, i)),
+				fmt.Sprintf("searching for %s", radix),
+			)
+		}
+	}
+
+	checkSubPackages(p, "subpackage")
+	// Non existent packages should not return an element
+	require.Nil(t, p.GetElementByID("subpackage-10000000"))
+
+	// Now bifurcating the document structure adding dependencies should
+	// not alter those conditions.
+
+	// Lets add 3 dependencies to one of the nested packages
+	for i := 0; i < 3; i++ {
+		subp := NewPackage()
+		subp.SetSPDXID(fmt.Sprintf("dep-%d", i))
+		require.NoError(t, p.GetElementByID("subpackage-1").(*Package).AddPackage(subp))
+	}
+
+	// Same tests should still pass:
+	checkSubPackages(p, "subpackage")
+	// Non existent packages should not return an element
+	require.Nil(t, p.GetElementByID("subpackage-10000000"))
+
+	// But also dependencies should be found
+	checkSubPackages(p, "dep")
+}
