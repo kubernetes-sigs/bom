@@ -191,6 +191,7 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 		if err != nil {
 			return nil, errors.Wrap(err, "generating package from directory")
 		}
+		doc.ensureUniqueElementID(pkg)
 
 		if err := doc.AddPackage(pkg); err != nil {
 			return nil, errors.Wrap(err, "adding directory package to document")
@@ -204,6 +205,8 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 		if err != nil {
 			return nil, errors.Wrapf(err, "generating SPDX package from image ref %s", i)
 		}
+		doc.ensureUniqueElementID(p)
+		doc.ensureUniquePeerIDs(p.GetRelationships())
 		if err := doc.AddPackage(p); err != nil {
 			return nil, errors.Wrap(err, "adding package to document")
 		}
@@ -211,11 +214,13 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 
 	// Process OCI image archives
 	for _, tb := range genopts.Tarballs {
-		logrus.Infof("Processing tarball %s", tb)
+		logrus.Infof("Processing image archive %s", tb)
 		p, err := spdx.PackageFromImageTarball(tb)
 		if err != nil {
 			return nil, errors.Wrap(err, "generating tarball package")
 		}
+		doc.ensureUniqueElementID(p)
+		doc.ensureUniquePeerIDs(p.GetRelationships())
 		if err := doc.AddPackage(p); err != nil {
 			return nil, errors.Wrap(err, "adding package to document")
 		}
@@ -228,6 +233,8 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 		if err != nil {
 			return nil, errors.Wrap(err, "creating spdx package from archive")
 		}
+		doc.ensureUniqueElementID(p)
+		doc.ensureUniquePeerIDs(p.GetRelationships())
 		if err := doc.AddPackage(p); err != nil {
 			return nil, errors.Wrap(err, "adding package to document")
 		}
@@ -240,6 +247,7 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 		if err != nil {
 			return nil, errors.Wrap(err, "adding file")
 		}
+		doc.ensureUniqueElementID(f)
 		if err := doc.AddFile(f); err != nil {
 			return nil, errors.Wrap(err, "adding file to document")
 		}
