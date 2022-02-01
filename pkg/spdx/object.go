@@ -40,6 +40,7 @@ import (
 // objects. Currently this includes files and packages.
 type Object interface {
 	SPDXID() string
+	SetSPDXID(string)
 	ReadSourceFile(string) error
 	Render() (string, error)
 	BuildID(seeds ...string)
@@ -48,6 +49,7 @@ type Object interface {
 	GetRelationships() *[]*Relationship
 	ToProvenanceSubject() *intoto.Subject
 	getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []intoto.Subject
+	GetElementByID(string) Object
 }
 
 type Entity struct {
@@ -75,6 +77,11 @@ func (e *Entity) Options() *ObjectOptions {
 // SPDXID returns the SPDX reference string for the object
 func (e *Entity) SPDXID() string {
 	return e.ID
+}
+
+// SPDXID returns the SPDX reference string for the object
+func (e *Entity) SetSPDXID(id string) {
+	e.ID = id
 }
 
 // BuildID sets the file ID, optionally from a series of strings
