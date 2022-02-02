@@ -803,6 +803,9 @@ func (di *spdxDefaultImplementation) PackageFromDirectory(opts *Options, dirPath
 
 	// Apply the ignore patterns to the list of files
 	fileList = di.ApplyIgnorePatterns(fileList, patterns)
+	if len(fileList) == 0 {
+		return nil, errors.Errorf("directory %s has no files to scan", dirPath)
+	}
 	logrus.Infof("Scanning %d files and adding them to the SPDX package", len(fileList))
 
 	pkg = NewPackage()
