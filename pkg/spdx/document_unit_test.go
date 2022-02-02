@@ -118,3 +118,54 @@ func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement)
 		}
 	}
 }
+
+func TestEnsureUniqueElementID(t *testing.T) {
+	doc := NewDocument()
+	name := "same-name"
+	for i := 0; i < 3; i++ {
+		subp := NewPackage()
+		subp.SetSPDXID(name)
+
+		// Passing the subpackages through nsureUniquePackageID
+		// should rename the last two, but not the first one
+		doc.ensureUniqueElementID(subp)
+		require.NoError(t, doc.AddPackage(subp))
+
+		if i == 0 {
+			require.Equal(t, name, subp.SPDXID())
+		} else {
+			require.NotEqual(t, name, subp.SPDXID())
+		}
+	}
+}
+
+func TestEnsureUniquePeerIDs(t *testing.T) {
+	doc := NewDocument()
+	name := "same-name"
+
+	// Add one node with the name
+	namePkg := NewPackage()
+	namePkg.SetSPDXID(name)
+
+	// Build a package with 3 peers all with the same name
+	p := NewPackage()
+	p.SetSPDXID("parentNode")
+	for i := 0; i < 3; i++ {
+		subp := NewPackage()
+		subp.SetSPDXID(name)
+		require.NoError(t, p.AddPackage(subp))
+	}
+
+	// Pass the package with its peers through ensureUniquePeerIDs
+	doc.ensureUniquePeerIDs(p.GetRelationships())
+
+	// Now, they should all be different
+	seenNames := map[string]struct{}{}
+	rels := p.GetRelationships()
+	for _, rel := range *rels {
+		logrus.Info("Checking " + rel.Peer.SPDXID())
+		_, ok := seenNames[rel.Peer.SPDXID()]
+		require.False(t, ok, rel.Peer.SPDXID()+" should be unique")
+		seenNames[rel.Peer.SPDXID()] = struct{}{}
+	}
+}

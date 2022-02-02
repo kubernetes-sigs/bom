@@ -190,3 +190,13 @@ func getFileContentType(path string) (string, error) {
 	contentType := http.DetectContentType(buffer)
 	return contentType, nil
 }
+
+// GetElementByID search the file and its peers looking for the
+// specified SPDX id. If found, the function returns a copy of
+// the object identified by the SPDX-ID provided
+func (f *File) GetElementByID(id string) Object {
+	if f.SPDXID() == id {
+		return f
+	}
+	return recursiveSearch(id, f, &map[string]struct{}{})
+}
