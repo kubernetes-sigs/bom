@@ -23,10 +23,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/release-utils/log"
+	"sigs.k8s.io/release-utils/version"
 )
 
 var rootCmd = &cobra.Command{
-	Short: "bom: A tool for working with SPDX manifests",
+	Short: "A tool for working with SPDX manifests",
 	Long: `bom (Bill of Materials)
 
 bom is a little utility that lets software authors generate
@@ -61,7 +62,7 @@ func init() {
 
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(documentCmd)
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(version.Version())
 	AddValidate(rootCmd)
 }
 

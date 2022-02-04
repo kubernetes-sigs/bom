@@ -25,8 +25,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/bom/pkg/spdx"
-	"sigs.k8s.io/bom/pkg/version"
 	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/version"
 )
 
 var genOpts = &generateOptions{}
