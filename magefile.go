@@ -104,7 +104,12 @@ func Verify() error {
 func Build() error {
 	fmt.Println("Running go build...")
 
-	os.Setenv("BOM_LDFLAGS", generateLDFlags())
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+
+	os.Setenv("BOM_LDFLAGS", ldFlag)
 
 	if err := mage.VerifyBuild(scriptDir); err != nil {
 		return err
@@ -123,49 +128,4 @@ func Clean() {
 	}
 
 	fmt.Println("Done.")
-}
-
-// getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
-func getVersion() string {
-	version, _ := sh.Output("git", "describe", "--tags", "--match=v*")
-	if version != "" {
-		return version
-	}
-
-	// repo without any tags in it
-	return "v0.0.0"
-}
-
-// getCommit gets the hash of the current commit
-func getCommit() string {
-	commit, _ := sh.Output("git", "rev-parse", "--short", "HEAD")
-	return commit
-}
-
-// getGitState gets the state of the git repository
-func getGitState() string {
-	_, err := sh.Output("git", "diff", "--quiet")
-	if err != nil {
-		return "dirty"
-	}
-
-	return "clean"
-}
-
-// getBuildDateTime gets the build date and time
-func getBuildDateTime() string {
-	result, _ := sh.Output("git", "log", "-1", "--pretty=%ct")
-	if result != "" {
-		sourceDateEpoch := fmt.Sprintf("@%s", result)
-		date, _ := sh.Output("date", "-u", "-d", sourceDateEpoch, "+%Y-%m-%dT%H:%M:%SZ")
-		return date
-	}
-
-	date, _ := sh.Output("date", "+%Y-%m-%dT%H:%M:%SZ")
-	return date
-}
-
-func generateLDFlags() string {
-	pkg := "sigs.k8s.io/bom/pkg/version"
-	return fmt.Sprintf("-X %[1]s.GitVersion=%[2]s -X %[1]s.gitCommit=%[3]s -X %[1]s.gitTreeState=%[4]s -X %[1]s.buildDate=%[5]s", pkg, getVersion(), getCommit(), getGitState(), getBuildDateTime())
 }

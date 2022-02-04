@@ -18,10 +18,11 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.9
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.4.0
+	sigs.k8s.io/release-utils v0.4.1-0.20220204055400-90cc83d1e838
 )
 
 require (
+	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 )
