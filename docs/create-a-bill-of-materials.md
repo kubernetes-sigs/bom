@@ -45,7 +45,7 @@ a project need to know them: security, compliance, compatibility.
 
 Finally, a Bill of Materials allows software creators to express licensing
 information for their project as a whole, but also for individual pieces
-and it's dependencies. You can release your project under the Apache 2.0
+and its dependencies. You can release your project under the Apache 2.0
 license but have its documentation published under Creative Commons. Then,
 there are all of your dependencies' original licenses. A well-written
 SBOM can express all of them in the same document.
