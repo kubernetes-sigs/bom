@@ -120,6 +120,7 @@ func Build() error {
 	return nil
 }
 
+// BuildImages build bom image using ko
 func BuildImages() error {
 	fmt.Println("Building images with ko...")
 
@@ -151,6 +152,11 @@ func BuildImagesLocal() error {
 }
 
 func BuildStaging() error {
+	fmt.Println("Ensuring mage is available...")
+	if err := pkg.EnsureMage(""); err != nil {
+		return err
+	}
+
 	if err := EnsureKO(""); err != nil {
 		return err
 	}
@@ -163,15 +169,15 @@ func BuildStaging() error {
 		return errors.Wrap(err, "building the images")
 	}
 
-	if err := sh.RunV("cd", "output"); err != nil {
-		return errors.Wrap(err, "cd into output directory")
-	}
+	// if err := sh.RunV("cd", "output"); err != nil {
+	// 	return errors.Wrap(err, "cd into output directory")
+	// }
 
-	if err := sh.RunV("./bom-linux-amd64", "output", "generate", "-f", "bom-darwin-amd64",
-		"-f", "bom-darwin-arm64", "-f", "bom-linux-amd64", "-f", "bom-linux-arm64",
-		"-f", "bom-windows-amd64.exe", "-d", "../", "-o", "bom-sbom.sdpx"); err != nil {
-		return errors.Wrap(err, "generating the bom")
-	}
+	// if err := sh.RunV("./bom-linux-amd64", "output", "generate", "-f", "bom-darwin-amd64",
+	// 	"-f", "bom-darwin-arm64", "-f", "bom-linux-amd64", "-f", "bom-linux-arm64",
+	// 	"-f", "bom-windows-amd64.exe", "-d", "../", "-o", "bom-sbom.sdpx"); err != nil {
+	// 	return errors.Wrap(err, "generating the bom")
+	// }
 
 	return nil
 }
