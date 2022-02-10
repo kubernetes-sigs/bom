@@ -155,7 +155,7 @@ create one or more SPDX documents which are useful for your consumers.
 
 As the name implies, open source software releases include a snapshot of the source code
 in time: the state of your repo when a git tag was cut, for example. Do you want to include
-the source code in the same document? ßWhen we were testing for the Kubernetes SBOM, the file
+the source code in the same document? When we were testing for the Kubernetes SBOM, the file
 produced was over 11 MB long, so we decided to split the source data to its own SPDX file.
 
 ### Generating the SBOM
