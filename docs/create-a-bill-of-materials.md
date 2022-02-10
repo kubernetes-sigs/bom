@@ -191,7 +191,7 @@ generating names for packages and files.
 
 #### Adding Additional Sources
 
-Generally, an SPDX bill of materials will include more than one package. you can pass `bom`
+Generally, an SPDX bill of materials will include more than one package. You can pass `bom`
 more sources to add to the document. These can be container images, other directories, container
 archives, etc. When you add other sources, bom will add them as top-level packages in the
 document. Some of these will include sub-packages: layers of images, dependencies, etc.
