@@ -45,7 +45,7 @@ a project need to know them: security, compliance, compatibility.
 
 Finally, a Bill of Materials allows software creators to express licensing
 information for their project as a whole, but also for individual pieces
-and it's dependencies. You can release your project under the Apache 2.0
+and its dependencies. You can release your project under the Apache 2.0
 license but have its documentation published under Creative Commons. Then,
 there are all of your dependencies' original licenses. A well-written
 SBOM can express all of them in the same document.
@@ -155,7 +155,7 @@ create one or more SPDX documents which are useful for your consumers.
 
 As the name implies, open source software releases include a snapshot of the source code
 in time: the state of your repo when a git tag was cut, for example. Do you want to include
-the source code in the same document?When we were testing for the Kubernetes SBOM, the file
+the source code in the same document? When we were testing for the Kubernetes SBOM, the file
 produced was over 11 MB long, so we decided to split the source data to its own SPDX file.
 
 ### Generating the SBOM
@@ -191,7 +191,7 @@ generating names for packages and files.
 
 #### Adding Additional Sources
 
-Generally, an SPDX bill of materials will include more than one package. you can pass `bom`
+Generally, an SPDX bill of materials will include more than one package. You can pass `bom`
 more sources to add to the document. These can be container images, other directories, container
 archives, etc. When you add other sources, bom will add them as top-level packages in the
 document. Some of these will include sub-packages: layers of images, dependencies, etc.
