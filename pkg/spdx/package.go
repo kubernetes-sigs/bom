@@ -49,6 +49,12 @@ var packageTemplate = `##### Package: {{ .Name }}
 {{- end -}}
 PackageDownloadLocation: {{ if .DownloadLocation }}{{ .DownloadLocation }}{{ else }}NONE{{ end }}
 FilesAnalyzed: {{ .FilesAnalyzed }}
+{{ if .Supplier -}}
+{{- if .Supplier.Person }}PackageSupplier: Person: {{ .Supplier.Person }}
+{{ end -}}
+{{- if .Supplier.Organization }}PackageSupplier: Organization: {{ .Supplier.Organization }}
+{{ end -}}
+{{ end -}}
 {{ if .VerificationCode }}PackageVerificationCode: {{ .VerificationCode }}
 {{ end -}}
 PackageLicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ else }}NOASSERTION{{ end }}

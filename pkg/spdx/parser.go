@@ -198,6 +198,23 @@ func OpenDoc(path string) (doc *Document, err error) {
 			if !have {
 				currentObject.(*Package).LicenseInfoFromFiles = append(currentObject.(*Package).LicenseInfoFromFiles, value)
 			}
+		case "PackageSupplier":
+			// Supplier has a tag/value format inside
+			match := tagRegExp.FindStringSubmatch(value)
+			if len(match) != 3 {
+				return nil, errors.Errorf("invalid creator tag syntax at line %d", i)
+			}
+			switch match[1] {
+			case "Person":
+				currentObject.(*Package).Supplier.Person = match[2]
+			case "Organization":
+				currentObject.(*Package).Supplier.Organization = match[2]
+			default:
+				return nil, errors.Errorf(
+					"invalid supplier tag '%s' syntax at line %d, valid values are 'Organization' or 'Person'",
+					match[1], i,
+				)
+			}
 		case "LicenseInfoInFile":
 			if value != NONE {
 				currentObject.(*File).LicenseInfoInFile = value
