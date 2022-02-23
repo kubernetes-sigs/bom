@@ -18,6 +18,7 @@ package spdx
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -37,15 +38,37 @@ var (
 // spdx.Document object. This functions has the cyclomatic chec disabled as
 // it spans specific cases for each of the tags it recognizes.
 // nolint:gocyclo
-func OpenDoc(path string) (*Document, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, errors.Wrapf(err, "opening document from %s", path)
+func OpenDoc(path string) (doc *Document, err error) {
+	// support reading SBOMs from STDIN
+	var file *os.File
+	var isTemp bool
+	if path == "-" {
+		file, err = os.CreateTemp("", "temp-sbom")
+		if err != nil {
+			return nil, errors.Wrap(err, "creating temp file to buffer sbom")
+		}
+		if _, err := io.Copy(file, os.Stdin); err != nil {
+			return nil, errors.Wrap(err, "writing SBOM to temporary file")
+		}
+		isTemp = true
+		if _, err := file.Seek(0, 0); err != nil {
+			return doc, errors.Wrap(err, "rewinding temporary file")
+		}
+	} else {
+		file, err = os.Open(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "opening document from %s", path)
+		}
 	}
-	defer file.Close()
+	defer func() {
+		file.Close()
+		if isTemp {
+			os.Remove(file.Name())
+		}
+	}()
 
 	// Create a blank document
-	doc := &Document{
+	doc = &Document{
 		Packages:        map[string]*Package{},
 		Files:           map[string]*File{},
 		ExternalDocRefs: []ExternalDocumentRef{},
