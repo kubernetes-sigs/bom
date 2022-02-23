@@ -60,6 +60,7 @@ type Entity struct {
 	CopyrightText    string            // NOASSERTION
 	FileName         string            // Name of the file
 	LicenseConcluded string            // LicenseID o NOASSERTION
+	LicenseComments  string            // record any relevant background information or analysis that went in to arriving at the Concluded License
 	Opts             *ObjectOptions    // Entity options
 	Relationships    []*Relationship   // List of objects that have a relationship woth this package
 	Checksum         map[string]string // Colection of source file checksums

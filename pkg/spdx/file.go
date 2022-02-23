@@ -46,6 +46,9 @@ var fileTemplate = `{{ if .Name }}FileName: {{ .Name }}
 {{- end -}}
 {{- end -}}
 LicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ else }}NOASSERTION{{ end }}
+{{ if .LicenseComments }}LicenseComments: <text>{{ .LicenseComments }}
+</text>
+{{ end -}}
 LicenseInfoInFile: {{ if .LicenseInfoInFile }}{{ .LicenseInfoInFile }}{{ else }}NOASSERTION{{ end }}
 FileCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
 </text>{{ else }}NOASSERTION{{ end }}

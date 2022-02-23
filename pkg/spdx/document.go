@@ -61,6 +61,8 @@ ExternalDocumentRef:{{ extDocFormat $value }}
 {{ if .Creator -}}
 {{- if .Creator.Person }}Creator: Person: {{ .Creator.Person }}
 {{ end -}}
+{{- if .Creator.Organization }}Creator: Organization: {{ .Creator.Organization }}
+{{ end -}}
 {{- if .Creator.Tool -}}
 {{- range $key, $value := .Creator.Tool }}Creator: Tool: {{ $value }}
 {{ end -}}
