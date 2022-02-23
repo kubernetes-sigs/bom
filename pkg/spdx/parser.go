@@ -242,6 +242,10 @@ func OpenDoc(path string) (doc *Document, err error) {
 			if value != NONE {
 				currentEntity.DownloadLocation = value
 			}
+		case "PackageLicenseComments", "LicenseComments":
+			if value != NONE {
+				currentEntity.LicenseComments = value
+			}
 			// Tags that apply top the doc
 		case "Created":
 			t, err := time.Parse("2006-01-02T15:04:05Z", value)

@@ -59,6 +59,9 @@ PackageLicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ els
 {{ end -}}
 {{ if .Version }}PackageVersion: {{ .Version }}
 {{ end -}}
+{{ if .LicenseComments }}PackageLicenseComments: <text>{{ .LicenseComments }}
+</text>
+{{ end -}}
 PackageLicenseDeclared: {{ if .LicenseDeclared }}{{ .LicenseDeclared }}{{ else }}NOASSERTION{{ end }}
 PackageCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
 </text>{{ else }}NOASSERTION{{ end }}
@@ -73,7 +76,6 @@ type Package struct {
 	VerificationCode     string   // 6486e016b01e9ec8a76998cefd0705144d869234
 	LicenseInfoFromFiles []string // GPL-3.0-or-later
 	LicenseDeclared      string   // GPL-3.0-or-later
-	LicenseComments      string   // record any relevant background information or analysis that went in to arriving at the Concluded License
 	Version              string   // Package version
 	Comment              string   // a place for the SPDX document creator to record any general comments
 
