@@ -186,6 +186,8 @@ func OpenDoc(path string) (doc *Document, err error) {
 			currentObject.(*Package).Comment = value
 		case "PackageFileName":
 			currentObject.(*Package).FileName = value
+		case "PackageHomePage":
+			currentObject.(*Package).HomePage = value
 		case "PackageLicenseInfoFromFiles":
 			have := false
 			// Check if we already have the license

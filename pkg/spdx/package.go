@@ -65,6 +65,8 @@ PackageLicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ els
 {{ end -}}
 {{ if .Version }}PackageVersion: {{ .Version }}
 {{ end -}}
+{{ if .HomePage }}PackageHomePage: {{ .HomePage }}
+{{ end -}}
 {{ if .LicenseComments }}PackageLicenseComments: <text>{{ .LicenseComments }}
 </text>
 {{ end -}}
@@ -84,6 +86,7 @@ type Package struct {
 	LicenseDeclared      string   // GPL-3.0-or-later
 	Version              string   // Package version
 	Comment              string   // a place for the SPDX document creator to record any general comments
+	HomePage             string   // A web site that serves as the package home page
 
 	// Supplier: the actual distribution source for the package/directory
 	Supplier struct {
