@@ -126,13 +126,17 @@ func BuildImages() error {
 
 	gitVersion := getVersion()
 	gitCommit := getCommit()
-	os.Setenv("BOM_LDFLAGS", generateLDFlags())
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+	os.Setenv("BOM_LDFLAGS", ldFlag)
 
 	if os.Getenv("KO_DOCKER_REPO") == "" {
 		return errors.New("missing KO_DOCKER_REPO environment variable")
 	}
 
-	return sh.RunV("ko", "publish", "--base-import-paths", "--bare",
+	return sh.RunV("ko", "publish", "--bare",
 		"--platform=all", "--tags", gitVersion, "--tags", gitCommit,
 		"sigs.k8s.io/bom/cmd/bom")
 }
@@ -146,7 +150,7 @@ func BuildImagesLocal() error {
 
 	os.Setenv("BOM_LDFLAGS", generateLDFlags())
 
-	return sh.RunV("ko", "publish", "--base-import-paths", "--bare",
+	return sh.RunV("ko", "publish", "--bare",
 		"--local", "--platform=linux/amd64",
 		"sigs.k8s.io/bom/cmd/bom")
 }
