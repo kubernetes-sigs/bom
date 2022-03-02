@@ -26,7 +26,7 @@ steps:
     - DOCKER_CLI_EXPERIMENTAL=enabled
     - TAG=$_GIT_TAG
     - PULL_BASE_REF=$_PULL_BASE_REF
-    - KO_DOCKER_REPO=gcr.io/k8s-staging-bom
+    - KO_DOCKER_REPO=gcr.io/k8s-staging-bom/bom
     args:
     - run
     - mage.go
