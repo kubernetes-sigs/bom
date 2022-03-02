@@ -131,6 +131,7 @@ func BuildImages() error {
 		return err
 	}
 	os.Setenv("BOM_LDFLAGS", ldFlag)
+	os.Setenv("KOCACHE", "/tmp/ko")
 
 	if os.Getenv("KO_DOCKER_REPO") == "" {
 		return errors.New("missing KO_DOCKER_REPO environment variable")
@@ -149,6 +150,7 @@ func BuildImagesLocal() error {
 	}
 
 	os.Setenv("BOM_LDFLAGS", generateLDFlags())
+	os.Setenv("KOCACHE", "/tmp/ko")
 
 	return sh.RunV("ko", "build", "--bare",
 		"--local", "--platform=linux/amd64",
