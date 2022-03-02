@@ -136,7 +136,7 @@ func BuildImages() error {
 		return errors.New("missing KO_DOCKER_REPO environment variable")
 	}
 
-	return sh.RunV("ko", "publish", "--bare",
+	return sh.RunV("ko", "build", "--bare",
 		"--platform=all", "--tags", gitVersion, "--tags", gitCommit,
 		"sigs.k8s.io/bom/cmd/bom")
 }
@@ -150,7 +150,7 @@ func BuildImagesLocal() error {
 
 	os.Setenv("BOM_LDFLAGS", generateLDFlags())
 
-	return sh.RunV("ko", "publish", "--bare",
+	return sh.RunV("ko", "build", "--bare",
 		"--local", "--platform=linux/amd64",
 		"sigs.k8s.io/bom/cmd/bom")
 }
@@ -246,7 +246,7 @@ func generateLDFlags() string {
 func EnsureKO(version string) error {
 	versionToInstall := version
 	if versionToInstall == "" {
-		versionToInstall = "0.9.3"
+		versionToInstall = "0.10.0"
 	}
 
 	fmt.Printf("Checking if `ko` version %s is installed\n", versionToInstall)
