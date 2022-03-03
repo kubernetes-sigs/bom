@@ -25,19 +25,24 @@ import (
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
-var outlineOpts = &spdx.DrawingOptions{}
+func AddDocument(parent *cobra.Command) {
+	documentCmd := &cobra.Command{
+		Short:             "bom document → Work with SPDX documents",
+		Use:               "document",
+		SilenceUsage:      false,
+		SilenceErrors:     true,
+		PersistentPreRunE: initLogging,
+	}
 
-var documentCmd = &cobra.Command{
-	Short:             "bom document → Work with SPDX documents",
-	Use:               "document",
-	SilenceUsage:      false,
-	SilenceErrors:     true,
-	PersistentPreRunE: initLogging,
+	AddOutline(documentCmd)
 }
 
-var outlineCmd = &cobra.Command{
-	Short: "bom document outline → Draw structure of a SPDX document",
-	Long: `bom document outline → Draw structure of a SPDX document",
+func AddOutline(parent *cobra.Command) {
+	outlineOpts := &spdx.DrawingOptions{}
+	outlineCmd := &cobra.Command{
+		PersistentPreRunE: initLogging,
+		Short:             "bom document outline → Draw structure of a SPDX document",
+		Long: `bom document outline → Draw structure of a SPDX document",
 
 This subcommand draws a tree-like outline to help the user visualize
 the structure of the bom. Even when an SBOM represents a graph structure,
@@ -51,30 +56,27 @@ bom will try to add useful information to the oultine but, if needed, you can
 set the --spdx-ids to only output the IDs of the entities.
 
 `,
-	Use:               "outline SPDX_FILE",
-	SilenceUsage:      true,
-	SilenceErrors:     true,
-	PersistentPreRunE: initLogging,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			cmd.Help() // nolint:errcheck
-			return errors.New("You should only specify one file")
-		}
-		doc, err := spdx.OpenDoc(args[0])
-		if err != nil {
-			return errors.Wrap(err, "opening doc")
-		}
-		output, err := doc.Outline(outlineOpts)
-		if err != nil {
-			return errors.Wrap(err, "generating document outline")
-		}
-		fmt.Println(spdx.Banner())
-		fmt.Println(output)
-		return nil
-	},
-}
-
-func init() {
+		Use:           "outline SPDX_FILE",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				cmd.Help() // nolint:errcheck
+				return errors.New("You should only specify one file")
+			}
+			doc, err := spdx.OpenDoc(args[0])
+			if err != nil {
+				return errors.Wrap(err, "opening doc")
+			}
+			output, err := doc.Outline(outlineOpts)
+			if err != nil {
+				return errors.Wrap(err, "generating document outline")
+			}
+			fmt.Println(spdx.Banner())
+			fmt.Println(output)
+			return nil
+		},
+	}
 	outlineCmd.PersistentFlags().IntVarP(
 		&outlineOpts.Recursion,
 		"depth",
@@ -90,5 +92,5 @@ func init() {
 		"use SPDX identifiers in tree nodes instead of names",
 	)
 
-	documentCmd.AddCommand(outlineCmd)
+	parent.AddCommand(outlineCmd)
 }

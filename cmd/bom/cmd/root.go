@@ -61,9 +61,9 @@ func init() {
 	)
 
 	rootCmd.AddCommand(generateCmd)
-	rootCmd.AddCommand(documentCmd)
-	rootCmd.AddCommand(version.Version())
+	AddDocument(rootCmd)
 	AddValidate(rootCmd)
+	rootCmd.AddCommand(version.Version())
 }
 
 // Execute builds the command
