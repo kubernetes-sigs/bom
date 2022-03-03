@@ -60,7 +60,7 @@ func init() {
 		fmt.Sprintf("the logging verbosity, either %s", log.LevelNames()),
 	)
 
-	rootCmd.AddCommand(generateCmd)
+	AddGenerate(rootCmd)
 	AddDocument(rootCmd)
 	AddValidate(rootCmd)
 	rootCmd.AddCommand(version.Version())
