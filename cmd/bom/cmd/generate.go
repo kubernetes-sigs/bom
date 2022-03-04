@@ -29,58 +29,6 @@ import (
 	"sigs.k8s.io/release-utils/version"
 )
 
-var genOpts = &generateOptions{}
-
-var generateCmd = &cobra.Command{
-	Short: "bom generate → Create SPDX SBOMs",
-	Long: `bom generate → Create SPDX SBOMs
-
-generate is the bom subcommand to generate SPDX manifests.
-
-Currently supports creating SBOM from files, images, and docker
-archives (images in tarballs). It supports pulling images from
-remote registries for analysis.
-
-bom can take a deeper look into images using a growing number
-of analyzers designed to add more sense to common base images.
-
-The SBOM data can also be exported to an in-toto provenance
-attestation. The output will produce a provenance statement listing all
-the SPDX data as in-toto subjects, but otherwise ready to be
-completed by a later stage in your CI/CD pipeline. See the
---provenance flag for more details.
-
-`,
-	Use:               "generate",
-	SilenceUsage:      true,
-	SilenceErrors:     true,
-	PersistentPreRunE: initLogging,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		for i, arg := range args {
-			if util.Exists(arg) {
-				file, err := os.Open(arg)
-				if err != nil {
-					return errors.Wrapf(err, "checking argument %d", i)
-				}
-				fileInfo, err := file.Stat()
-				if err != nil {
-					return errors.Wrapf(err, "calling stat on argument %d", i)
-				}
-				if fileInfo.IsDir() {
-					genOpts.directories = append(genOpts.directories, arg)
-				}
-			}
-		}
-
-		if err := genOpts.Validate(); err != nil {
-			cmd.Help() // nolint:errcheck // We already errored
-			return errors.Wrap(err, "validating command line options")
-		}
-
-		return generateBOM(genOpts)
-	},
-}
-
 type generateOptions struct {
 	analyze        bool
 	noGitignore    bool
@@ -133,7 +81,60 @@ func (opts *generateOptions) Validate() error {
 	return nil
 }
 
-func init() {
+func AddGenerate(parent *cobra.Command) {
+	genOpts := &generateOptions{}
+
+	generateCmd := &cobra.Command{
+		Short: "bom generate → Create SPDX SBOMs",
+		Long: `bom generate → Create SPDX SBOMs
+
+generate is the bom subcommand to generate SPDX manifests.
+
+Currently supports creating SBOM from files, images, and docker
+archives (images in tarballs). It supports pulling images from
+remote registries for analysis.
+
+bom can take a deeper look into images using a growing number
+of analyzers designed to add more sense to common base images.
+
+The SBOM data can also be exported to an in-toto provenance
+attestation. The output will produce a provenance statement listing all
+the SPDX data as in-toto subjects, but otherwise ready to be
+completed by a later stage in your CI/CD pipeline. See the
+--provenance flag for more details.
+
+`,
+		Use:               "generate",
+		SilenceUsage:      true,
+		SilenceErrors:     true,
+		PersistentPreRunE: initLogging,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			for i, arg := range args {
+				if !util.Exists(arg) {
+					continue
+				}
+				file, err := os.Open(arg)
+				if err != nil {
+					return errors.Wrapf(err, "checking argument %d", i)
+				}
+				fileInfo, err := file.Stat()
+				if err != nil {
+					return errors.Wrapf(err, "calling stat on argument %d", i)
+				}
+				if fileInfo.IsDir() {
+					genOpts.directories = append(genOpts.directories, arg)
+				}
+			}
+
+			if err := genOpts.Validate(); err != nil {
+				cmd.Help() // nolint:errcheck // We already errored
+				return errors.Wrap(err, "validating command line options")
+			}
+
+			return generateBOM(genOpts)
+		},
+	}
+
 	generateCmd.PersistentFlags().StringSliceVarP(
 		&genOpts.images,
 		"image",
@@ -283,6 +284,8 @@ func init() {
 			logrus.Error("error marking flag as file")
 		}
 	}
+
+	parent.AddCommand(generateCmd)
 }
 
 func generateBOM(opts *generateOptions) error {
