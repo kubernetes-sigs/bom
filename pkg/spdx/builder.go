@@ -241,18 +241,41 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	}
 
 	// Process single files, not part of a package
-	for _, f := range genopts.Files {
-		logrus.Infof("Processing file %s", f)
-		f, err := spdx.FileFromPath(f)
+	for _, filePattern := range genopts.Files {
+		matches, err := filepath.Glob(filePattern)
 		if err != nil {
-			return nil, errors.Wrap(err, "adding file")
+			return nil, err
 		}
-		doc.ensureUniqueElementID(f)
-		if err := doc.AddFile(f); err != nil {
-			return nil, errors.Wrap(err, "adding file to document")
+		if len(matches) == 0 {
+			logrus.Warnf("%s pattern didn't match any file", filePattern)
+		}
+		for _, filePath := range matches {
+			isFile, err := pathIsOfFile(filePath)
+			if err != nil {
+				return nil, errors.Wrap(err, "stat file")
+			}
+			if !isFile {
+				continue
+			}
+			f, err := spdx.FileFromPath(filePath)
+			if err != nil {
+				return nil, errors.Wrap(err, "adding file")
+			}
+			doc.ensureUniqueElementID(f)
+			if err := doc.AddFile(f); err != nil {
+				return nil, errors.Wrap(err, "adding file to document")
+			}
 		}
 	}
 	return doc, nil
+}
+
+func pathIsOfFile(path string) (bool, error) {
+	fInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return !fInfo.IsDir(), nil
 }
 
 // WriteDoc renders the document to a file

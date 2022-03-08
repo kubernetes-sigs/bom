@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -73,12 +74,16 @@ func (opts *generateOptions) Validate() error {
 	} {
 		// Check if image archives exist
 		for i, iPath := range col.Items {
-			if !util.Exists(iPath) {
+			if !isGlob(iPath) && !util.Exists(iPath) {
 				return errors.Errorf("%s #%d not found (%s)", col.Name, i+1, iPath)
 			}
 		}
 	}
 	return nil
+}
+
+func isGlob(pathPattern string) bool {
+	return strings.ContainsAny(pathPattern, "*?")
 }
 
 func AddGenerate(parent *cobra.Command) {
