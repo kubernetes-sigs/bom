@@ -18,6 +18,7 @@ package spdx
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -101,7 +102,14 @@ func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 		spdxPackage.Name += "@" + strings.TrimSuffix(pkg.Revision, "+incompatible")
 	}
 	spdxPackage.BuildID()
-	spdxPackage.DownloadLocation = repo.Repo
+	if strings.Contains(pkg.Revision, "+incompatible") {
+		spdxPackage.DownloadLocation = repo.VCS.Scheme[0] + "+" + repo.Repo
+	} else {
+		spdxPackage.DownloadLocation = fmt.Sprintf(
+			"https://proxy.golang.org/%s/@v/%s.zip", pkg.ImportPath,
+			strings.TrimSuffix(pkg.Revision, "+incompatible"),
+		)
+	}
 	spdxPackage.LicenseConcluded = pkg.LicenseID
 	spdxPackage.Version = strings.TrimSuffix(pkg.Revision, "+incompatible")
 	spdxPackage.CopyrightText = pkg.CopyrightText
