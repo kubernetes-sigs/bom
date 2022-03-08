@@ -67,6 +67,9 @@ PackageLicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ els
 {{ end -}}
 {{ if .HomePage }}PackageHomePage: {{ .HomePage }}
 {{ end -}}
+{{ if .ExternalRefs }}{{- range $key, $value := .ExternalRefs -}}ExternalRef: {{ $value.Category }} {{ $value.Type }} {{ $value.Locator }}
+{{ end -}}
+{{ end -}}
 {{ if .LicenseComments }}PackageLicenseComments: <text>{{ .LicenseComments }}
 </text>
 {{ end -}}
