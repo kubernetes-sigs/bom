@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -48,10 +49,14 @@ func (ct *ContainerScanner) ReadOSPackages(layers []string) (
 		}
 	}
 
-	if osKind == OSDebian {
-		return ct.ReadDebianPackages(layers)
+	switch osKind {
+	case OSDebian, OSUbuntu:
+		layerNum, packages, err = ct.ReadDebianPackages(layers)
+	default:
+		return 0, nil, nil
 	}
-	return 0, nil, nil
+
+	return layerNum, packages, err
 }
 
 // ReadDebianPackages scans through a set of container layers looking for the
@@ -89,9 +94,14 @@ func (ct *ContainerScanner) ReadDebianPackages(layers []string) (layer int, pk *
 }
 
 type PackageDBEntry struct {
-	Package      string
-	Version      string
-	Architecture string
+	Package         string
+	Version         string
+	Architecture    string
+	Type            string // purl package type (ref: https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst)
+	Namespace       string // purl namespace
+	MaintainerName  string
+	MaintainerEmail string
+	HomePage        string
 }
 
 func (ct *ContainerScanner) parseDpkgDB(dbPath string) (*[]PackageDBEntry, error) {
@@ -105,28 +115,39 @@ func (ct *ContainerScanner) parseDpkgDB(dbPath string) (*[]PackageDBEntry, error
 	scanner := bufio.NewScanner(file)
 	var curPkg *PackageDBEntry
 	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "Package:") {
+		parts := strings.SplitN(scanner.Text(), ":", 2)
+		if len(parts) < 2 {
+			continue
+		}
+
+		switch parts[0] {
+		case "Package":
 			if curPkg != nil {
 				db = append(db, *curPkg)
 			}
 			curPkg = &PackageDBEntry{
-				Package: strings.TrimSpace(strings.TrimPrefix(scanner.Text(), "Package:")),
+				Package: strings.TrimSpace(parts[1]),
+				Type:    purl.TypeDebian,
 			}
-		}
-
-		if strings.HasPrefix(scanner.Text(), "Architecture:") {
+		case "Architecture":
 			if curPkg != nil {
-				curPkg.Architecture = strings.TrimSpace(
-					strings.TrimPrefix(scanner.Text(), "Architecture:"),
-				)
+				curPkg.Architecture = strings.TrimSpace(parts[1])
 			}
-		}
-
-		if strings.HasPrefix(scanner.Text(), "Version:") {
+		case "Version":
 			if curPkg != nil {
-				curPkg.Version = strings.TrimSpace(
-					strings.TrimPrefix(scanner.Text(), "Version:"),
-				)
+				curPkg.Version = strings.TrimSpace(parts[1])
+			}
+		case "Homepage":
+			if curPkg != nil {
+				curPkg.HomePage = strings.TrimSpace(parts[1])
+			}
+		case "Maintainer":
+			if curPkg != nil {
+				mparts := strings.SplitN(parts[1], "<", 2)
+				if len(mparts) == 2 {
+					curPkg.MaintainerName = mparts[0]
+					curPkg.MaintainerEmail = strings.TrimSuffix(mparts[1], ">")
+				}
 			}
 		}
 	}

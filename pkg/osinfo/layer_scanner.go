@@ -30,7 +30,10 @@ import (
 
 const (
 	OSDebian     = "debian"
+	OSUbuntu     = "ubuntu"
 	OSFedora     = "fedora"
+	OSCentos     = "centos"
+	OSRHEL       = "rhel"
 	OSAlpine     = "alpine"
 	OSDistroless = "distroless"
 )
@@ -60,11 +63,19 @@ func (loss *LayerScanner) OSType(layerPath string) (ostype string, err error) {
 	}
 
 	if strings.Contains(osrelease, "NAME=\"Ubuntu\"") {
-		return OSDebian, nil
+		return OSUbuntu, nil
 	}
 
 	if strings.Contains(osrelease, "NAME=\"Fedora Linux\"") {
 		return OSFedora, nil
+	}
+
+	if strings.Contains(osrelease, "NAME=\"CentOS Linux\"") {
+		return OSCentos, nil
+	}
+
+	if strings.Contains(osrelease, "NAME=\"Red Hat Enterprise Linux\"") {
+		return OSRHEL, nil
 	}
 
 	if strings.Contains(osrelease, "NAME=\"Alpine Linux\"") {
