@@ -17,8 +17,12 @@ limitations under the License.
 package osinfo
 
 import (
+	"fmt"
+	"net/url"
+	"strings"
 	"testing"
 
+	purl "github.com/package-url/packageurl-go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,4 +81,65 @@ func TestReadOSPackages(t *testing.T) {
 	// While an invalid file shour err
 	_, _, err = ct.ReadOSPackages([]string{"testdata/nonexistent"})
 	require.Error(t, err)
+}
+
+func TestPackageURL(t *testing.T) {
+	for _, tc := range []struct {
+		dbe      PackageDBEntry
+		expected string
+	}{
+		{
+			// Emtpty db entry
+			dbe:      PackageDBEntry{},
+			expected: "",
+		},
+		{
+			// Only package
+			dbe:      PackageDBEntry{Package: "test"},
+			expected: "",
+		},
+		{
+			// Emtpty db entry
+			dbe: PackageDBEntry{
+				Package: "test", Namespace: "osname",
+			},
+			expected: "",
+		},
+		{
+			// Tyoe missing
+			dbe: PackageDBEntry{
+				Package: "test", Version: "v1.0.0", Namespace: "osname",
+			},
+			expected: "",
+		},
+		{
+			// Minimum elements
+			dbe: PackageDBEntry{
+				Package: "test", Version: "v1.0.0", Type: purl.TypeDebian, Namespace: "osname",
+			},
+			expected: "pkg:deb/osname/test@v1.0.0",
+		},
+		{
+			// All but type
+			dbe: PackageDBEntry{
+				Package: "test", Version: "v1.0.0", Architecture: "amd64",
+				Type: purl.TypeDebian, Namespace: "osname",
+			},
+			expected: "pkg:deb/osname/test@v1.0.0?arch=amd64",
+		},
+	} {
+		p := tc.dbe.PackageURL()
+		require.Equal(t, tc.expected, p)
+		if p == "" {
+			continue
+		}
+		parsed, err := url.Parse(p)
+		require.NoError(t, err)
+		require.Equal(t, "pkg", parsed.Scheme)
+		require.True(t, strings.HasPrefix(p, fmt.Sprintf(
+			"pkg:%s/%s/%s@%s", tc.dbe.Type, tc.dbe.Namespace,
+			tc.dbe.Package, tc.dbe.Version,
+		)))
+		require.Equal(t, tc.dbe.Architecture, parsed.Query().Get("arch"))
+	}
 }
