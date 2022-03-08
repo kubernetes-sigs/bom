@@ -743,10 +743,24 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 
 		// If we got the OS data from the scanner, add the packages:
 		if i == layerNum && osPackageData != nil {
-			for _, osPkgData := range *osPackageData {
+			for i := range *osPackageData {
 				ospk := NewPackage()
-				ospk.Name = osPkgData.Package + "-" + osPkgData.Version
-				ospk.Version = osPkgData.Version
+				ospk.Name = (*osPackageData)[i].Package + "-" + (*osPackageData)[i].Version
+				ospk.Version = (*osPackageData)[i].Version
+				ospk.HomePage = (*osPackageData)[i].HomePage
+				if (*osPackageData)[i].MaintainerName != "" {
+					ospk.Supplier.Person = (*osPackageData)[i].MaintainerName
+					if (*osPackageData)[i].MaintainerEmail != "" {
+						ospk.Supplier.Person += fmt.Sprintf(" (%s)", (*osPackageData)[i].MaintainerEmail)
+					}
+				}
+				if (*osPackageData)[i].PackageURL() != "" {
+					ospk.ExternalRefs = append(ospk.ExternalRefs, ExternalRef{
+						Category: "PACKAGE-MANAGER",
+						Type:     "purl",
+						Locator:  (*osPackageData)[i].PackageURL(),
+					})
+				}
 				ospk.BuildID(pkg.ID)
 				if err := pkg.AddPackage(ospk); err != nil {
 					return nil, errors.Wrap(err, "adding OS package to container layer")
