@@ -49,11 +49,19 @@ func (ct *ContainerScanner) ReadOSPackages(layers []string) (
 		}
 	}
 
+	purlType := ""
+
 	switch osKind {
 	case OSDebian, OSUbuntu:
 		layerNum, packages, err = ct.ReadDebianPackages(layers)
+		purlType = purl.TypeDebian
 	default:
 		return 0, nil, nil
+	}
+
+	for i := range *packages {
+		(*packages)[i].Type = purlType
+		(*packages)[i].Namespace = osKind
 	}
 
 	return layerNum, packages, err
@@ -104,6 +112,31 @@ type PackageDBEntry struct {
 	HomePage        string
 }
 
+// PackageURL returns a purl representing the db entry. If the entry
+// does not have enough data to generate the purl, it will return an
+// empty string
+func (e *PackageDBEntry) PackageURL() string {
+	// We require type, package, namespace and version at the very
+	// least to generate a purl
+	if e.Package == "" || e.Version == "" || e.Namespace == "" || e.Type == "" {
+		return ""
+	}
+
+	qualifiersMap := map[string]string{}
+
+	// Add the architecture
+	// TODO(puerco): Support adding the distro
+	if e.Architecture != "" {
+		qualifiersMap["arch"] = e.Architecture
+	}
+	return purl.NewPackageURL(
+		e.Type, e.Namespace, e.Package,
+		e.Version, purl.QualifiersFromMap(qualifiersMap), "",
+	).ToString()
+}
+
+// parseDpkgDB reads a dpks database and populates a slice of PackageDBEntry
+// with information from the packages found
 func (ct *ContainerScanner) parseDpkgDB(dbPath string) (*[]PackageDBEntry, error) {
 	file, err := os.Open(dbPath)
 	if err != nil {
@@ -145,8 +178,8 @@ func (ct *ContainerScanner) parseDpkgDB(dbPath string) (*[]PackageDBEntry, error
 			if curPkg != nil {
 				mparts := strings.SplitN(parts[1], "<", 2)
 				if len(mparts) == 2 {
-					curPkg.MaintainerName = mparts[0]
-					curPkg.MaintainerEmail = strings.TrimSuffix(mparts[1], ">")
+					curPkg.MaintainerName = strings.TrimSpace(mparts[0])
+					curPkg.MaintainerEmail = strings.TrimSuffix(strings.TrimSpace(mparts[1]), ">")
 				}
 			}
 		}
