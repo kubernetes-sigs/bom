@@ -32,12 +32,14 @@ import (
 
 	gitignore "github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/uuid"
 	"github.com/nozzle/throttler"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -578,6 +580,59 @@ func (di *spdxDefaultImplementation) GetDirectoryLicense(
 	return licenseResult.License, nil
 }
 
+// purlFromImage builds a purl from an image reference
+func (*spdxDefaultImplementation) purlFromImage(img struct {
+	Reference, Archive, Arch, OS string
+}) string {
+	// OCI type urls don't have a namespace ref:
+	// https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#oci
+
+	imageReference, err := name.ParseReference(img.Reference)
+	if err != nil {
+		return ""
+	}
+
+	digest := ""
+	// If we have the digest, skip checking it from the resistry
+	if _, ok := imageReference.(name.Digest); ok {
+		p := strings.Split(imageReference.(name.Digest).String(), "@")
+		if len(p) < 2 {
+			return ""
+		}
+		digest = p[1]
+	} else {
+		digest, err = crane.Digest(img.Reference)
+		if err != nil {
+			logrus.Error(err)
+			return ""
+		}
+	}
+
+	url := imageReference.Context().Name()
+	parts := strings.Split(url, "/")
+	if len(parts) < 2 {
+		return ""
+	}
+	imageName := parts[len(parts)-1]
+	url = strings.TrimSuffix(url, "/"+imageName)
+
+	// Add the purl qualifgiers:
+	mm := map[string]string{
+		"repository_url": url,
+	}
+	if img.Arch != "" {
+		mm["arch"] = img.Arch
+	}
+	if tag, ok := imageReference.(name.Tag); ok {
+		mm["tag"] = tag.String()
+	}
+	packageurl := purl.NewPackageURL(
+		purl.TypeOCI, "", imageName, digest,
+		purl.QualifiersFromMap(mm), "",
+	)
+	return packageurl.String()
+}
+
 // ImageRefToPackage Returns a spdx package from an OCI image reference
 func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options) (*Package, error) {
 	tmpdir, err := os.MkdirTemp("", "doc-build-")
@@ -585,6 +640,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 		return nil, errors.Wrap(err, "creating temporary workdir in")
 	}
 	defer os.RemoveAll(tmpdir)
+
 	imgs, err := di.PullImagesToArchive(ref, tmpdir)
 	if err != nil {
 		return nil, errors.Wrap(err, "while downloading images to archive")
@@ -597,7 +653,19 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	// If we just got one image and that image is exactly the same
 	// reference, return a single package:
 	if len(imgs) == 1 && imgs[0].Reference == ref {
-		return di.PackageFromImageTarball(opts, imgs[0].Archive)
+		p, err := di.PackageFromImageTarball(opts, imgs[0].Archive)
+		if err != nil {
+			return nil, errors.Wrap(err, "building package from single image")
+		}
+		packageurl := di.purlFromImage(imgs[0])
+		if packageurl != "" {
+			p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
+				Category: "PACKAGE-MANAGER",
+				Type:     "purl",
+				Locator:  packageurl,
+			})
+		}
+		return p, nil
 	}
 
 	// Create the package representing the image tag:
@@ -630,6 +698,15 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 			subpkg.Name = img.Reference
 		}
 
+		packageurl := di.purlFromImage(img)
+		if packageurl != "" {
+			subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
+				Category: "PACKAGE-MANAGER",
+				Type:     "purl",
+				Locator:  packageurl,
+			})
+		}
+
 		// Add the package
 		pkg.AddRelationship(&Relationship{
 			Peer:       subpkg,
@@ -641,6 +718,16 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 			Peer:    pkg,
 			Type:    VARIANT_OF,
 			Comment: "Image index",
+		})
+	}
+
+	// Add a the topmost package purl
+	packageurl := di.purlFromImage(struct{ Reference, Archive, Arch, OS string }{ref, "", "", ""})
+	if packageurl != "" {
+		pkg.ExternalRefs = append(pkg.ExternalRefs, ExternalRef{
+			Category: "PACKAGE-MANAGER",
+			Type:     "purl",
+			Locator:  packageurl,
 		})
 	}
 	return pkg, nil
