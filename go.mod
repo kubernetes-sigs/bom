@@ -12,7 +12,7 @@ require (
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/mod v0.5.1
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
