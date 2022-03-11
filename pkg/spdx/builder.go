@@ -185,16 +185,29 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	doc.Creator.Person = genopts.CreatorPerson
 	doc.ExternalDocRefs = genopts.ExternalDocumentRef
 
-	for _, i := range genopts.Directories {
-		logrus.Infof("Processing directory %s", i)
-		pkg, err := spdx.PackageFromDirectory(i)
+	for _, dirPattern := range genopts.Directories {
+		matches, err := filepath.Glob(dirPattern)
 		if err != nil {
-			return nil, errors.Wrap(err, "generating package from directory")
+			return nil, err
 		}
-		doc.ensureUniqueElementID(pkg)
-
-		if err := doc.AddPackage(pkg); err != nil {
-			return nil, errors.Wrap(err, "adding directory package to document")
+		for _, dirMatch := range matches {
+			isFile, err := pathIsOfFile(dirMatch)
+			if err != nil {
+				return nil, errors.Wrap(err, "stat dir")
+			}
+			if isFile {
+				logrus.Debugf("Skipping %s because it's a file", dirMatch)
+				continue
+			}
+			logrus.Infof("Processing directory %s", dirMatch)
+			pkg, err := spdx.PackageFromDirectory(dirMatch)
+			if err != nil {
+				return nil, errors.Wrap(err, "generating package from directory")
+			}
+			doc.ensureUniqueElementID(pkg)
+			if err := doc.AddPackage(pkg); err != nil {
+				return nil, errors.Wrap(err, "adding directory package to document")
+			}
 		}
 	}
 
@@ -270,6 +283,7 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	return doc, nil
 }
 
+// TODO: Move this to https://github.com/kubernetes-sigs/release-utils/blob/main/util/common.go#L485
 func pathIsOfFile(path string) (bool, error) {
 	fInfo, err := os.Stat(path)
 	if err != nil {
