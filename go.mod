@@ -22,9 +22,15 @@ require (
 )
 
 require (
+	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/andybalholm/brotli v1.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
+	github.com/containerd/containerd v1.5.8 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/klauspost/pgzip v1.2.4 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
@@ -34,6 +40,9 @@ require (
 	github.com/pierrec/lz4/v4 v4.0.3 // indirect
 	github.com/ulikunitz/xz v0.5.7 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
+	google.golang.org/grpc v1.43.0 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 )
 
 require (

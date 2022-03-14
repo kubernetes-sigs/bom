@@ -30,6 +30,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/v1/daemon"
+
 	gitignore "github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
@@ -199,6 +201,7 @@ func (di *spdxDefaultImplementation) ReadArchiveManifest(manifestPath string) (m
 // references from it
 func getImageReferences(referenceString string) ([]struct {
 	Digest string
+	Tag    string
 	Arch   string
 	OS     string
 }, error) {
@@ -206,21 +209,44 @@ func getImageReferences(referenceString string) ([]struct {
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing image reference %s", referenceString)
 	}
+
+	images := []struct {
+		Digest string
+		Tag    string
+		Arch   string
+		OS     string
+	}{}
+
+	img, err := daemon.Image(ref)
+	if err != nil {
+		return nil, errors.Errorf("could not get image reference %s", referenceString)
+	}
+
+	if size, err := img.Size(); err == nil && size > 0 {
+		tag, ok := ref.(name.Tag)
+		if !ok {
+			return nil, errors.Errorf("could not cast tag from reference %s", referenceString)
+		}
+
+		logrus.Infof("Adding image tag %s from reference", referenceString)
+		return append(images, struct {
+			Digest string
+			Tag    string
+			Arch   string
+			OS     string
+		}{Tag: tag.String()}), nil
+	}
+
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching remote descriptor")
 	}
 
-	images := []struct {
-		Digest string
-		Arch   string
-		OS     string
-	}{}
-
 	// If we got a digest, we reuse it as is
 	if _, ok := ref.(name.Digest); ok {
 		images = append(images, struct {
 			Digest string
+			Tag    string
 			Arch   string
 			OS     string
 		}{Digest: ref.(name.Digest).String()})
@@ -260,6 +286,7 @@ func getImageReferences(referenceString string) ([]struct {
 		logrus.Infof("Adding image digest %s from reference", dig.String())
 		return append(images, struct {
 			Digest string
+			Tag    string
 			Arch   string
 			OS     string
 		}{Digest: dig.String()}), nil
@@ -300,6 +327,7 @@ func getImageReferences(referenceString string) ([]struct {
 		images = append(images,
 			struct {
 				Digest string
+				Tag    string
 				Arch   string
 				OS     string
 			}{
@@ -359,17 +387,62 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	}
 
 	for _, refData := range references {
-		logrus.Infof("Downloading %s", refData.Digest)
+		if refData.Tag != "" {
+			tagRef, err := name.ParseReference(refData.Tag)
+			if err != nil {
+				return nil, errors.Wrapf(err, "parsing reference %s", referenceString)
+			}
+
+			logrus.Infof("Checking the local image cache for %s", refData.Tag)
+
+			img, err := daemon.Image(tagRef)
+			if err != nil {
+				return nil, errors.Wrapf(err, "getting image %s", referenceString)
+			}
+
+			if size, err := img.Size(); err == nil && size > 0 {
+				logrus.Infof("%s was found in the local image cache", refData.Tag)
+				// This function is not for digests
+				d, ok := tagRef.(name.Tag)
+				if !ok {
+					return nil, fmt.Errorf("reference is not a tag or digest")
+				}
+				var p string
+				ri := strings.Split(d.RepositoryStr(), "/")
+				if len(ri) > 0 {
+					p = fmt.Sprintf("%s_%s_%s", ri[0], ri[1], d.TagStr())
+				} else {
+					p = fmt.Sprintf("%s_%s", ri[0], d.TagStr())
+				}
+
+				tarPath := filepath.Join(path, p+".tar")
+				err := tarball.WriteToFile(tarPath, tagRef, img)
+				if err != nil {
+					return nil, err
+				}
+				images = append(images, struct {
+					Reference string
+					Archive   string
+					Arch      string
+					OS        string
+				}{refData.Digest, tarPath, refData.Arch, refData.OS})
+				return images, nil
+			}
+		}
+
+		logrus.Infof("%s was not found in the local image cache", refData.Digest)
 		ref, err := name.ParseReference(refData.Digest)
 		if err != nil {
 			return nil, errors.Wrapf(err, "parsing reference %s", referenceString)
 		}
 
+		logrus.Infof("Trying to downloat it %s from remote", refData.Digest)
 		// Get the reference image
 		img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 		if err != nil {
 			return nil, errors.Wrap(err, "getting image")
 		}
+
 		// This function is not for digests
 		d, ok := ref.(name.Digest)
 		if !ok {
