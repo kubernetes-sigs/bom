@@ -201,5 +201,5 @@ func (f *File) GetElementByID(id string) Object {
 	if f.SPDXID() == id {
 		return f
 	}
-	return recursiveSearch(id, f, &map[string]struct{}{})
+	return recursiveIDSearch(id, f, &map[string]struct{}{})
 }

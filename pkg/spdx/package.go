@@ -420,5 +420,5 @@ func (p *Package) GetElementByID(id string) Object {
 	if p.SPDXID() == id {
 		return p
 	}
-	return recursiveSearch(id, p, &map[string]struct{}{})
+	return recursiveIDSearch(id, p, &map[string]struct{}{})
 }
