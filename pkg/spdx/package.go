@@ -31,6 +31,7 @@ import (
 	"sync"
 	"text/template"
 
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -421,4 +422,73 @@ func (p *Package) GetElementByID(id string) Object {
 		return p
 	}
 	return recursiveIDSearch(id, p, &map[string]struct{}{})
+}
+
+// Purl searches the external refs in the package and returns
+// a pursed purl if it finds a purl PACKAGE-MANAGER
+func (p *Package) Purl() *purl.PackageURL {
+	if p.ExternalRefs == nil {
+		return nil
+	}
+	purlString := ""
+	for _, er := range p.ExternalRefs {
+		if er.Category == "PACKAGE-MANAGER" && er.Type == "purl" {
+			purlString = er.Locator
+		}
+	}
+	if purlString == "" {
+		return nil
+	}
+	// Parse the purl
+	purlObject, err := purl.FromString(purlString)
+	if err != nil {
+		logrus.Warnf("Invalid Purl in package %s: %s", p.SPDXID(), purlString)
+		return nil
+	}
+	return &purlObject
+}
+
+// PurlMatches gets a spec url and returns true if its defined parts
+// match the analog parts in the package's purl
+func (p *Package) PurlMatches(spec *purl.PackageURL) bool {
+	pkgPurl := p.Purl()
+	if pkgPurl == nil {
+		fmt.Println("Nor p[url")
+		return false
+	}
+
+	if spec.Type != "" && spec.Type != pkgPurl.Type {
+		fmt.Println("Type")
+		return false
+	}
+	if spec.Namespace != "" && spec.Namespace != pkgPurl.Namespace {
+		fmt.Printf("Namespace: %s %s", spec.Namespace, pkgPurl.Namespace)
+		return false
+	}
+	if spec.Name != "" && spec.Name != pkgPurl.Name {
+		fmt.Println("Name")
+		return false
+	}
+	if spec.Version != "" && spec.Version != pkgPurl.Version {
+		fmt.Println("Version")
+		return false
+	}
+	if spec.Subpath != "" && spec.Subpath != pkgPurl.Subpath {
+		fmt.Println("Subpoath")
+		return false
+	}
+
+	// Compare the qualifiers
+	specQs := spec.Qualifiers.Map()
+	pkgQs := pkgPurl.Qualifiers.Map()
+
+	for k := range specQs {
+		if _, ok := pkgQs[k]; !ok {
+			continue
+		}
+		if specQs[k] != pkgQs[k] {
+			return false
+		}
+	}
+	return true
 }
