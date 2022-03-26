@@ -35,6 +35,7 @@ import (
 
 	"github.com/google/uuid"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
@@ -475,6 +476,20 @@ func (d *Document) GetElementByID(id string) Object {
 		}
 	}
 	return nil
+}
+
+// GetPackagesByPurl queries the document packages and returns all that
+// match the specified purl bits
+func (d *Document) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
+	seen := map[string]struct{}{}
+	foundPackages := []*Package{}
+	for _, p := range d.Packages {
+		foundPackages = append(foundPackages, recursivePurlSearch(purlSpec, p, &seen, opts...)...)
+	}
+	for _, f := range d.Files {
+		foundPackages = append(foundPackages, recursivePurlSearch(purlSpec, f, &seen, opts...)...)
+	}
+	return foundPackages
 }
 
 type ValidationResults struct {

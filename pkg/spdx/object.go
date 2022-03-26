@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -280,3 +281,10 @@ mloop:
 
 // GetElementByID nil function to be overridden by package and file
 func (e *Entity) GetElementByID(string) Object { return nil }
+
+// GetPackagesByPurl queries the package and returns all the nodes it is
+// connected to that match the specified purl bits
+func (p *Package) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
+	seen := map[string]struct{}{}
+	return recursivePurlSearch(purlSpec, p, &seen, opts...)
+}

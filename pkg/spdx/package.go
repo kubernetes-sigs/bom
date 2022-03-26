@@ -36,6 +36,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const OptionVersionPattern PurlSearchOption = "VERSION_PATTERN"
+
 var packageTemplate = `##### Package: {{ .Name }}
 
 {{ if .Name }}PackageName: {{ .Name }}
@@ -448,33 +450,29 @@ func (p *Package) Purl() *purl.PackageURL {
 	return &purlObject
 }
 
+type PurlSearchOption string
+
 // PurlMatches gets a spec url and returns true if its defined parts
 // match the analog parts in the package's purl
-func (p *Package) PurlMatches(spec *purl.PackageURL) bool {
+func (p *Package) PurlMatches(spec *purl.PackageURL, opts ...PurlSearchOption) bool {
 	pkgPurl := p.Purl()
 	if pkgPurl == nil {
-		fmt.Println("Nor p[url")
 		return false
 	}
 
 	if spec.Type != "" && spec.Type != pkgPurl.Type {
-		fmt.Println("Type")
 		return false
 	}
 	if spec.Namespace != "" && spec.Namespace != pkgPurl.Namespace {
-		fmt.Printf("Namespace: %s %s", spec.Namespace, pkgPurl.Namespace)
 		return false
 	}
 	if spec.Name != "" && spec.Name != pkgPurl.Name {
-		fmt.Println("Name")
 		return false
 	}
 	if spec.Version != "" && spec.Version != pkgPurl.Version {
-		fmt.Println("Version")
 		return false
 	}
 	if spec.Subpath != "" && spec.Subpath != pkgPurl.Subpath {
-		fmt.Println("Subpoath")
 		return false
 	}
 
@@ -484,7 +482,7 @@ func (p *Package) PurlMatches(spec *purl.PackageURL) bool {
 
 	for k := range specQs {
 		if _, ok := pkgQs[k]; !ok {
-			continue
+			return false
 		}
 		if specQs[k] != pkgQs[k] {
 			return false
