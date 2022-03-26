@@ -251,10 +251,10 @@ func Banner() string {
 	return string(d)
 }
 
-// recursiveSearch is a function that recursively searches an object's peers
+// recursiveIDSearch is a function that recursively searches an object's peers
 // to find the specified SPDX ID. If found, returns a copy of the object.
 // nolint:gocritic // seen is a pointer recursively populated
-func recursiveSearch(id string, o Object, seen *map[string]struct{}) Object {
+func recursiveIDSearch(id string, o Object, seen *map[string]struct{}) Object {
 	if o.SPDXID() == id {
 		return o
 	}
@@ -271,7 +271,7 @@ func recursiveSearch(id string, o Object, seen *map[string]struct{}) Object {
 			return rel.Peer
 		}
 
-		if peerObject := recursiveSearch(id, rel.Peer, seen); peerObject != nil {
+		if peerObject := recursiveIDSearch(id, rel.Peer, seen); peerObject != nil {
 			return peerObject
 		}
 	}

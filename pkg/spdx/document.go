@@ -465,12 +465,12 @@ func (d *Document) ensureUniquePeerIDs(rels *[]*Relationship) {
 func (d *Document) GetElementByID(id string) Object {
 	seen := map[string]struct{}{}
 	for _, p := range d.Packages {
-		if sub := recursiveSearch(id, p, &seen); sub != nil {
+		if sub := recursiveIDSearch(id, p, &seen); sub != nil {
 			return sub
 		}
 	}
 	for _, f := range d.Files {
-		if sub := recursiveSearch(id, f, &seen); sub != nil {
+		if sub := recursiveIDSearch(id, f, &seen); sub != nil {
 			return sub
 		}
 	}
