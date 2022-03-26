@@ -59,12 +59,19 @@ func (ct *ContainerScanner) ReadOSPackages(layers []string) (
 		return 0, nil, nil
 	}
 
-	for i := range *packages {
-		(*packages)[i].Type = purlType
-		(*packages)[i].Namespace = osKind
-	}
-
+	ct.setPurlData(purlType, osKind, packages)
 	return layerNum, packages, err
+}
+
+// setPurlData stamps al found packages with the purl type and NS
+func (ct *ContainerScanner) setPurlData(ptype, pnamespace string, packages *[]PackageDBEntry) {
+	if packages == nil {
+		return
+	}
+	for i := range *packages {
+		(*packages)[i].Type = ptype
+		(*packages)[i].Namespace = pnamespace
+	}
 }
 
 // ReadDebianPackages scans through a set of container layers looking for the
