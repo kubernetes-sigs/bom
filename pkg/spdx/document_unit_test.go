@@ -25,6 +25,7 @@ import (
 
 	"github.com/in-toto/in-toto-golang/in_toto"
 	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
@@ -278,4 +279,51 @@ func TestValidateFiles(t *testing.T) {
 	require.NoError(t, doc.AddFile(f))
 	_, err := doc.ValidateFiles([]string{"/tmo/lskdjflskdjf"})
 	require.Error(t, err)
+}
+
+func TestGetPackagesByPurl(t *testing.T) {
+	// Open the Nginx SBOM to test queries
+	doc, err := OpenDoc("testdata/nginx.spdx")
+	require.NotNil(t, doc)
+	require.NoError(t, err)
+
+	for _, tc := range []struct {
+		len  int
+		purl *purl.PackageURL
+	}{
+		{
+			// Find all image references
+			len:  9,
+			purl: &purl.PackageURL{Type: "oci"},
+		},
+		{
+			// Find all debian packages
+			len:  1128,
+			purl: &purl.PackageURL{Type: "deb"},
+		},
+		{
+			// Find all container images for s390x
+			len: 1,
+			purl: &purl.PackageURL{
+				Type:       "oci",
+				Qualifiers: purl.QualifiersFromMap(map[string]string{"arch": "s390x"}),
+			},
+		},
+		{
+			// Find containers with util-linux
+			len:  8,
+			purl: &purl.PackageURL{Type: "deb", Name: "util-linux"},
+		},
+		{
+			//  Search that should not return anything
+			len:  0,
+			purl: &purl.PackageURL{Type: "go", Name: "errors"},
+		},
+	} {
+		packages := doc.GetPackagesByPurl(tc.purl)
+		for _, p := range packages {
+			logrus.Infof("%s", p.Purl())
+		}
+		require.Equal(t, tc.len, len(packages), tc.purl)
+	}
 }
