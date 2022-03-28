@@ -35,6 +35,7 @@ func AddDocument(parent *cobra.Command) {
 	}
 
 	AddOutline(documentCmd)
+	parent.AddCommand(documentCmd)
 }
 
 func AddOutline(parent *cobra.Command) {
