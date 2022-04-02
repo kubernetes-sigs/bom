@@ -63,7 +63,7 @@ func init() {
 	AddGenerate(rootCmd)
 	AddDocument(rootCmd)
 	AddValidate(rootCmd)
-	rootCmd.AddCommand(version.Version())
+	rootCmd.AddCommand(version.WithFont("doom"))
 }
 
 // Execute builds the command
