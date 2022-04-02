@@ -248,7 +248,7 @@ func generateLDFlags() string {
 func EnsureKO(version string) error {
 	versionToInstall := version
 	if versionToInstall == "" {
-		versionToInstall = "0.10.0"
+		versionToInstall = "0.11.2"
 	}
 
 	fmt.Printf("Checking if `ko` version %s is installed\n", versionToInstall)
