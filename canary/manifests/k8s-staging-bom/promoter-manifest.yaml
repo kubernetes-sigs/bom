@@ -1,7 +1,0 @@
-# Image promotion to canary test repository
-registries:
-- name: gcr.io/k8s-staging-bom
-  src: true
-- name: gcr.io/ulabs-cloud-tests/bom-canary
-  service-account: k8s-infra-gcr-promoter@k8s-artifacts-prod.iam.gserviceaccount.com
-
