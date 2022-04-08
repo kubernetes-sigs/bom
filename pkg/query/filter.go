@@ -16,7 +16,11 @@ limitations under the License.
 
 package query
 
-import "sigs.k8s.io/bom/pkg/spdx"
+import (
+	"strings"
+
+	"sigs.k8s.io/bom/pkg/spdx"
+)
 
 type Filter interface {
 	Apply(map[string]spdx.Object) (map[string]spdx.Object, error)
@@ -73,4 +77,62 @@ func searchDepth(objectSet map[string]spdx.Object, currentDepth, targetDepth uin
 	return searchDepth(res, currentDepth+1, targetDepth)
 }
 
-// res = elements.Apply(filter).Apply(filter).Apply(filter)
+type NameFilter struct {
+	Pattern string
+}
+
+func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+	// Perform filter
+	cycler := ObjectCycler{}
+	return cycler.Cycle(&objects, func(o spdx.Object) bool {
+		if _, ok := o.(*spdx.File); ok {
+			return strings.Contains(o.(*spdx.File).FileName, f.Pattern)
+		}
+		if _, ok := o.(*spdx.Package); ok {
+			return strings.Contains(o.(*spdx.Package).Name, f.Pattern)
+		}
+		return false
+	}), nil
+}
+
+type MatcherFunction func(spdx.Object) bool
+
+type ObjectCycler struct{}
+
+func (cycler *ObjectCycler) Cycle(objects *map[string]spdx.Object, fn MatcherFunction) map[string]spdx.Object {
+	return doRecursion(objects, fn, &map[string]struct{}{})
+}
+
+func doRecursion(objects *map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{}) map[string]spdx.Object {
+	newSet := map[string]spdx.Object{}
+	for _, o := range *objects {
+		if o.SPDXID() == "" {
+			continue
+		}
+		if _, ok := (*seen)[o.SPDXID()]; ok {
+			continue
+		}
+		(*seen)[o.SPDXID()] = struct{}{}
+
+		if fn(o) {
+			newSet[o.SPDXID()] = o
+			continue
+		}
+
+		// do a new recursion on the related objects
+		subSet := map[string]spdx.Object{}
+		for _, r := range *o.GetRelationships() {
+			if r.Peer != nil && r.Peer.SPDXID() != "" {
+				// We only recurse on the first match of each object
+				if _, ok := subSet[r.Peer.SPDXID()]; !ok {
+					subSet[r.Peer.SPDXID()] = r.Peer
+				}
+			}
+		}
+		filteredSet := doRecursion(&subSet, fn, seen)
+		for _, o := range filteredSet {
+			newSet[o.SPDXID()] = o
+		}
+	}
+	return newSet
+}

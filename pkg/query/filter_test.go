@@ -17,6 +17,7 @@ limitations under the License.
 package query
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,10 +29,13 @@ func testPackages() map[string]*spdx.Package {
 	for _, s := range []string{"packageOne", "packageTwo"} {
 		p := spdx.NewPackage()
 		p.ID = s
+		p.Name = fmt.Sprintf("gcr.io/puerco-chainguard/images/%s:v9.0.2-buster", s)
 		pks[s] = p
 	}
 	subFile := spdx.NewFile()
 	subFile.ID = "subfile1"
+	subFile.Name = "subfile1.txt"
+	subFile.FileName = "subfile1.txt"
 	pks["packageTwo"].AddRelationship(&spdx.Relationship{
 		Type: "",
 		Peer: subFile,
@@ -44,6 +48,8 @@ func testFiles() map[string]*spdx.File {
 	for _, s := range []string{"file1.txt", "file2.txt"} {
 		f := spdx.NewFile()
 		f.ID = s
+		f.Name = s
+		f.FileName = s
 		files[s] = f
 	}
 	return files
@@ -87,4 +93,15 @@ func TestDepth(t *testing.T) {
 	require.NotNil(t, fr3.Objects)
 	require.NoError(t, fr3.Error)
 	require.Len(t, fr3.Objects, 0)
+}
+
+func TestName(t *testing.T) {
+	fr := testFilterResults()
+	newResults := fr.Apply(&NameFilter{Pattern: "subfile"})
+	require.Len(t, newResults.Objects, 1)
+
+	// Match the two image packages
+	fr = testFilterResults()
+	newResults = fr.Apply(&NameFilter{Pattern: "puerco-chainguard"})
+	require.Len(t, newResults.Objects, 2)
 }
