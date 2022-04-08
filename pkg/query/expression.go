@@ -16,6 +16,12 @@ limitations under the License.
 
 package query
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 type Expression struct {
 	Filters []Filter
 }
@@ -24,6 +30,45 @@ func NewExpression(exp string) (*Expression, error) {
 	return parseExpression(exp)
 }
 
-func parseExpression(exp string) (*Expression, error) {
-	return nil, nil
+func tokenizeExpression(expString string) []string {
+	quoted := false
+	return strings.FieldsFunc(expString, func(r rune) bool {
+		if r == '"' {
+			quoted = !quoted
+		}
+		return !quoted && r == ' '
+	})
+}
+
+func scanToken(token string) (label, value string) {
+	parts := strings.SplitN(token, ":", 2)
+	if strings.HasPrefix(parts[1], `"`) && strings.HasSuffix(parts[1], `"`) {
+		parts[1] = strings.TrimPrefix(strings.TrimSuffix(parts[1], `"`), `"`)
+	}
+	return parts[0], parts[1]
+}
+
+func parseExpression(expString string) (*Expression, error) {
+	tokens := tokenizeExpression(expString)
+	exp := &Expression{
+		Filters: []Filter{},
+	}
+	for _, token := range tokens {
+		label, data := scanToken(token)
+		switch label {
+		case "name":
+			exp.Filters = append(exp.Filters, &NameFilter{Pattern: data})
+		case "depth":
+			i, err := strconv.Atoi(data)
+			if err != nil {
+				return nil, fmt.Errorf("checking value for depth filter: %w", err)
+			}
+			exp.Filters = append(exp.Filters, &DepthFilter{
+				TargetDepth: i,
+			})
+		default:
+			return nil, fmt.Errorf("unknown filter: %s", label)
+		}
+	}
+	return exp, nil
 }
