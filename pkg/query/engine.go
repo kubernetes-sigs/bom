@@ -17,13 +17,22 @@ limitations under the License.
 package query
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 type Engine struct {
+	impl     engineImplementation
 	Document *spdx.Document
 	MaxDepth int
+}
+
+func New() *Engine {
+	return &Engine{
+		impl: &defaultEngineImplementation{},
+	}
 }
 
 // Open reads a document from the specified path
@@ -36,14 +45,47 @@ func (e *Engine) Open(path string) error {
 	return nil
 }
 
-// Query takes an expression as a string and filters de document
-func (e *Engine) Query(expressionText string) error {
+// Query takes an expression as a string and filters the loaded document
+func (e *Engine) Query(expString string) (fr FilterResults, err error) {
 	if e.Document == nil {
-		return errors.New("query engine has no document open")
+		return fr, errors.New("query engine has no document open")
 	}
-	_, err := NewExpression(expressionText)
+
+	exp, err := NewExpression(expString)
 	if err != nil {
-		return errors.Wrap(err, "parsing expression")
+		return fr, fmt.Errorf("reading expression: %w", err)
 	}
-	return nil
+
+	resultSet := e.impl.resultsFromDocument(e.Document)
+
+	for _, filter := range exp.Filters {
+		resultSet = *resultSet.Apply(filter)
+	}
+
+	return resultSet, nil
+}
+
+type engineImplementation interface {
+	resultsFromDocument(*spdx.Document) FilterResults
+}
+
+type defaultEngineImplementation struct{}
+
+func (di *defaultEngineImplementation) resultsFromDocument(doc *spdx.Document) FilterResults {
+	fr := FilterResults{
+		Objects: map[string]spdx.Object{},
+	}
+	for _, p := range doc.Packages {
+		if p.SPDXID() == "" {
+			continue
+		}
+		fr.Objects[p.SPDXID()] = p
+	}
+	for _, f := range doc.Files {
+		if f.SPDXID() == "" {
+			continue
+		}
+		fr.Objects[f.SPDXID()] = f
+	}
+	return fr
 }
