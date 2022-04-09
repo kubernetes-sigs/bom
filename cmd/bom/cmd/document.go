@@ -19,7 +19,6 @@ package cmd
 import (
 	"fmt"
 
-	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -40,6 +39,7 @@ func AddDocument(parent *cobra.Command) {
 	parent.AddCommand(documentCmd)
 }
 
+/*
 func AddQuery(parent *cobra.Command) {
 	queryCmd := &cobra.Command{
 		Short:             "bom document query → Query for data in an SPDX document",
@@ -88,7 +88,7 @@ func AddQuery(parent *cobra.Command) {
 	}
 	parent.AddCommand(queryCmd)
 }
-
+*/
 func AddOutline(parent *cobra.Command) {
 	outlineOpts := &spdx.DrawingOptions{}
 	outlineCmd := &cobra.Command{
