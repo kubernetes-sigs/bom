@@ -84,7 +84,7 @@ type NameFilter struct {
 func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
 	// Perform filter
 	cycler := ObjectCycler{}
-	return cycler.Cycle(&objects, func(o spdx.Object) bool {
+	return cycler.Cycle(objects, func(o spdx.Object) bool {
 		if _, ok := o.(*spdx.File); ok {
 			return strings.Contains(o.(*spdx.File).FileName, f.Pattern)
 		}
@@ -99,13 +99,16 @@ type MatcherFunction func(spdx.Object) bool
 
 type ObjectCycler struct{}
 
-func (cycler *ObjectCycler) Cycle(objects *map[string]spdx.Object, fn MatcherFunction) map[string]spdx.Object {
+func (cycler *ObjectCycler) Cycle(objects map[string]spdx.Object, fn MatcherFunction) map[string]spdx.Object {
 	return doRecursion(objects, fn, &map[string]struct{}{})
 }
 
-func doRecursion(objects *map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{}) map[string]spdx.Object {
+func doRecursion(
+	// nolint:gocritic // seen is passed recursively
+	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},
+) map[string]spdx.Object {
 	newSet := map[string]spdx.Object{}
-	for _, o := range *objects {
+	for _, o := range objects {
 		if o.SPDXID() == "" {
 			continue
 		}
@@ -129,7 +132,7 @@ func doRecursion(objects *map[string]spdx.Object, fn MatcherFunction, seen *map[
 				}
 			}
 		}
-		filteredSet := doRecursion(&subSet, fn, seen)
+		filteredSet := doRecursion(subSet, fn, seen)
 		for _, o := range filteredSet {
 			newSet[o.SPDXID()] = o
 		}
