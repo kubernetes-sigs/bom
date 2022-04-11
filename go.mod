@@ -3,7 +3,7 @@ module sigs.k8s.io/bom
 go 1.17
 
 require (
-	github.com/carolynvs/magex v0.7.2
+	github.com/carolynvs/magex v0.8.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-containerregistry v0.8.0
 	github.com/google/licenseclassifier/v2 v2.0.0-alpha.1
