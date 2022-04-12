@@ -606,7 +606,13 @@ func (di *spdxDefaultImplementation) GetGoDependencies(
 		return nil, errors.Wrap(err, "opening new module path")
 	}
 
-	defer func() { err = mod.RemoveDownloads() }()
+	defer func() {
+		preErr := err
+		err = mod.RemoveDownloads()
+		if preErr != nil {
+			err = preErr
+		}
+	}()
 	if opts.ScanLicenses {
 		if errScan := mod.ScanLicenses(); err != nil {
 			return nil, errScan
