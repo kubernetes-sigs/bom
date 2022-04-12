@@ -295,6 +295,11 @@ func (mod *GoModule) BuildFullPackageList(g *modfile.File) (packageList []*GoPac
 			return nil, errors.Wrap(err, "decoding module list")
 		}
 		if m.Module.Path != "" {
+			// If this is the main package (ie the module itself) skip
+			if m.Module.Main {
+				continue
+			}
+
 			if _, ok := list[m.Module.Path]; !ok {
 				list[m.Module.Path] = map[string]*ModEntry{}
 			}

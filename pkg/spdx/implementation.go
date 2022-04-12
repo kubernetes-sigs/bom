@@ -606,7 +606,13 @@ func (di *spdxDefaultImplementation) GetGoDependencies(
 		return nil, errors.Wrap(err, "opening new module path")
 	}
 
-	defer func() { err = mod.RemoveDownloads() }()
+	defer func() {
+		preErr := err
+		err = mod.RemoveDownloads()
+		if preErr != nil {
+			err = preErr
+		}
+	}()
 	if opts.ScanLicenses {
 		if errScan := mod.ScanLicenses(); err != nil {
 			return nil, errScan
@@ -617,7 +623,9 @@ func (di *spdxDefaultImplementation) GetGoDependencies(
 	for _, goPkg := range mod.Packages {
 		spdxPkg, err := goPkg.ToSPDXPackage()
 		if err != nil {
-			return nil, errors.Wrap(err, "converting go module to spdx package")
+			// If a dependency cannot be converted, warn but do not die
+			logrus.Error(fmt.Errorf("converting go dependency to spdx package: %w", err))
+			continue
 		}
 		spdxPackages = append(spdxPackages, spdxPkg)
 	}
