@@ -17,10 +17,42 @@ limitations under the License.
 package spdx
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestToSPDXPackage(t *testing.T) {
+	for _, tc := range []struct {
+		pkg         GoPackage
+		shouldError bool
+	}{
+		// No error
+		{GoPackage{ImportPath: "golang.org/x/term", Revision: "v0.0.0-20220411215600-e5f449aeb171"}, false},
+		// Invalid import path
+		{GoPackage{ImportPath: "package/name", Revision: "v1.0.0"}, true},
+		// No import path
+		{GoPackage{ImportPath: "github.com/docker/cli", Revision: "v20.10.12+incompatible"}, false},
+	} {
+		spdxPackage, err := tc.pkg.ToSPDXPackage()
+		if tc.shouldError {
+			require.Error(t, err)
+			continue
+		}
+
+		require.NoError(t, err)
+		require.Equal(t, tc.pkg.ImportPath, spdxPackage.Name)
+		if strings.HasSuffix(tc.pkg.Revision, "+incompatible") {
+			require.NotEqual(t, tc.pkg.Revision, spdxPackage.Version)
+			require.Equal(t, strings.TrimSuffix(tc.pkg.Revision, "+incompatible"), spdxPackage.Version)
+			require.NotContains(t, spdxPackage.DownloadLocation, "https://proxy.golang.org/")
+		} else {
+			require.Equal(t, tc.pkg.Revision, spdxPackage.Version)
+			require.Contains(t, spdxPackage.DownloadLocation, "https://proxy.golang.org/")
+		}
+	}
+}
 
 func TestPackageURL(t *testing.T) {
 	for _, tc := range []struct {
