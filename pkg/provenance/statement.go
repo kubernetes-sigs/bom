@@ -134,7 +134,8 @@ func (si *defaultStatementImplementation) AddSubject(
 // ReadSubjectsFromDir reads a directory and adds all files found as
 // subjects of the statement.
 func (si *defaultStatementImplementation) ReadSubjectsFromDir(
-	s *Statement, dirPath string) (err error) {
+	s *Statement, dirPath string,
+) (err error) {
 	// Traverse the directory
 	if err := fs.WalkDir(os.DirFS(dirPath), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {

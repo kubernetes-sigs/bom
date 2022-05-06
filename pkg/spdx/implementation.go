@@ -204,7 +204,8 @@ func getImageReferences(referenceString string) ([]struct {
 	Tag    string
 	Arch   string
 	OS     string
-}, error) {
+}, error,
+) {
 	ref, err := name.ParseReference(referenceString)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing image reference %s", referenceString)
@@ -363,7 +364,8 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	Archive   string
 	Arch      string
 	OS        string
-}, err error) {
+}, err error,
+) {
 	images = []struct {
 		Reference string
 		Archive   string
@@ -664,7 +666,8 @@ func (di *spdxDefaultImplementation) GetDirectoryLicense(
 // purlFromImage builds a purl from an image reference
 func (*spdxDefaultImplementation) purlFromImage(img struct {
 	Reference, Archive, Arch, OS string
-}) string {
+},
+) string {
 	// OCI type urls don't have a namespace ref:
 	// https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#oci
 

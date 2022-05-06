@@ -227,7 +227,8 @@ func (spdx *SPDX) PullImagesToArchive(reference, path string) ([]struct {
 	Archive   string
 	Arch      string
 	OS        string
-}, error) {
+}, error,
+) {
 	return spdx.impl.PullImagesToArchive(reference, path)
 }
 

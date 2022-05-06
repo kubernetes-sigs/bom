@@ -97,11 +97,10 @@ func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 		return nil, errors.Wrap(err, "building repository from package import path")
 	}
 	spdxPackage := NewPackage()
+	spdxPackage.Options().Prefix = "gomod"
 	spdxPackage.Name = pkg.ImportPath
-	if pkg.Revision != "" {
-		spdxPackage.Name += "@" + strings.TrimSuffix(pkg.Revision, "+incompatible")
-	}
-	spdxPackage.BuildID()
+
+	spdxPackage.BuildID(pkg.ImportPath, pkg.Revision)
 	if strings.Contains(pkg.Revision, "+incompatible") {
 		spdxPackage.DownloadLocation = repo.VCS.Scheme[0] + "+" + repo.Repo
 	} else {
@@ -485,7 +484,8 @@ func (di *GoModDefaultImpl) LicenseReader() (*license.Reader, error) {
 
 // ScanPackageLicense scans a package for licensing info
 func (di *GoModDefaultImpl) ScanPackageLicense(
-	pkg *GoPackage, reader *license.Reader, opts *GoModuleOptions) error {
+	pkg *GoPackage, reader *license.Reader, opts *GoModuleOptions,
+) error {
 	dir := pkg.LocalDir
 	if dir == "" && pkg.LocalInstall != "" {
 		dir = pkg.LocalInstall
