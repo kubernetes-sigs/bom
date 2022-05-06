@@ -308,7 +308,8 @@ func (builder *defaultDocBuilderImpl) WriteDoc(doc *Document, path string) error
 // ReadYamlConfiguration reads a yaml configuration and
 // set the values in an options struct
 func (builder *defaultDocBuilderImpl) ReadYamlConfiguration(
-	path string, opts *DocGenerateOptions) (err error) {
+	path string, opts *DocGenerateOptions,
+) (err error) {
 	yamldata, err := os.ReadFile(path)
 	if err != nil {
 		return errors.Wrap(err, "reading yaml SBOM configuration")

@@ -60,7 +60,8 @@ func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTa
 
 // ClassifyLicenseFiles takes a list of paths and tries to find return all licenses found in it
 func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
-	licenseList []*ClassifyResult, unrecognizedPaths []string, err error) {
+	licenseList []*ClassifyResult, unrecognizedPaths []string, err error,
+) {
 	licenseList = []*ClassifyResult{}
 	// Run the files through the clasifier
 	for _, f := range paths {

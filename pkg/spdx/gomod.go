@@ -484,7 +484,8 @@ func (di *GoModDefaultImpl) LicenseReader() (*license.Reader, error) {
 
 // ScanPackageLicense scans a package for licensing info
 func (di *GoModDefaultImpl) ScanPackageLicense(
-	pkg *GoPackage, reader *license.Reader, opts *GoModuleOptions) error {
+	pkg *GoPackage, reader *license.Reader, opts *GoModuleOptions,
+) error {
 	dir := pkg.LocalDir
 	if dir == "" && pkg.LocalInstall != "" {
 		dir = pkg.LocalInstall
