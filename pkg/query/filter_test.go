@@ -26,10 +26,25 @@ import (
 
 func testPackages() map[string]*spdx.Package {
 	pks := map[string]*spdx.Package{}
-	for _, s := range []string{"packageOne", "packageTwo"} {
+	for i, s := range []string{"packageOne", "packageTwo"} {
 		p := spdx.NewPackage()
 		p.ID = s
 		p.Name = fmt.Sprintf("gcr.io/puerco-chainguard/images/%s:v9.0.2-buster", s)
+		dg := "sha256:4ed64c2e0857ad21c38b98345ebb5edb01791a0a10b0e9e3d9ddde185cdbd31a"
+		repo := "index.docker.io%2Flibrary"
+		if i == 1 {
+			dg = "sha256:c0d8e30ad4f13b5f26794264fe057c488c72a5112978b1c24f3940dfaf69368a"
+			repo = "gcr.io%2Fproject"
+		}
+		p.ExternalRefs = []spdx.ExternalRef{
+			{
+				Category: "PACKAGE-MANAGER",
+				Type:     "purl",
+				Locator: fmt.Sprintf(
+					"pkg:oci/%s@%s?repository_url=%s&tag=nginx", s, dg, repo,
+				),
+			},
+		}
 		pks[s] = p
 	}
 	subFile := spdx.NewFile()
@@ -104,4 +119,42 @@ func TestName(t *testing.T) {
 	fr = testFilterResults()
 	newResults = fr.Apply(&NameFilter{Pattern: "puerco-chainguard"})
 	require.Len(t, newResults.Objects, 2)
+}
+
+func TestPurl(t *testing.T) {
+	for _, tc := range []struct {
+		pattern string
+		num     int
+		mustErr bool
+		descr   string
+	}{
+		{"pkg:oci/*/*", 2, false, "match by type"},
+		{"pkg:oci/*/packageOne", 1, false, "match by name"},
+		{"sdlkfjlskdjf", 4, true, "invalid purl"},
+		{"pkg:oci/*/*?repository_url=gcr.io%2Fproject", 1, false, "match by qualifiers"},
+		{"pkg:oci/*/*?repository_url=index.docker.io%2Flibrary", 1, false, "match by qualifiers2"},
+		{"pkg:oci/*/*@sha256:c0d8e30ad4f13b5f26794264fe057c488c72a5112978b1c24f3940dfaf69368a", 1, false, "match by version"},
+	} {
+		fr := testFilterResults()
+		newResults := fr.Apply(&PurlFilter{Pattern: tc.pattern})
+		if tc.mustErr {
+			require.Error(t, newResults.Error)
+		} else {
+			require.NoError(t, newResults.Error)
+		}
+		require.Len(t, newResults.Objects, tc.num)
+	}
+
+	//fr := testFilterResults()
+	//newResults := fr.Apply(&PurlFilter{Pattern: "pkg:oci/*/*"})
+	//require.Len(t, newResults.Objects, 2)
+
+	//fr = testFilterResults()
+	//newResults = fr.Apply(&PurlFilter{Pattern: })
+	//require.Len(t, newResults.Objects, 1)
+
+	// Match the two image packages
+	//fr = testFilterResults()
+	//newResults = fr.Apply(&PurlFilter{Pattern: "puerco-chainguard"})
+	//require.Len(t, newResults.Objects, 2)
 }
