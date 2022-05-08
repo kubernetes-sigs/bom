@@ -460,19 +460,19 @@ func (p *Package) PurlMatches(spec *purl.PackageURL, opts ...PurlSearchOption) b
 		return false
 	}
 
-	if spec.Type != "" && spec.Type != pkgPurl.Type {
+	if spec.Type != "*" && spec.Type != pkgPurl.Type {
 		return false
 	}
-	if spec.Namespace != "" && spec.Namespace != pkgPurl.Namespace {
+	if spec.Namespace != "*" && spec.Namespace != pkgPurl.Namespace {
 		return false
 	}
-	if spec.Name != "" && spec.Name != pkgPurl.Name {
+	if spec.Name != "*" && spec.Name != pkgPurl.Name {
 		return false
 	}
-	if spec.Version != "" && spec.Version != pkgPurl.Version {
+	if spec.Version != "*" && spec.Version != pkgPurl.Version {
 		return false
 	}
-	if spec.Subpath != "" && spec.Subpath != pkgPurl.Subpath {
+	if spec.Subpath != "*" && spec.Subpath != pkgPurl.Subpath {
 		return false
 	}
 
