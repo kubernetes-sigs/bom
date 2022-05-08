@@ -17,7 +17,11 @@ limitations under the License.
 package query
 
 import (
+	"fmt"
 	"strings"
+
+	purl "github.com/package-url/packageurl-go"
+	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/bom/pkg/spdx"
 )
@@ -92,6 +96,44 @@ func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Obje
 			return strings.Contains(o.(*spdx.Package).Name, f.Pattern)
 		}
 		return false
+	}), nil
+}
+
+type PurlFilter struct {
+	Pattern string
+}
+
+func (f *PurlFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+	patternPurl, err := purl.FromString(f.Pattern)
+	if err != nil {
+		return nil, fmt.Errorf("parsing purl: %w", err)
+	}
+
+	logrus.Infof("Purl: %s", patternPurl)
+	if patternPurl.Type == "" {
+		patternPurl.Type = "*"
+	}
+
+	if patternPurl.Name == "" {
+		patternPurl.Name = "*"
+	}
+
+	if patternPurl.Version == "" {
+		patternPurl.Version = "*"
+	}
+
+	if patternPurl.Namespace == "" {
+		patternPurl.Namespace = "*"
+	}
+	cycler := ObjectCycler{}
+	return cycler.Cycle(objects, func(o spdx.Object) bool {
+		p, ok := o.(*spdx.Package)
+		if !ok {
+			logrus.Info("No package")
+			return false
+		}
+		logrus.Infof("Package! %s vs %s", p.Purl(), patternPurl)
+		return p.PurlMatches(&patternPurl)
 	}), nil
 }
 

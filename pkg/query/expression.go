@@ -66,6 +66,8 @@ func parseExpression(expString string) (*Expression, error) {
 			exp.Filters = append(exp.Filters, &DepthFilter{
 				TargetDepth: i,
 			})
+		case "purl":
+			exp.Filters = append(exp.Filters, &PurlFilter{Pattern: data})
 		default:
 			return nil, fmt.Errorf("unknown filter: %s", label)
 		}
