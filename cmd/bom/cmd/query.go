@@ -71,7 +71,14 @@ Example:
 
 			fmt.Println(spdx.Banner())
 			for _, o := range fp.Objects {
-				fmt.Printf(" %s\n", o.SPDXID())
+				s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
+				if f, ok := o.(*spdx.File); ok {
+					s = f.FileName
+				} else if p, ok := o.(*spdx.Package); ok {
+					s = p.Name
+				}
+
+				fmt.Printf(" %s\n", s)
 			}
 			return nil
 		},
