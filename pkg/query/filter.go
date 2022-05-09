@@ -132,7 +132,9 @@ func (f *PurlFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Obje
 			logrus.Info("No package")
 			return false
 		}
-		logrus.Infof("Package! %s vs %s", p.Purl(), patternPurl)
+		if p.Purl() == nil {
+			return false
+		}
 		return p.PurlMatches(&patternPurl)
 	}), nil
 }

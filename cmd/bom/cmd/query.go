@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/bom/pkg/query"
 	"sigs.k8s.io/bom/pkg/spdx"
@@ -69,7 +70,15 @@ Example:
 				return fmt.Errorf("querying document: %w", err)
 			}
 
+			if fp.Error != nil {
+				return fmt.Errorf("filter query returned an error: %w", fp.Error)
+			}
+
 			fmt.Println(spdx.Banner())
+			if len(fp.Objects) == 0 {
+				logrus.Warning("No objects in the SBOM match the query")
+				return nil
+			}
 			for _, o := range fp.Objects {
 				s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
 				if f, ok := o.(*spdx.File); ok {
