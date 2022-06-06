@@ -38,6 +38,7 @@ type generateOptions struct {
 	scanImages     bool
 	name           string // Name to use in the document
 	namespace      string
+	format         string
 	outputFile     string
 	configFile     string
 	license        string
@@ -60,6 +61,11 @@ func (opts *generateOptions) Validate() error {
 		len(opts.archives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
+	}
+
+	if opts.format != spdx.FormatTagValue && opts.format != spdx.FormatJSON {
+		return fmt.Errorf("unknown format provided, must be one of [%s, %s]: %s",
+			spdx.FormatTagValue, spdx.FormatJSON, opts.format)
 	}
 
 	// Check if specified local files exist
@@ -236,6 +242,14 @@ completed by a later stage in your CI/CD pipeline. See the
 		"an URI that servers as namespace for the SPDX doc",
 	)
 
+	generateCmd.PersistentFlags().StringVar(
+		&genOpts.format,
+		"format",
+		"tv",
+		fmt.Sprintf("format of the document (supports %s, %s)",
+			spdx.FormatTagValue, spdx.FormatJSON),
+	)
+
 	generateCmd.PersistentFlags().StringVarP(
 		&genOpts.outputFile,
 		"output",
@@ -299,13 +313,15 @@ func generateBOM(opts *generateOptions) error {
 		version.GetVersionInfo().GitVersion,
 	)
 
-	builder := spdx.NewDocBuilder()
+	newDocBuilderOpts := []spdx.NewDocBuilderOption{spdx.WithFormat(spdx.Format(opts.format))}
+	builder := spdx.NewDocBuilder(newDocBuilderOpts...)
 	builderOpts := &spdx.DocGenerateOptions{
 		Tarballs:         opts.imageArchives,
 		Archives:         opts.archives,
 		Files:            opts.files,
 		Images:           opts.images,
 		Directories:      opts.directories,
+		Format:           opts.format,
 		OutputFile:       opts.outputFile,
 		Namespace:        opts.namespace,
 		AnalyseLayers:    opts.analyze,
@@ -330,6 +346,11 @@ func generateBOM(opts *generateOptions) error {
 		markup, err := doc.Render()
 		if err != nil {
 			return errors.Wrap(err, "rendering document")
+		}
+		if opts.format == spdx.FormatJSON {
+			if markup, err = spdx.ConvertTagValueToJSON(markup); err != nil {
+				return errors.Wrap(err, "converting to JSON")
+			}
 		}
 		fmt.Println(markup)
 	}
