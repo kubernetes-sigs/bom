@@ -245,7 +245,7 @@ completed by a later stage in your CI/CD pipeline. See the
 	generateCmd.PersistentFlags().StringVar(
 		&genOpts.format,
 		"format",
-		"tv",
+		spdx.FormatTagValue,
 		fmt.Sprintf("format of the document (supports %s, %s)",
 			spdx.FormatTagValue, spdx.FormatJSON),
 	)
