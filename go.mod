@@ -14,7 +14,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.2
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.11
 	gopkg.in/yaml.v2 v2.4.0
@@ -73,5 +73,9 @@ require (
 	golang.org/x/sys v0.0.0-20220513210249-45d2b4557a2a // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+<<<<<<< HEAD
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
+=======
+	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704 // indirect
+>>>>>>> 111cf36 (build(deps): bump github.com/stretchr/testify from 1.7.1 to 1.7.2)
 )
