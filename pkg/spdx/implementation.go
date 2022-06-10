@@ -219,7 +219,8 @@ func getImageReferences(referenceString string) ([]struct {
 	}{}
 
 	img, err := daemon.Image(ref)
-	if err != nil && !strings.Contains(err.Error(), "Error: No such image") {
+	if err != nil && (!strings.Contains(err.Error(), "Error: No such image") &&
+		!strings.Contains(err.Error(), "Cannot connect to the Docker daemon at")) {
 		return nil, errors.Errorf("could not get image reference %s: %s", referenceString, err)
 	}
 
