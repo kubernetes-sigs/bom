@@ -95,7 +95,7 @@ func TestReadArchiveManifest(t *testing.T) {
 		manifest.ConfigFilename,
 	)
 	require.Equal(t, 1, len(manifest.RepoTags))
-	require.Equal(t, "k8s.gcr.io/kube-apiserver-amd64:v1.22.0-alpha.1", manifest.RepoTags[0])
+	require.Equal(t, "registry.k8s.io/kube-apiserver-amd64:v1.22.0-alpha.1", manifest.RepoTags[0])
 	require.Equal(t, 3, len(manifest.LayerFiles))
 	for i, fname := range []string{
 		"23e140cb8e03a12cba4ac571d9a7143cf5e2e9b72de3b33ce3243b4f7ad6a188/layer.tar",
@@ -270,20 +270,20 @@ iM1273P+Bm/lX4mUvyQlkP8cLvkHdwhFOIQMd4wBG6Oe5y/1Xf6VNhXjlGGXB3+e/yY2O9e2PV/H
 xvnOBTcsF59eCmZT5Cz+yXT/5bX/pMb3P030fw4rlB8AAAAAAAAAAAAAAAAA4CccAXRRwL4AKAAA
 `
 
-var sampleManifest = `[{"Config":"386bcf5c63de46c7066c42d4ae1c38af0689836e88fed37d1dca2d484b343cf5.json","RepoTags":["k8s.gcr.io/kube-apiserver-amd64:v1.22.0-alpha.1"],"Layers":["23e140cb8e03a12cba4ac571d9a7143cf5e2e9b72de3b33ce3243b4f7ad6a188/layer.tar","48dd73ececdf0f52a174ad33a469145824713bd2b73c6257ce1ba8502003ad4e/layer.tar","d397673d78556210baa112013c960cb95a3fd452e5c4a2ead2b26e5a458cd87f/layer.tar"]}]
+var sampleManifest = `[{"Config":"386bcf5c63de46c7066c42d4ae1c38af0689836e88fed37d1dca2d484b343cf5.json","RepoTags":["registry.k8s.io/kube-apiserver-amd64:v1.22.0-alpha.1"],"Layers":["23e140cb8e03a12cba4ac571d9a7143cf5e2e9b72de3b33ce3243b4f7ad6a188/layer.tar","48dd73ececdf0f52a174ad33a469145824713bd2b73c6257ce1ba8502003ad4e/layer.tar","d397673d78556210baa112013c960cb95a3fd452e5c4a2ead2b26e5a458cd87f/layer.tar"]}]
 `
 
 func TestGetImageReferences(t *testing.T) {
-	references, err := getImageReferences("k8s.gcr.io/kube-apiserver:v1.23.0-alpha.3")
+	references, err := getImageReferences("registry.k8s.io/kube-apiserver:v1.23.0-alpha.3")
 	images := map[string]struct {
 		arch string
 		os   string
 	}{
-		"k8s.gcr.io/kube-apiserver@sha256:a82ca097e824f99bfb2b5107aa9c427633f9afb82afd002d59204f39ef81ae70": {"amd64", "linux"},
-		"k8s.gcr.io/kube-apiserver@sha256:2a11e07f916b5982d9a6e3bbf5defd66ad50359c00b33862552063beb6981aec": {"arm", "linux"},
-		"k8s.gcr.io/kube-apiserver@sha256:18f97b8c1c9b7b35dea7ba122d86e23066ce347aa8bb75b7346fed3f79d0ea21": {"arm64", "linux"},
-		"k8s.gcr.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519": {"ppc64le", "linux"},
-		"k8s.gcr.io/kube-apiserver@sha256:3e98f1591a5052791eec71d3c5f5d0fa913140992cb9e1d19fd80a158305c2ff": {"s390x", "linux"},
+		"registry.k8s.io/kube-apiserver@sha256:a82ca097e824f99bfb2b5107aa9c427633f9afb82afd002d59204f39ef81ae70": {"amd64", "linux"},
+		"registry.k8s.io/kube-apiserver@sha256:2a11e07f916b5982d9a6e3bbf5defd66ad50359c00b33862552063beb6981aec": {"arm", "linux"},
+		"registry.k8s.io/kube-apiserver@sha256:18f97b8c1c9b7b35dea7ba122d86e23066ce347aa8bb75b7346fed3f79d0ea21": {"arm64", "linux"},
+		"registry.k8s.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519": {"ppc64le", "linux"},
+		"registry.k8s.io/kube-apiserver@sha256:3e98f1591a5052791eec71d3c5f5d0fa913140992cb9e1d19fd80a158305c2ff": {"s390x", "linux"},
 	}
 	require.NoError(t, err)
 	// This image should have 5 architectures
@@ -296,24 +296,24 @@ func TestGetImageReferences(t *testing.T) {
 	}
 
 	// Test a sha reference. This is the linux/ppc64le image
-	singleRef := "k8s.gcr.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519"
+	singleRef := "registry.k8s.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519"
 	references, err = getImageReferences(singleRef)
 	require.NoError(t, err)
 	require.Len(t, references, 1)
 	require.Equal(t, singleRef, references[0].Digest)
 
 	// Tag with a single image. Image 1.0 is a single image
-	references, err = getImageReferences("k8s.gcr.io/pause:1.0")
+	references, err = getImageReferences("registry.k8s.io/pause:1.0")
 	require.NoError(t, err)
 	require.Len(t, references, 1)
-	require.Equal(t, "k8s.gcr.io/pause@sha256:a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f", references[0].Digest)
+	require.Equal(t, "registry.k8s.io/pause@sha256:a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f", references[0].Digest)
 }
 
 func TestPullImagesToArchive(t *testing.T) {
 	impl := spdxDefaultImplementation{}
 
 	// First. If the tag does not represent an image, expect an error
-	_, err := impl.PullImagesToArchive("k8s.gcr.io/pause:0.0", "/tmp")
+	_, err := impl.PullImagesToArchive("registry.k8s.io/pause:0.0", "/tmp")
 	require.Error(t, err)
 
 	// Create a temp workdir
@@ -322,7 +322,7 @@ func TestPullImagesToArchive(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	// The pause 1.0 image is a single image
-	images, err := impl.PullImagesToArchive("k8s.gcr.io/pause:1.0", dir)
+	images, err := impl.PullImagesToArchive("registry.k8s.io/pause:1.0", dir)
 	require.NoError(t, err)
 	require.Len(t, images, 1)
 	require.FileExists(t, filepath.Join(dir, "a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f.tar"))

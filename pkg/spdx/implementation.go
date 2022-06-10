@@ -219,23 +219,26 @@ func getImageReferences(referenceString string) ([]struct {
 	}{}
 
 	img, err := daemon.Image(ref)
-	if err != nil {
-		return nil, errors.Errorf("could not get image reference %s", referenceString)
+	if err != nil && (!strings.Contains(err.Error(), "Error: No such image") &&
+		!strings.Contains(err.Error(), "Cannot connect to the Docker daemon at")) {
+		return nil, errors.Errorf("could not get image reference %s: %s", referenceString, err)
 	}
 
-	if size, err := img.Size(); err == nil && size > 0 {
-		tag, ok := ref.(name.Tag)
-		if !ok {
-			return nil, errors.Errorf("could not cast tag from reference %s", referenceString)
-		}
+	if img != nil {
+		if size, err := img.Size(); err == nil && size > 0 {
+			tag, ok := ref.(name.Tag)
+			if !ok {
+				return nil, errors.Errorf("could not cast tag from reference %s", referenceString)
+			}
 
-		logrus.Infof("Adding image tag %s from reference", referenceString)
-		return append(images, struct {
-			Digest string
-			Tag    string
-			Arch   string
-			OS     string
-		}{Tag: tag.String()}), nil
+			logrus.Infof("Adding image tag %s from reference", referenceString)
+			return append(images, struct {
+				Digest string
+				Tag    string
+				Arch   string
+				OS     string
+			}{Tag: tag.String()}), nil
+		}
 	}
 
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
@@ -251,6 +254,7 @@ func getImageReferences(referenceString string) ([]struct {
 			Arch   string
 			OS     string
 		}{Digest: ref.(name.Digest).String()})
+		logrus.Infof("Adding image %s", ref)
 		return images, nil
 	}
 
