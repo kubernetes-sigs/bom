@@ -38,7 +38,7 @@ artifacts:
     - type: file
       source: ./SECURITY.md
     - type: image
-      source: k8s.gcr.io/kube-apiserver:v1.22.0-alpha.2
+      source: registry.k8s.io/kube-apiserver:v1.22.0-alpha.2
     - type: docker-archive
       source: tmp/sample-images/kube-apiserver.tar
 `
@@ -59,7 +59,7 @@ func TestYAMLParse(t *testing.T) {
 	require.Equal(t, 1, len(opts.Directories))
 
 	require.Equal(t, "./SECURITY.md", opts.Files[0])
-	require.Equal(t, "k8s.gcr.io/kube-apiserver:v1.22.0-alpha.2", opts.Images[0])
+	require.Equal(t, "registry.k8s.io/kube-apiserver:v1.22.0-alpha.2", opts.Images[0])
 	require.Equal(t, ".", opts.Directories[0])
 	require.Equal(t, "tmp/sample-images/kube-apiserver.tar", opts.Tarballs[0])
 

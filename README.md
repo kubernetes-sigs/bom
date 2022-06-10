@@ -129,7 +129,7 @@ SBOM. Each of its layers are then expressed as a subpackage in the resulting
 document:
 
 ```console
-bom generate -n http://example.com/ --image k8s.gcr.io/kube-apiserver:v1.21.0 
+bom generate -n http://example.com/ --image registry.k8s.io/kube-apiserver:v1.21.0
 ```
 
 ### Generate a SBOM to describe files
@@ -141,7 +141,7 @@ bom generate -n http://example.com/ \
   -f Makefile \
   -f file1.exe \
   -f document.md \
-  -f other/file.txt 
+  -f other/file.txt
 ```
 
 ## Code of conduct
