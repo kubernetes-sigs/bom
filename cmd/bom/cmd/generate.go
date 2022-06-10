@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/bom/pkg/serialize"
 	"sigs.k8s.io/bom/pkg/spdx"
 	"sigs.k8s.io/release-utils/util"
 	"sigs.k8s.io/release-utils/version"
@@ -343,15 +344,17 @@ func generateBOM(opts *generateOptions) error {
 	}
 
 	if opts.outputFile == "" {
-		markup, err := doc.Render()
+		renderer := serialize.JSON{}
+		markup, err := renderer.Serialize(doc)
 		if err != nil {
-			return errors.Wrap(err, "rendering document")
+			return fmt.Errorf("serializing document: %w", err)
 		}
-		if opts.format == spdx.FormatJSON {
-			if markup, err = spdx.ConvertTagValueToJSON(markup); err != nil {
-				return errors.Wrap(err, "converting to JSON")
+		/*
+			markup, err := doc.Render()
+			if err != nil {
+				return errors.Wrap(err, "rendering document")
 			}
-		}
+		*/
 		fmt.Println(markup)
 	}
 

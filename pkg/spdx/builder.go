@@ -323,12 +323,6 @@ func (builder *defaultDocBuilderImpl) WriteDoc(doc *Document, path string) error
 	if err != nil {
 		return errors.Wrap(err, "generating document markup")
 	}
-	if builder.format == FormatJSON {
-		logrus.Info("converting document to JSON")
-		if markup, err = ConvertTagValueToJSON(markup); err != nil {
-			return errors.Wrap(err, "converting to JSON")
-		}
-	}
 	logrus.Infof("writing document to %s", path)
 	return errors.Wrap(
 		os.WriteFile(path, []byte(markup), os.FileMode(0o644)),
