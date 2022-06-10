@@ -42,6 +42,9 @@ func tokenizeExpression(expString string) []string {
 
 func scanToken(token string) (label, value string) {
 	parts := strings.SplitN(token, ":", 2)
+	if len(parts) == 1 {
+		return parts[0], ""
+	}
 	if strings.HasPrefix(parts[1], `"`) && strings.HasSuffix(parts[1], `"`) {
 		parts[1] = strings.TrimPrefix(strings.TrimSuffix(parts[1], `"`), `"`)
 	}
@@ -56,6 +59,8 @@ func parseExpression(expString string) (*Expression, error) {
 	for _, token := range tokens {
 		label, data := scanToken(token)
 		switch label {
+		case "all":
+			exp.Filters = append(exp.Filters, &AllFilter{})
 		case "name":
 			exp.Filters = append(exp.Filters, &NameFilter{Pattern: data})
 		case "depth":
