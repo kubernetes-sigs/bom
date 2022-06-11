@@ -217,6 +217,51 @@ func (p *Package) ComputeVerificationCode() error {
 	return nil
 }
 
+// ComputeLicenseListComputes the license list from the
+// files contained in the package
+func (p *Package) ComputeLicenseList() error {
+	p.LicenseInfoFromFiles = []string{}
+	if !p.FilesAnalyzed {
+		return nil
+	}
+
+	files := p.Files()
+	if len(files) == 0 {
+		return fmt.Errorf("unable to compute license list, package has no files")
+	}
+
+	filesTagList := []string{}
+	for _, f := range files {
+		// Collect the license tags
+		if f.LicenseInfoInFile != "" {
+			collected := false
+			for _, tag := range filesTagList {
+				if tag == f.LicenseInfoInFile {
+					collected = true
+					break
+				}
+			}
+			if !collected {
+				filesTagList = append(filesTagList, f.LicenseInfoInFile)
+			}
+		}
+	}
+
+	for _, tag := range filesTagList {
+		if tag != NONE && tag != NOASSERTION {
+			p.LicenseInfoFromFiles = append(p.LicenseInfoFromFiles, tag)
+		}
+	}
+
+	// If no license tags where collected from files, then the SBOM has
+	// to express "NONE" in the LicenseInfoFromFiles section to be compliant:
+	if len(filesTagList) == 0 {
+		p.LicenseInfoFromFiles = append(p.LicenseInfoFromFiles, NONE)
+	}
+
+	return nil
+}
+
 // Render renders the document fragment of the package
 func (p *Package) Render() (docFragment string, err error) {
 	// First thing, check all relationships
@@ -233,48 +278,17 @@ func (p *Package) Render() (docFragment string, err error) {
 		return "", errors.Wrap(err, "parsing package template")
 	}
 
-	// If files were analyzed, calculate the verification which
-	// is a sha1sum from all sha1 checksumf from included friles.
-	//
-	// Since we are already doing it, we use the same loop to
-	// collect license tags to express them in the LicenseInfoFromFiles
-	// entry of the SPDX package:
-	filesTagList := []string{}
 	if p.FilesAnalyzed {
-		files := p.Files()
-		if len(files) == 0 {
-			return docFragment, errors.New("unable to get package verification code, package has no files")
-		}
+		// If files were analyzed, calculate the verification which
+		// is a sha1sum from all sha1 checksum from contained files.
 		if err := p.ComputeVerificationCode(); err != nil {
 			return "", fmt.Errorf("computing verification code: %w", err)
 		}
 
-		for _, f := range files {
-			// Collect the license tags
-			if f.LicenseInfoInFile != "" {
-				collected := false
-				for _, tag := range filesTagList {
-					if tag == f.LicenseInfoInFile {
-						collected = true
-						break
-					}
-				}
-				if !collected {
-					filesTagList = append(filesTagList, f.LicenseInfoInFile)
-				}
-			}
-		}
-
-		for _, tag := range filesTagList {
-			if tag != NONE && tag != NOASSERTION {
-				p.LicenseInfoFromFiles = append(p.LicenseInfoFromFiles, tag)
-			}
-		}
-
-		// If no license tags where collected from files, then the BOM has
-		// to express "NONE" in the LicenseInfoFromFiles section to be compliant:
-		if len(filesTagList) == 0 {
-			p.LicenseInfoFromFiles = append(p.LicenseInfoFromFiles, NONE)
+		// Extract the ltest license tags from the contained files
+		// these MUST be listed in the LicenseInfoFromFiles tag
+		if err := p.ComputeVerificationCode(); err != nil {
+			return "", fmt.Errorf("computing verification code: %w", err)
 		}
 	}
 

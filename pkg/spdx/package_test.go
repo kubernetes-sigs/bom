@@ -17,6 +17,7 @@ limitations under the License.
 package spdx
 
 import (
+	"fmt"
 	"testing"
 
 	purl "github.com/package-url/packageurl-go"
@@ -139,10 +140,15 @@ func TestPurlMatches(t *testing.T) {
 	}
 }
 
-func TestComputeVerificationCode(t *testing.T) {
-	p := Package{}
-	p.FilesAnalyzed = true
+func genTestPackage() (p *Package) {
+	p = NewPackage()
 	p.Name = "testPackage"
+	return p
+}
+
+func TestComputeVerificationCode(t *testing.T) {
+	p := genTestPackage()
+	p.FilesAnalyzed = true
 
 	// If package has no files, it should return an empty code
 	require.NoError(t, p.ComputeVerificationCode())
@@ -175,4 +181,66 @@ func TestComputeVerificationCode(t *testing.T) {
 	p.FilesAnalyzed = false
 	require.NoError(t, p.ComputeVerificationCode())
 	require.Equal(t, "", p.VerificationCode)
+}
+
+func TestComputeLicenseList(t *testing.T) {
+	p := genTestPackage()
+	p.FilesAnalyzed = true
+	p.LicenseConcluded = "GPL-2.0-only"
+	p.Name = "testPackage"
+
+	licenses := []string{
+		"Apache-2.0",
+		"BSD-2-Clause",
+		"Spencer-94",
+		"Spencer-94",
+		"Apache-2.0",
+		"Apache-2.0",
+		"Apache-2.0",
+	}
+
+	unique := []string{
+		"Apache-2.0",
+		"BSD-2-Clause",
+		"Spencer-94",
+	}
+
+	for i, l := range licenses {
+		f := NewFile()
+		f.Name = fmt.Sprintf("file%d.txt", i)
+		f.LicenseInfoInFile = l
+		require.NoError(t, p.AddFile(f))
+	}
+	require.NoError(t, p.ComputeLicenseList())
+	require.ElementsMatch(t, p.LicenseInfoFromFiles, unique)
+
+	// FilesAnalyzed=false should not return a list
+	p.FilesAnalyzed = false
+	require.NoError(t, p.ComputeLicenseList())
+	require.Empty(t, p.LicenseInfoFromFiles)
+
+	noLicenses := []string{NONE}
+
+	// Package License concluded must not filter into the
+	// license list unless found in a file
+	p = genTestPackage()
+	p.FilesAnalyzed = true
+	p.LicenseConcluded = "GPL-2.0-only"
+
+	f := NewFile()
+	f.Name = "file.txt"
+	require.NoError(t, p.AddFile(f))
+	require.NoError(t, p.ComputeLicenseList())
+	require.Equal(t, noLicenses, p.LicenseInfoFromFiles)
+
+	// Same with licenses concluded in files
+	p = genTestPackage()
+	p.FilesAnalyzed = true
+
+	f = NewFile()
+	f.Name = "file.txt"
+	f.LicenseConcluded = "Apache-2.0"
+	require.NoError(t, p.AddFile(f))
+	require.NoError(t, p.ComputeLicenseList())
+	require.Equal(t, noLicenses, p.LicenseInfoFromFiles)
 }
