@@ -344,17 +344,18 @@ func generateBOM(opts *generateOptions) error {
 	}
 
 	if opts.outputFile == "" {
-		renderer := serialize.JSON{}
+		var renderer serialize.Serializer
+		if opts.format == "json" {
+			renderer = &serialize.JSON{}
+		} else {
+			renderer = &serialize.TagValue{}
+		}
+
 		markup, err := renderer.Serialize(doc)
 		if err != nil {
 			return fmt.Errorf("serializing document: %w", err)
 		}
-		/*
-			markup, err := doc.Render()
-			if err != nil {
-				return errors.Wrap(err, "rendering document")
-			}
-		*/
+
 		fmt.Println(markup)
 	}
 
