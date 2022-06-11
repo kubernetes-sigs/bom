@@ -81,6 +81,14 @@ func searchDepth(objectSet map[string]spdx.Object, currentDepth, targetDepth uin
 	return searchDepth(res, currentDepth+1, targetDepth)
 }
 
+// AllFilter matches everything
+type AllFilter struct{}
+
+func (f *AllFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+	cycler := ObjectCycler{}
+	return cycler.CycleFull(objects, func(spdx.Object) bool { return true }), nil
+}
+
 type NameFilter struct {
 	Pattern string
 }
@@ -147,6 +155,12 @@ func (cycler *ObjectCycler) Cycle(objects map[string]spdx.Object, fn MatcherFunc
 	return doRecursion(objects, fn, &map[string]struct{}{})
 }
 
+func (cycler *ObjectCycler) CycleFull(objects map[string]spdx.Object, fn MatcherFunction) map[string]spdx.Object {
+	return doFullRecursion(objects, fn, &map[string]struct{}{})
+}
+
+// Recursion will traverse the SBOM graph and return the element that
+// matches the query without continuing down its relationships
 func doRecursion(
 	// nolint:gocritic // seen is passed recursively
 	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},
@@ -177,6 +191,45 @@ func doRecursion(
 			}
 		}
 		filteredSet := doRecursion(subSet, fn, seen)
+		for _, o := range filteredSet {
+			newSet[o.SPDXID()] = o
+		}
+	}
+	return newSet
+}
+
+// doFullRecursion will probe all objects in the sbom, when matching an
+// object, it will continue traversing its relationships returning all
+// matching objects in a flat array
+func doFullRecursion(
+	// nolint:gocritic // seen is passed recursively
+	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},
+) map[string]spdx.Object {
+	newSet := map[string]spdx.Object{}
+	for _, o := range objects {
+		if o.SPDXID() == "" {
+			continue
+		}
+		if _, ok := (*seen)[o.SPDXID()]; ok {
+			continue
+		}
+		(*seen)[o.SPDXID()] = struct{}{}
+
+		if fn(o) {
+			newSet[o.SPDXID()] = o
+		}
+
+		// do a new recursion on the related objects
+		subSet := map[string]spdx.Object{}
+		for _, r := range *o.GetRelationships() {
+			if r.Peer != nil && r.Peer.SPDXID() != "" {
+				// We only recurse on the first match of each object
+				if _, ok := subSet[r.Peer.SPDXID()]; !ok {
+					subSet[r.Peer.SPDXID()] = r.Peer
+				}
+			}
+		}
+		filteredSet := doFullRecursion(subSet, fn, seen)
 		for _, o := range filteredSet {
 			newSet[o.SPDXID()] = o
 		}

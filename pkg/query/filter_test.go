@@ -144,17 +144,4 @@ func TestPurl(t *testing.T) {
 		}
 		require.Len(t, newResults.Objects, tc.num)
 	}
-
-	//fr := testFilterResults()
-	//newResults := fr.Apply(&PurlFilter{Pattern: "pkg:oci/*/*"})
-	//require.Len(t, newResults.Objects, 2)
-
-	//fr = testFilterResults()
-	//newResults = fr.Apply(&PurlFilter{Pattern: })
-	//require.Len(t, newResults.Objects, 1)
-
-	// Match the two image packages
-	//fr = testFilterResults()
-	//newResults = fr.Apply(&PurlFilter{Pattern: "puerco-chainguard"})
-	//require.Len(t, newResults.Objects, 2)
 }
