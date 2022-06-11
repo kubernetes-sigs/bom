@@ -20,7 +20,7 @@ package spdx
 type Format string
 
 // FormatTagValue is the default format for an SPDX document.
-const FormatTagValue = "tag:value"
+const FormatTagValue = "tag-value"
 
 // FormatJSON is the JSON format for an SPDX document.
-const FormatJSON = "JSON"
+const FormatJSON = "json"

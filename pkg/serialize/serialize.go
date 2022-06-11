@@ -118,7 +118,8 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 			}
 		}
 	}
-	output, err := gojson.Marshal(jsonDoc)
+
+	output, err := gojson.MarshalIndent(jsonDoc, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("marshaling document json: %w", err)
 	}
