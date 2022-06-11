@@ -179,6 +179,44 @@ func (p *Package) Files() []*File {
 	return ret
 }
 
+// ComputeVerificationCode calculates the package verification
+// code according to the SPDX spec
+func (p *Package) ComputeVerificationCode() error {
+	files := p.Files()
+	p.VerificationCode = ""
+
+	// If files where not analyzed, the code is not required
+	if !p.FilesAnalyzed {
+		return nil
+	}
+
+	// If there are no files, the code is not required
+	if len(files) == 0 {
+		return nil
+	}
+	shaList := []string{}
+	for _, f := range files {
+		if f.Checksum == nil {
+			return fmt.Errorf("unable to render package, file has no checksums")
+		}
+		if _, ok := f.Checksum["SHA1"]; !ok {
+			return fmt.Errorf(
+				"unable to render package, files were analyzed but some do not have sha1 checksums",
+			)
+		}
+		shaList = append(shaList, f.Checksum["SHA1"])
+	}
+
+	// Sort the strings:
+	sort.Strings(shaList)
+	h := sha1.New()
+	if _, err := h.Write([]byte(strings.Join(shaList, ""))); err != nil {
+		return fmt.Errorf("getting SHA1 verification of files: %w", err)
+	}
+	p.VerificationCode = fmt.Sprintf("%x", h.Sum(nil))
+	return nil
+}
+
 // Render renders the document fragment of the package
 func (p *Package) Render() (docFragment string, err error) {
 	// First thing, check all relationships
@@ -207,16 +245,11 @@ func (p *Package) Render() (docFragment string, err error) {
 		if len(files) == 0 {
 			return docFragment, errors.New("unable to get package verification code, package has no files")
 		}
-		shaList := []string{}
-		for _, f := range files {
-			if f.Checksum == nil {
-				return docFragment, errors.New("unable to render package, file has no checksums")
-			}
-			if _, ok := f.Checksum["SHA1"]; !ok {
-				return docFragment, errors.New("unable to render package, files were analyzed but some do not have sha1 checksum")
-			}
-			shaList = append(shaList, f.Checksum["SHA1"])
+		if err := p.ComputeVerificationCode(); err != nil {
+			return "", fmt.Errorf("computing verification code: %w", err)
+		}
 
+		for _, f := range files {
 			// Collect the license tags
 			if f.LicenseInfoInFile != "" {
 				collected := false
@@ -231,12 +264,6 @@ func (p *Package) Render() (docFragment string, err error) {
 				}
 			}
 		}
-		sort.Strings(shaList)
-		h := sha1.New()
-		if _, err := h.Write([]byte(strings.Join(shaList, ""))); err != nil {
-			return docFragment, errors.Wrap(err, "getting sha1 verification of files")
-		}
-		p.VerificationCode = fmt.Sprintf("%x", h.Sum(nil))
 
 		for _, tag := range filesTagList {
 			if tag != NONE && tag != NOASSERTION {

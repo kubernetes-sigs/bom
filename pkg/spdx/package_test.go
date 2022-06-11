@@ -138,3 +138,41 @@ func TestPurlMatches(t *testing.T) {
 		require.Equal(t, sut.PurlMatches(&tc.spec), tc.mustMatch, tc.spec)
 	}
 }
+
+func TestComputeVerificationCode(t *testing.T) {
+	p := Package{}
+	p.FilesAnalyzed = true
+	p.Name = "testPackage"
+
+	// If package has no files, it should return an empty code
+	require.NoError(t, p.ComputeVerificationCode())
+	require.Equal(t, "", p.VerificationCode)
+
+	// Add bunch of files
+	for _, s1 := range []string{
+		"2dce2a1b847cf337770abcf2f5a23fdb4150826a",
+		"637ca3c1d37083c3de7f5928b1cec99f4495adc7",
+		"05dd7d2e432a28126fe7b41c7cc1458b2936af8d",
+		"805914c62e61ef0e5c8a23b4a388adf9c7154845",
+	} {
+		f := NewFile()
+		f.Name = s1 + ".txt"
+		f.Checksum = map[string]string{"SHA1": s1}
+		require.NoError(t, p.AddFile(f))
+	}
+
+	// Code should be generated correctly
+	require.NoError(t, p.ComputeVerificationCode())
+	require.Equal(t, "7772199fd355003bfd91c7d946404685da0c5bb0", p.VerificationCode)
+
+	// A file without a checksum should make the sum fail
+	f := NewFile()
+	f.Name = "test.txt"
+	require.NoError(t, p.AddFile(f))
+	require.Error(t, p.ComputeVerificationCode())
+
+	// If FilesAnalyzed is false, the code should be empty
+	p.FilesAnalyzed = false
+	require.NoError(t, p.ComputeVerificationCode())
+	require.Equal(t, "", p.VerificationCode)
+}
