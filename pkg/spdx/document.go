@@ -483,6 +483,23 @@ func (d *Document) GetElementByID(id string) Object {
 func (d *Document) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
 	seen := map[string]struct{}{}
 	foundPackages := []*Package{}
+
+	if purlSpec.Type == "" {
+		purlSpec.Type = "*"
+	}
+
+	if purlSpec.Name == "" {
+		purlSpec.Name = "*"
+	}
+
+	if purlSpec.Version == "" {
+		purlSpec.Version = "*"
+	}
+
+	if purlSpec.Namespace == "" {
+		purlSpec.Namespace = "*"
+	}
+
 	for _, p := range d.Packages {
 		foundPackages = append(foundPackages, recursivePurlSearch(purlSpec, p, &seen, opts...)...)
 	}
