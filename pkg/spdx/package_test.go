@@ -135,8 +135,27 @@ func TestPurlMatches(t *testing.T) {
 			Type:     "purl",
 			Locator:  tc.purl,
 		})
+		wildcardizePurl(&tc.spec)
+		require.Equal(t, tc.mustMatch, sut.PurlMatches(&tc.spec), tc.spec)
+	}
+}
 
-		require.Equal(t, sut.PurlMatches(&tc.spec), tc.mustMatch, tc.spec)
+// The spec for searching has to have wildcards
+func wildcardizePurl(purlSpec *purl.PackageURL) {
+	if purlSpec.Type == "" {
+		purlSpec.Type = "*"
+	}
+
+	if purlSpec.Name == "" {
+		purlSpec.Name = "*"
+	}
+
+	if purlSpec.Version == "" {
+		purlSpec.Version = "*"
+	}
+
+	if purlSpec.Namespace == "" {
+		purlSpec.Namespace = "*"
 	}
 }
 
