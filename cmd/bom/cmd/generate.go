@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/bom/pkg/serialize"
 	"sigs.k8s.io/bom/pkg/spdx"
 	"sigs.k8s.io/release-utils/util"
 	"sigs.k8s.io/release-utils/version"
@@ -38,6 +39,7 @@ type generateOptions struct {
 	scanImages     bool
 	name           string // Name to use in the document
 	namespace      string
+	format         string
 	outputFile     string
 	configFile     string
 	license        string
@@ -60,6 +62,11 @@ func (opts *generateOptions) Validate() error {
 		len(opts.archives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
+	}
+
+	if opts.format != spdx.FormatTagValue && opts.format != spdx.FormatJSON {
+		return fmt.Errorf("unknown format provided, must be one of [%s, %s]: %s",
+			spdx.FormatTagValue, spdx.FormatJSON, opts.format)
 	}
 
 	// Check if specified local files exist
@@ -236,6 +243,14 @@ completed by a later stage in your CI/CD pipeline. See the
 		"an URI that servers as namespace for the SPDX doc",
 	)
 
+	generateCmd.PersistentFlags().StringVar(
+		&genOpts.format,
+		"format",
+		spdx.FormatTagValue,
+		fmt.Sprintf("format of the document (supports %s, %s)",
+			spdx.FormatTagValue, spdx.FormatJSON),
+	)
+
 	generateCmd.PersistentFlags().StringVarP(
 		&genOpts.outputFile,
 		"output",
@@ -299,13 +314,15 @@ func generateBOM(opts *generateOptions) error {
 		version.GetVersionInfo().GitVersion,
 	)
 
-	builder := spdx.NewDocBuilder()
+	newDocBuilderOpts := []spdx.NewDocBuilderOption{spdx.WithFormat(spdx.Format(opts.format))}
+	builder := spdx.NewDocBuilder(newDocBuilderOpts...)
 	builderOpts := &spdx.DocGenerateOptions{
 		Tarballs:         opts.imageArchives,
 		Archives:         opts.archives,
 		Files:            opts.files,
 		Images:           opts.images,
 		Directories:      opts.directories,
+		Format:           opts.format,
 		OutputFile:       opts.outputFile,
 		Namespace:        opts.namespace,
 		AnalyseLayers:    opts.analyze,
@@ -327,10 +344,18 @@ func generateBOM(opts *generateOptions) error {
 	}
 
 	if opts.outputFile == "" {
-		markup, err := doc.Render()
-		if err != nil {
-			return errors.Wrap(err, "rendering document")
+		var renderer serialize.Serializer
+		if opts.format == "json" {
+			renderer = &serialize.JSON{}
+		} else {
+			renderer = &serialize.TagValue{}
 		}
+
+		markup, err := renderer.Serialize(doc)
+		if err != nil {
+			return fmt.Errorf("serializing document: %w", err)
+		}
+
 		fmt.Println(markup)
 	}
 

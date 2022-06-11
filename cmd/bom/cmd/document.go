@@ -35,9 +35,60 @@ func AddDocument(parent *cobra.Command) {
 	}
 
 	AddOutline(documentCmd)
+	AddQuery(documentCmd)
 	parent.AddCommand(documentCmd)
 }
 
+/*
+func AddQuery(parent *cobra.Command) {
+	queryCmd := &cobra.Command{
+		Short:             "bom document query → Query for data in an SPDX document",
+		Use:               "query SPDX_FILE",
+		SilenceUsage:      false,
+		SilenceErrors:     false,
+		PersistentPreRunE: initLogging,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 {
+				cmd.Help()
+				return nil
+			}
+			doc, err := spdx.OpenDoc(args[0])
+			if err != nil {
+				return errors.Wrap(err, "opening document")
+			}
+
+			// Parse the purl
+			pquery, err := purl.FromString(args[1])
+			if err != nil {
+				return errors.Wrap(err, "parsing purl")
+			}
+
+			// Create the purl we will use to query
+			var purlType, purlNamespace, purlName, purlVersion string
+			if pquery.Type != "*" {
+				purlType = pquery.Type
+			}
+			if pquery.Name != "*" {
+				purlName = pquery.Name
+			}
+			if pquery.Version != "*" {
+				purlVersion = pquery.Version
+			}
+			if pquery.Namespace != "*" {
+				purlNamespace = pquery.Namespace
+			}
+			pSpec := purl.NewPackageURL(purlType, purlNamespace, purlName, purlVersion, purl.Qualifiers{}, "")
+
+			pkgs := doc.GetPackagesByPurl(pSpec)
+			for _, pk := range pkgs {
+				fmt.Printf("%s (%s)\n", pk.Name, pk.Purl())
+			}
+			return nil
+		},
+	}
+	parent.AddCommand(queryCmd)
+}
+*/
 func AddOutline(parent *cobra.Command) {
 	outlineOpts := &spdx.DrawingOptions{}
 	outlineCmd := &cobra.Command{

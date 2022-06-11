@@ -35,6 +35,7 @@ import (
 
 	"github.com/google/uuid"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
@@ -465,16 +466,47 @@ func (d *Document) ensureUniquePeerIDs(rels *[]*Relationship) {
 func (d *Document) GetElementByID(id string) Object {
 	seen := map[string]struct{}{}
 	for _, p := range d.Packages {
-		if sub := recursiveSearch(id, p, &seen); sub != nil {
+		if sub := recursiveIDSearch(id, p, &seen); sub != nil {
 			return sub
 		}
 	}
 	for _, f := range d.Files {
-		if sub := recursiveSearch(id, f, &seen); sub != nil {
+		if sub := recursiveIDSearch(id, f, &seen); sub != nil {
 			return sub
 		}
 	}
 	return nil
+}
+
+// GetPackagesByPurl queries the document packages and returns all that
+// match the specified purl bits
+func (d *Document) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
+	seen := map[string]struct{}{}
+	foundPackages := []*Package{}
+
+	if purlSpec.Type == "" {
+		purlSpec.Type = "*"
+	}
+
+	if purlSpec.Name == "" {
+		purlSpec.Name = "*"
+	}
+
+	if purlSpec.Version == "" {
+		purlSpec.Version = "*"
+	}
+
+	if purlSpec.Namespace == "" {
+		purlSpec.Namespace = "*"
+	}
+
+	for _, p := range d.Packages {
+		foundPackages = append(foundPackages, recursivePurlSearch(purlSpec, p, &seen, opts...)...)
+	}
+	for _, f := range d.Files {
+		foundPackages = append(foundPackages, recursivePurlSearch(purlSpec, f, &seen, opts...)...)
+	}
+	return foundPackages
 }
 
 type ValidationResults struct {

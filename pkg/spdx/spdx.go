@@ -26,6 +26,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -251,10 +252,10 @@ func Banner() string {
 	return string(d)
 }
 
-// recursiveSearch is a function that recursively searches an object's peers
+// recursiveIDSearch is a function that recursively searches an object's peers
 // to find the specified SPDX ID. If found, returns a copy of the object.
 // nolint:gocritic // seen is a pointer recursively populated
-func recursiveSearch(id string, o Object, seen *map[string]struct{}) Object {
+func recursiveIDSearch(id string, o Object, seen *map[string]struct{}) Object {
 	if o.SPDXID() == id {
 		return o
 	}
@@ -271,9 +272,48 @@ func recursiveSearch(id string, o Object, seen *map[string]struct{}) Object {
 			return rel.Peer
 		}
 
-		if peerObject := recursiveSearch(id, rel.Peer, seen); peerObject != nil {
+		if peerObject := recursiveIDSearch(id, rel.Peer, seen); peerObject != nil {
 			return peerObject
 		}
 	}
 	return nil
+}
+
+// recursivePurlSearch is a function that recursively searches an object's peers
+// to find those that match the purl parts defined. If found, returns a copy of
+// the object.
+// nolint:gocritic // seen is a pointer recursively populated
+func recursivePurlSearch(purlSpec *purl.PackageURL, o Object, seen *map[string]struct{}, opts ...PurlSearchOption) []*Package {
+	foundPackages := []*Package{}
+	// Only packages can express purls
+	if p, ok := o.(*Package); ok {
+		if p.PurlMatches(purlSpec, opts...) {
+			foundPackages = append(foundPackages, o.(*Package))
+		}
+	}
+
+	(*seen)[o.SPDXID()] = struct{}{}
+
+	for _, rel := range *o.GetRelationships() {
+		if rel.Peer == nil {
+			continue
+		}
+
+		if _, ok := (*seen)[rel.Peer.SPDXID()]; ok {
+			continue
+		}
+
+		(*seen)[o.SPDXID()] = struct{}{}
+
+		more := recursivePurlSearch(purlSpec, rel.Peer, seen, opts...)
+		foundPackages = append(foundPackages, more...)
+
+		// If object is not a package. we're done
+		if p, ok := rel.Peer.(*Package); !ok {
+			if p.PurlMatches(purlSpec, opts...) {
+				foundPackages = append(foundPackages, p)
+			}
+		}
+	}
+	return foundPackages
 }

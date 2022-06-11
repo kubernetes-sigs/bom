@@ -48,10 +48,32 @@ type YamlBOMConfiguration struct {
 	Artifacts       []*YamlBuildArtifact  `yaml:"artifacts"`
 }
 
-func NewDocBuilder() *DocBuilder {
+// NewDocBuilderOption is a function with operates on a newDocBuilderSettings object.
+type NewDocBuilderOption func(*newDocBuilderSettings)
+
+type newDocBuilderSettings struct {
+	format Format
+}
+
+// WithFormat returns an NewDocBuilderOption setting the format.
+func WithFormat(format Format) NewDocBuilderOption {
+	return func(settings *newDocBuilderSettings) {
+		settings.format = format
+	}
+}
+
+func NewDocBuilder(options ...NewDocBuilderOption) *DocBuilder {
+	settings := &newDocBuilderSettings{
+		format: FormatTagValue,
+	}
+	for _, option := range options {
+		option(settings)
+	}
 	db := &DocBuilder{
 		options: &defaultDocBuilderOpts,
-		impl:    &defaultDocBuilderImpl{},
+		impl: &defaultDocBuilderImpl{
+			format: settings.format,
+		},
 	}
 	return db
 }
@@ -94,6 +116,7 @@ type DocGenerateOptions struct {
 	ScanLicenses        bool                  // Try to look into files to determine their license
 	ScanImages          bool                  // When true, scan images for OS information
 	ConfigFile          string                // Path to SBOM configuration file
+	Format              string                // Output format
 	OutputFile          string                // Output location
 	Name                string                // Name to use in the resulting document
 	Namespace           string                // Namespace for the document (a unique URI)
@@ -146,7 +169,9 @@ type DocBuilderImplementation interface {
 
 // defaultDocBuilderImpl is the default implementation for the
 // SPDX document builder
-type defaultDocBuilderImpl struct{}
+type defaultDocBuilderImpl struct {
+	format Format
+}
 
 // Generate generates a document
 func (builder *defaultDocBuilderImpl) GenerateDoc(
