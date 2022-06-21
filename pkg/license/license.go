@@ -20,8 +20,8 @@ package license
 
 import (
 	"bufio"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,7 +74,7 @@ func (r *Reader) SetImplementation(i ReaderImplementation) error {
 	r.impl = i
 	return fmt.Errorf(
 		"initializing the reader implementation: %w",
-		r.impl.Initialize(r.Options)
+		r.impl.Initialize(r.Options),
 	)
 }
 
@@ -336,7 +336,7 @@ func (license *License) WriteText(filePath string) error {
 		"while writing license to text file: %w",
 		os.WriteFile(
 			filePath, []byte(license.LicenseText), os.FileMode(0o644),
-		)
+		),
 	)
 }
 
