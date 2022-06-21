@@ -183,7 +183,10 @@ func (d *ReaderDefaultImpl) Initialize(opts *ReaderOptions) error {
 
 	// Create the implementation's classifier
 	d.lc = licenseclassifier.NewClassifier(opts.ConfidenceThreshold)
-	return fmt.Errorf("loading licenses at init: %w", d.lc.LoadLicenses(opts.LicensesPath()))
+	if err := d.lc.LoadLicenses(opts.LicensesPath()); err != nil {
+		return fmt.Errorf("loading licenses at init: %w", err)
+	}
+	return nil
 }
 
 // Classifier returns the license classifier

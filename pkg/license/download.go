@@ -203,7 +203,10 @@ func (ddi *DefaultDownloaderImpl) cacheData(url string, data []byte) error {
 			return fmt.Errorf("creating cache directory: %w", err)
 		}
 	}
-	return fmt.Errorf("writing cache file: %w", os.WriteFile(cacheFileName, data, os.FileMode(0o644)))
+	if err = os.WriteFile(cacheFileName, data, os.FileMode(0o644)); err != nil {
+		return fmt.Errorf("writing cache file: %w", err)
+	}
+	return nil
 }
 
 // getCachedData returns cached data for an URL if we have it
