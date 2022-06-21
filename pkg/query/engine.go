@@ -17,9 +17,9 @@ limitations under the License.
 package query
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
@@ -39,7 +39,7 @@ func New() *Engine {
 func (e *Engine) Open(path string) error {
 	doc, err := spdx.OpenDoc(path)
 	if err != nil {
-		return errors.Wrap(err, "opening doc")
+		return fmt.Errorf("opening doc: %w", err)
 	}
 	e.Document = doc
 	return nil
