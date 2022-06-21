@@ -25,11 +25,12 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"errors"
+
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/pkg/archive"
 	"github.com/carolynvs/magex/pkg/downloads"
 	"github.com/magefile/mage/sh"
-	"github.com/pkg/errors"
 
 	"sigs.k8s.io/release-utils/mage"
 )

@@ -19,7 +19,7 @@ package provenance_test
 import (
 	"testing"
 
-	"github.com/pkg/errors"
+	"errors"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/stretchr/testify/require"
