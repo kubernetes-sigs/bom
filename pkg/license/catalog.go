@@ -17,6 +17,7 @@ limitations under the License.
 package license
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -43,7 +44,7 @@ func NewCatalogWithOptions(opts *CatalogOptions) (catalog *Catalog, err error) {
 	doptions.CacheDir = opts.CacheDir
 	downloader, err := NewDownloaderWithOptions(doptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating downloader")
+		return nil, fmt.Errorf("creating downloader: %w", err)
 	}
 	catalog = &Catalog{
 		Downloader: downloader,
@@ -63,7 +64,7 @@ func (catalog *Catalog) LoadLicenses() error {
 	logrus.Info("Loading license data from downloader")
 	licenses, err := catalog.Downloader.GetLicenses()
 	if err != nil {
-		return errors.Wrap(err, "getting licenses from downloader")
+		return fmt.Errorf("getting licenses from downloader: %w", err)
 	}
 	catalog.List = licenses
 	logrus.Infof("Got %d licenses from downloader", len(licenses.Licenses))
@@ -85,7 +86,7 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 	}
 	if !util.Exists(targetDir) {
 		if err := os.MkdirAll(targetDir, os.FileMode(0o755)); err != nil {
-			return errors.Wrap(err, "creating license data dir")
+			return fmt.Errorf("creating license data dir: %w", err)
 		}
 	}
 	wg := sync.WaitGroup{}
@@ -101,13 +102,13 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 				if err == nil {
 					err = lerr
 				} else {
-					err = errors.Wrap(err, lerr.Error())
+					err = fmt.Errorf(lerr.Error(), err)
 				}
 			}
 		}(l)
 	}
 	wg.Wait()
-	return errors.Wrap(err, "caught errors while writing license files")
+	return fmt.Errorf("caught errors while writing license files: %w", err)
 }
 
 // GetLicense returns a license struct from its SPDX ID label

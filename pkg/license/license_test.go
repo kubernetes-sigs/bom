@@ -17,11 +17,11 @@ limitations under the License.
 package license_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/bom/pkg/license"
