@@ -17,11 +17,11 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -82,7 +82,7 @@ func (opts *generateOptions) Validate() error {
 		// Check if image archives exist
 		for i, iPath := range col.Items {
 			if !isGlob(iPath) && !util.Exists(iPath) {
-				return errors.Errorf("%s #%d not found (%s)", col.Name, i+1, iPath)
+				return fmt.Errorf("%s #%d not found (%s)", col.Name, i+1, iPath)
 			}
 		}
 	}
@@ -127,11 +127,11 @@ completed by a later stage in your CI/CD pipeline. See the
 				}
 				file, err := os.Open(arg)
 				if err != nil {
-					return errors.Wrapf(err, "checking argument %d", i)
+					return fmt.Errorf("checking argument %d: %w", i, err)
 				}
 				fileInfo, err := file.Stat()
 				if err != nil {
-					return errors.Wrapf(err, "calling stat on argument %d", i)
+					return fmt.Errorf("calling stat on argument %d: %w", i, err)
 				}
 				if fileInfo.IsDir() {
 					genOpts.directories = append(genOpts.directories, arg)
@@ -140,7 +140,7 @@ completed by a later stage in your CI/CD pipeline. See the
 
 			if err := genOpts.Validate(); err != nil {
 				cmd.Help() // nolint:errcheck // We already errored
-				return errors.Wrap(err, "validating command line options")
+				return fmt.Errorf("validating command line options: %w", err)
 			}
 
 			return generateBOM(genOpts)
@@ -174,7 +174,7 @@ completed by a later stage in your CI/CD pipeline. See the
 	if err := generateCmd.PersistentFlags().MarkDeprecated(
 		"tarball", "tarball has been renamed to image-archive",
 	); err != nil {
-		logrus.Fatal(errors.Wrap(err, "marking flag as deprecated"))
+		logrus.Fatalf("marking flag as deprecated: %v", err)
 	}
 
 	generateCmd.PersistentFlags().StringSliceVar(
@@ -340,7 +340,7 @@ func generateBOM(opts *generateOptions) error {
 	}
 	doc, err := builder.Generate(builderOpts)
 	if err != nil {
-		return errors.Wrap(err, "generating doc")
+		return fmt.Errorf("generating doc: %w", err)
 	}
 
 	if opts.outputFile == "" {
@@ -364,7 +364,7 @@ func generateBOM(opts *generateOptions) error {
 		if err := doc.WriteProvenanceStatement(
 			spdx.DefaultProvenanceOptions, opts.provenancePath,
 		); err != nil {
-			return errors.Wrap(err, "writing SBOM as provenance statement")
+			return fmt.Errorf("writing SBOM as provenance statement: %w", err)
 		}
 	}
 

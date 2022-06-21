@@ -17,10 +17,10 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/bom/pkg/query"
@@ -58,7 +58,7 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				cmd.Help() // nolint:errcheck
-				return errors.New("You should only specify one file")
+				return errors.New("you should only specify one file")
 			}
 
 			q := query.New()
