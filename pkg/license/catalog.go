@@ -108,7 +108,11 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 		}(l)
 	}
 	wg.Wait()
-	return fmt.Errorf("caught errors while writing license files: %w", err)
+
+	if err != nil {
+		return fmt.Errorf("caught errors while writing license files: %w", err)
+	}
+	return nil
 }
 
 // GetLicense returns a license struct from its SPDX ID label
