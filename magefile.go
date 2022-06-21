@@ -168,21 +168,21 @@ func BuildStaging() error {
 	}
 
 	if err := Build(); err != nil {
-		return errors.Wrap(err, "building the binaries")
+		return fmt.Errorf("building the binaries: %w", err)
 	}
 
 	if err := BuildImages(); err != nil {
-		return errors.Wrap(err, "building the images")
+		return fmt.Errorf("building the images: %w", err)
 	}
 
 	// if err := sh.RunV("cd", "output"); err != nil {
-	// 	return errors.Wrap(err, "cd into output directory")
+	// 	return fmt.Errorf("cd into output directory: %w", err)
 	// }
 
 	// if err := sh.RunV("./bom-linux-amd64", "output", "generate", "-f", "bom-darwin-amd64",
 	// 	"-f", "bom-darwin-arm64", "-f", "bom-linux-amd64", "-f", "bom-linux-arm64",
 	// 	"-f", "bom-windows-amd64.exe", "-d", "../", "-o", "bom-sbom.sdpx"); err != nil {
-	// 	return errors.Wrap(err, "generating the bom")
+	// 	return fmt.Errorf("generating the bom: %w", err)
 	// }
 
 	return nil
