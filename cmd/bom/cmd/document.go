@@ -17,9 +17,9 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/bom/pkg/spdx"
@@ -54,13 +54,13 @@ func AddQuery(parent *cobra.Command) {
 			}
 			doc, err := spdx.OpenDoc(args[0])
 			if err != nil {
-				return errors.Wrap(err, "opening document")
+				return fmt.Errorf("opening document: %w", err)
 			}
 
 			// Parse the purl
 			pquery, err := purl.FromString(args[1])
 			if err != nil {
-				return errors.Wrap(err, "parsing purl")
+				return fmt.Errorf(err, "parsing purl")
 			}
 
 			// Create the purl we will use to query
@@ -114,15 +114,15 @@ set the --spdx-ids to only output the IDs of the entities.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				cmd.Help() // nolint:errcheck
-				return errors.New("You should only specify one file")
+				return errors.New("you should only specify one file")
 			}
 			doc, err := spdx.OpenDoc(args[0])
 			if err != nil {
-				return errors.Wrap(err, "opening doc")
+				return fmt.Errorf("opening doc: %w", err)
 			}
 			output, err := doc.Outline(outlineOpts)
 			if err != nil {
-				return errors.Wrap(err, "generating document outline")
+				return fmt.Errorf("generating document outline: %w", err)
 			}
 			fmt.Println(spdx.Banner())
 			fmt.Println(output)

@@ -17,11 +17,12 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -55,15 +56,15 @@ for checking files.
 				if util.Exists(arg) {
 					file, err := os.Open(arg)
 					if err != nil {
-						return errors.Wrapf(err, "checking argument %d", i)
+						return fmt.Errorf("checking argument %d: %w", i, err)
 					}
 					defer file.Close()
 					fileInfo, err := file.Stat()
 					if err != nil {
-						return errors.Wrapf(err, "calling stat on argument %d", i)
+						return fmt.Errorf("calling stat on argument %d: %w", i, err)
 					}
 					if fileInfo.IsDir() {
-						return errors.Errorf(
+						return fmt.Errorf(
 							"the path %s is a directory, only files are supported at this time",
 							file.Name(),
 						)
@@ -74,7 +75,7 @@ for checking files.
 						valOpts.files = append(valOpts.files, file.Name())
 					}
 				} else {
-					return errors.Errorf("the path specified at %s does not exist", arg)
+					return fmt.Errorf("the path specified at %s does not exist", arg)
 				}
 			}
 			return validateArtifacts(valOpts)
@@ -117,7 +118,7 @@ func (opts *validateOptions) Validate() error {
 
 func validateArtifacts(opts validateOptions) error {
 	if err := opts.Validate(); err != nil {
-		return errors.Wrap(err, "validating command line options")
+		return fmt.Errorf("validating command line options: %w", err)
 	}
 
 	if !opts.exitCode {
@@ -125,12 +126,12 @@ func validateArtifacts(opts validateOptions) error {
 	}
 	doc, err := spdx.OpenDoc(opts.sbomPath)
 	if err != nil {
-		return errors.Wrap(err, "opening doc")
+		return fmt.Errorf("opening doc: %w", err)
 	}
 
 	res, err := doc.ValidateFiles(opts.files)
 	if err != nil {
-		return errors.Wrap(err, "validating files")
+		return fmt.Errorf("validating files: %w", err)
 	}
 
 	data := [][]string{}
