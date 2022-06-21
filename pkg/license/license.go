@@ -72,10 +72,10 @@ type Reader struct {
 // SetImplementation sets the implementation that the license reader will use
 func (r *Reader) SetImplementation(i ReaderImplementation) error {
 	r.impl = i
-	return fmt.Errorf(
-		"initializing the reader implementation: %w",
-		r.impl.Initialize(r.Options),
-	)
+	if err := r.impl.Initialize(r.Options); err != nil {
+		return fmt.Errorf("initializing the reader implementation: %w", err)
+	}
+	return nil
 }
 
 // NewReader returns a license reader with the default options
@@ -332,12 +332,10 @@ type License struct {
 
 // WriteText writes the SPDX license text to a text file
 func (license *License) WriteText(filePath string) error {
-	return fmt.Errorf(
-		"while writing license to text file: %w",
-		os.WriteFile(
-			filePath, []byte(license.LicenseText), os.FileMode(0o644),
-		),
-	)
+	if err := os.WriteFile(filePath, []byte(license.LicenseText), os.FileMode(0o644)); err != nil {
+		return fmt.Errorf("while writing license to text file: %w", err)
+	}
+	return nil
 }
 
 // ListEntry a license entry in the list
