@@ -17,8 +17,9 @@ limitations under the License.
 package provenance_test
 
 import (
-	"errors"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/stretchr/testify/require"
