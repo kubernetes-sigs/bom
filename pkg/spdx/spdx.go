@@ -18,6 +18,7 @@ package spdx
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,7 +28,6 @@ import (
 
 	"github.com/google/uuid"
 	purl "github.com/package-url/packageurl-go"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/release-utils/util"
@@ -159,7 +159,7 @@ func buildIDString(seeds ...string) string {
 func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error) {
 	pkg, err = spdx.impl.PackageFromDirectory(spdx.options, dirPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "generating SPDX package from directory")
+		return nil, fmt.Errorf("generating SPDX package from directory: %w", err)
 	}
 
 	// Scan the directory contents and if it is a go module, process the
@@ -168,12 +168,12 @@ func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error)
 		logrus.Info("Directory contains a go module. Scanning go packages")
 		deps, err := spdx.impl.GetGoDependencies(dirPath, spdx.Options())
 		if err != nil {
-			return nil, errors.Wrap(err, "scanning go packages")
+			return nil, fmt.Errorf("scanning go packages: %w", err)
 		}
 		logrus.Infof("Go module built list of %d dependencies", len(deps))
 		for _, dep := range deps {
 			if err := pkg.AddDependency(dep); err != nil {
-				return nil, errors.Wrap(err, "adding go dependency")
+				return nil, fmt.Errorf("adding go dependency: %w", err)
 			}
 		}
 	}
@@ -195,7 +195,7 @@ func (spdx *SPDX) PackageFromArchive(archivePath string) (imagePackage *Package,
 			}, archivePath,
 		)
 	}
-	return nil, errors.Wrap(err, "unable to create spdx package from archive, only tar archives are supported")
+	return nil, fmt.Errorf("unable to create spdx package from archive, only tar archives are supported: %w", err)
 }
 
 // FileFromPath creates a File object from a path
@@ -205,7 +205,7 @@ func (spdx *SPDX) FileFromPath(filePath string) (*File, error) {
 	}
 	f := NewFile()
 	if err := f.ReadSourceFile(filePath); err != nil {
-		return nil, errors.Wrap(err, "creating file from path")
+		return nil, fmt.Errorf("creating file from path: %w", err)
 	}
 	return f, nil
 }

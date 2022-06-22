@@ -26,6 +26,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -36,7 +37,6 @@ import (
 	"github.com/google/uuid"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	purl "github.com/package-url/packageurl-go"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
 
@@ -147,7 +147,7 @@ func (ed *ExternalDocumentRef) ReadSourceFile(path string) error {
 	// ref https://github.com/spdx/tools-java/issues/21
 	val, err := hash.SHA1ForFile(path)
 	if err != nil {
-		return errors.Wrap(err, "while calculating the sha256 checksum of the external reference")
+		return fmt.Errorf("while calculating the sha256 checksum of the external reference: %w", err)
 	}
 	ed.Checksums["SHA1"] = val
 	return nil
@@ -186,7 +186,7 @@ func (d *Document) AddPackage(pkg *Package) error {
 		return errors.New("package ID is needed to add a new package")
 	}
 	if _, ok := d.Packages[pkg.SPDXID()]; ok {
-		return errors.Errorf("a package with ID %s already exists in the document", pkg.SPDXID())
+		return fmt.Errorf("a package with ID %s already exists in the document", pkg.SPDXID())
 	}
 
 	d.Packages[pkg.SPDXID()] = pkg
@@ -197,10 +197,10 @@ func (d *Document) AddPackage(pkg *Package) error {
 func (d *Document) Write(path string) error {
 	content, err := d.Render()
 	if err != nil {
-		return errors.Wrap(err, "rendering SPDX code")
+		return fmt.Errorf("rendering SPDX code: %w", err)
 	}
 	if err := os.WriteFile(path, []byte(content), os.FileMode(0o644)); err != nil {
-		return errors.Wrap(err, "writing SPDX code to file")
+		return fmt.Errorf("writing SPDX code to file: %w", err)
 	}
 	logrus.Infof("SPDX SBOM written to %s", path)
 	return nil
@@ -227,7 +227,7 @@ func (d *Document) Render() (doc string, err error) {
 
 	// Run the template to verify the output.
 	if err := tmpl.Execute(&buf, d); err != nil {
-		return "", errors.Wrap(err, "executing spdx document template")
+		return "", fmt.Errorf("executing spdx document template: %w", err)
 	}
 
 	doc = buf.String()
@@ -243,7 +243,7 @@ func (d *Document) Render() (doc string, err error) {
 	for _, file := range d.Files {
 		fileDoc, err := file.Render()
 		if err != nil {
-			return "", errors.Wrap(err, "rendering file "+file.Name)
+			return "", fmt.Errorf("rendering file "+file.Name+" :%w", err)
 		}
 		doc += fileDoc
 		filesDescribed += fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID)
@@ -254,7 +254,7 @@ func (d *Document) Render() (doc string, err error) {
 	for _, pkg := range d.Packages {
 		pkgDoc, err := pkg.Render()
 		if err != nil {
-			return "", errors.Wrap(err, "rendering pkg "+pkg.Name)
+			return "", fmt.Errorf("rendering pkg "+pkg.Name+" :%w", err)
 		}
 
 		doc += pkgDoc
@@ -280,7 +280,7 @@ func (d *Document) AddFile(file *File) error {
 		}
 		h := sha1.New()
 		if _, err := h.Write([]byte(d.Name + ":" + file.Name)); err != nil {
-			return errors.Wrap(err, "getting sha1 of filename")
+			return fmt.Errorf("getting sha1 of filename: %w", err)
 		}
 		file.ID = "SPDXRef-File-" + fmt.Sprintf("%x", h.Sum(nil))
 	}
@@ -316,7 +316,7 @@ func (d *Document) Outline(o *DrawingOptions) (outline string, err error) {
 	if term.IsTerminal(0) {
 		width, height, err = term.GetSize(0)
 		if err != nil {
-			return "", errors.Wrap(err, "reading the terminal size")
+			return "", fmt.Errorf("reading the terminal size: %w", err)
 		}
 		logrus.Debugf("Terminal size is %dx%d", width, height)
 	}
@@ -398,12 +398,16 @@ func (d *Document) WriteProvenanceStatement(opts *ProvenanceOptions, path string
 	statement := d.ToProvenanceStatement(opts)
 	data, err := json.Marshal(statement)
 	if err != nil {
-		return errors.Wrap(err, "serializing statement to json")
+		return fmt.Errorf("serializing statement to json: %w", err)
 	}
-	return errors.Wrap(
-		os.WriteFile(path, data, os.FileMode(0o644)),
-		"writing sbom as provenance statement",
-	)
+
+	if err := os.WriteFile(path, data, os.FileMode(0o644)); err != nil {
+		return fmt.Errorf(
+			"writing sbom as provenance statement: %w",
+			err,
+		)
+	}
+	return nil
 }
 
 // ensureUniquePackageID takes a string and checks if
@@ -543,7 +547,7 @@ func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error
 		// Create a new SPDX file from the path
 		testFile, err := spdxObject.FileFromPath(path)
 		if err != nil {
-			e := errors.Wrap(err, "unable to create SPDX File from path")
+			e := fmt.Errorf("unable to create SPDX File from path: %w", err)
 			res.Message = e.Error()
 			continue
 		}

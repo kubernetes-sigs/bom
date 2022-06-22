@@ -25,6 +25,7 @@ package spdx
 import (
 	"bytes"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -32,7 +33,6 @@ import (
 	"text/template"
 
 	purl "github.com/package-url/packageurl-go"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -131,7 +131,7 @@ func (p *Package) AddFile(file *File) error {
 		}
 		h := sha1.New()
 		if _, err := h.Write([]byte(p.Name + ":" + file.Name)); err != nil {
-			return errors.Wrap(err, "getting sha1 of filename")
+			return fmt.Errorf("getting sha1 of filename: %w", err)
 		}
 		file.BuildID(fmt.Sprintf("%x", h.Sum(nil)))
 	}
@@ -268,14 +268,14 @@ func (p *Package) Render() (docFragment string, err error) {
 	if len(p.Relationships) > 0 {
 		logrus.Infof("Package %s has %d relationships defined", p.SPDXID(), len(p.Relationships))
 		if err := p.CheckRelationships(); err != nil {
-			return "", errors.Wrap(err, "checking package relationships")
+			return "", fmt.Errorf("checking package relationships: %w", err)
 		}
 	}
 
 	var buf bytes.Buffer
 	tmpl, err := template.New("package").Parse(packageTemplate)
 	if err != nil {
-		return "", errors.Wrap(err, "parsing package template")
+		return "", fmt.Errorf("parsing package template: %w", err)
 	}
 
 	if p.FilesAnalyzed {
@@ -294,7 +294,7 @@ func (p *Package) Render() (docFragment string, err error) {
 
 	// Run the template to verify the output.
 	if err := tmpl.Execute(&buf, p); err != nil {
-		return "", errors.Wrap(err, "executing spdx package template")
+		return "", fmt.Errorf("executing spdx package template: %w", err)
 	}
 
 	docFragment = buf.String()
@@ -303,7 +303,7 @@ func (p *Package) Render() (docFragment string, err error) {
 	for _, rel := range p.Relationships {
 		fragment, err := rel.Render(p)
 		if err != nil {
-			return "", errors.Wrap(err, "rendering relationship")
+			return "", fmt.Errorf("rendering relationship: %w", err)
 		}
 		docFragment += fragment
 	}
