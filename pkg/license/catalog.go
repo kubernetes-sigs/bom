@@ -102,7 +102,7 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 				if err == nil {
 					err = lerr
 				} else {
-					err = fmt.Errorf(lerr.Error(), err)
+					err = fmt.Errorf("%v: %w", lerr, err)
 				}
 			}
 		}(l)
