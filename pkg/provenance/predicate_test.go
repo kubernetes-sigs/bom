@@ -17,9 +17,8 @@ limitations under the License.
 package provenance_test
 
 import (
+	"errors"
 	"testing"
-
-	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 
