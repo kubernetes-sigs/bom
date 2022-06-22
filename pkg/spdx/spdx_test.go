@@ -17,9 +17,9 @@ limitations under the License.
 package spdx_test
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/bom/pkg/spdx"
