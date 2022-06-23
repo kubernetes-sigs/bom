@@ -31,6 +31,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -527,7 +528,39 @@ func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error
 	if len(filePaths) == 0 {
 		logrus.Warn("ValidateFiles called with 0 paths")
 	}
-	if len(d.Files) == 0 {
+
+	// Assume that the current working dir is within the package
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get current working dir: %w", err)
+	}
+	baseDir := filepath.Base(cwd)
+
+	allFiles := make(map[string]*File)
+	var pkg *Package
+	// Search for the package describing the directory
+	for _, p := range d.Packages {
+		if p.Name == baseDir {
+			pkg = p
+			break
+		}
+	}
+	if pkg == nil {
+		if len(d.Packages) > 0 {
+			return results, errors.New("directory not found in SBOM packages")
+		}
+
+		// No packages specified, use the root files
+		for k, v := range d.Files {
+			allFiles[k] = v
+		}
+	} else {
+		for _, file := range pkg.Files() {
+			allFiles[file.ID] = file
+		}
+	}
+
+	if len(allFiles) == 0 {
 		return results, errors.New("document has no files")
 	}
 	spdxObject := NewSPDX()
@@ -557,7 +590,7 @@ func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error
 		message := "file path not found in document"
 		res.FileName = path
 
-		for _, docFile := range d.Files {
+		for _, docFile := range allFiles {
 			if docFile.FileName != path {
 				continue
 			}
