@@ -42,13 +42,13 @@ func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTa
 	defer file.Close()
 
 	// Get the classsification
-	matches, err := d.Classifier().MatchFrom(file)
-	if len(matches) == 0 {
+	results, err := d.Classifier().MatchFrom(file)
+	if results.Matches.Len() == 0 {
 		logrus.Debugf("File does not match a known license: %s", path)
 	}
 	var highestConf float64
 	moreTags = []string{}
-	for _, match := range matches {
+	for _, match := range results.Matches {
 		if match.Confidence > highestConf {
 			highestConf = match.Confidence
 			licenseTag = match.Name
