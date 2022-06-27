@@ -6,7 +6,7 @@ require (
 	github.com/carolynvs/magex v0.8.1
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-containerregistry v0.10.0
-	github.com/google/licenseclassifier/v2 v2.0.0-pre5
+	github.com/google/licenseclassifier/v2 v2.0.0-alpha.1
 	github.com/google/uuid v1.3.0
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
@@ -14,7 +14,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.7.5
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
-	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.11
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.7.1
