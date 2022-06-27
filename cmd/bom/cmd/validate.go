@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
@@ -90,6 +91,14 @@ for checking files.
 		"list of files to verify",
 	)
 
+	cmd.PersistentFlags().StringVarP(
+		&valOpts.dir,
+		"dir",
+		"d",
+		"",
+		"a whole directory to verify",
+	)
+
 	cmd.PersistentFlags().BoolVarP(
 		&valOpts.exitCode,
 		"exit-code",
@@ -105,12 +114,13 @@ type validateOptions struct {
 	exitCode bool
 	sbomPath string
 	files    []string
+	dir      string
 }
 
 // Validate verify options consistency
 func (opts *validateOptions) Validate() error {
-	if len(opts.files) == 0 {
-		return errors.New("please provide at least one artifact to validate")
+	if len(opts.files) == 0 && opts.dir == "" {
+		return errors.New("please provide at least one artifact file or directory to validate")
 	}
 
 	return nil
@@ -129,17 +139,42 @@ func validateArtifacts(opts validateOptions) error {
 		return fmt.Errorf("opening doc: %w", err)
 	}
 
-	res, err := doc.ValidateFiles(opts.files)
+	files := []string{}
+	if opts.dir != "" {
+		if err := os.Chdir(opts.dir); err != nil {
+			return fmt.Errorf("unable to change to dir %s: %w", opts.dir, err)
+		}
+
+		if err := filepath.Walk(".",
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if info.IsDir() {
+					return nil
+				}
+
+				files = append(files, path)
+				return nil
+			},
+		); err != nil {
+			return fmt.Errorf("unable to walk current dir: %w", err)
+		}
+	}
+	files = append(files, opts.files...)
+
+	res, err := doc.ValidateFiles(files)
 	if err != nil {
 		return fmt.Errorf("validating files: %w", err)
 	}
 
 	data := [][]string{}
+	errored := false
 	for _, res := range res {
 		// If we only want an exit code abort on the first failure
 		if !res.Success && opts.exitCode {
-			logrus.Errorf("Checking %s: %s", res.FileName, res.Message)
-			os.Exit(1)
+			errored = true
 		}
 		resRow := []string{
 			res.FileName,
@@ -156,12 +191,6 @@ func validateArtifacts(opts validateOptions) error {
 		data = append(data, resRow)
 	}
 
-	// Exit now if we only want the exit code
-	if opts.exitCode {
-		logrus.Info("All files valid")
-		os.Exit(0)
-	}
-
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"FileName", "Valid", "Message", "Invalid Hashes"})
 
@@ -169,5 +198,10 @@ func validateArtifacts(opts validateOptions) error {
 		table.Append(v)
 	}
 	table.Render()
+
+	if errored {
+		return errors.New("failed to validate all files")
+	}
+
 	return nil
 }

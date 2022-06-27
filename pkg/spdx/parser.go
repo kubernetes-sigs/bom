@@ -317,7 +317,7 @@ func OpenDoc(path string) (doc *Document, err error) {
 		case "LicenseListVersion":
 			doc.LicenseListVersion = value
 		default:
-			logrus.Warnf("Unknown tag: %s", tag)
+			logrus.Debugf("Unknown tag: %s", tag)
 		}
 		i++
 	}
