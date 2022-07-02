@@ -1,4 +1,11 @@
-# Generating a Bill of Materials for Your Project
+---
+title: "Creating Bill of Materials"
+linkTitle: "Creating Bill of Materials"
+tags: ["tutorial"]
+date: 2022-06-27
+description: Generating a Bill of Materials for Your Project
+
+---
 
  <!-- toc -->
 - [Introduction](#introduction)
@@ -19,8 +26,7 @@
 
 ## Introduction
 
-To generate a Bill of Materials for your project, download `bom`, our utility
-that leverages the code found in this repo and point it to your project:
+To generate a Bill of Materials for your project, make sure you have `bom` installed. See [how to here]({{< ref "Quick Start" >}})
 
 ```console
 cd gitrepo/
