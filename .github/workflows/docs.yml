@@ -7,7 +7,6 @@ on:
       - "docs/**"
     branches:
       - main  # Set a branch to deploy
-  pull_request:
 
 jobs:
   deploy:
