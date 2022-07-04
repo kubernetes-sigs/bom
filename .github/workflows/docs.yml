@@ -3,6 +3,8 @@ permissions:
   contents: write
 on:
   push:
+    paths:
+      - "docs/**"
     branches:
       - main  # Set a branch to deploy
   pull_request:
