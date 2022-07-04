@@ -1,0 +1,278 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>– tutorial</title><link>https://kubernetes-sigs.github.io/bom/tags/tutorial/</link><description>Recent content in tutorial on</description><generator>Hugo -- gohugo.io</generator><lastBuildDate>Mon, 27 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://kubernetes-sigs.github.io/bom/tags/tutorial/index.xml" rel="self" type="application/rss+xml"/><item><title>Tutorials: Configuring BOM via YAML</title><link>https://kubernetes-sigs.github.io/bom/tutorials/using_yaml_config/</link><pubDate>Mon, 27 Jun 2022 00:00:00 +0000</pubDate><guid>https://kubernetes-sigs.github.io/bom/tutorials/using_yaml_config/</guid><description>
+&lt;h2 id="usage">Usage:&lt;/h2>
+&lt;p>bom can be configured via a YAML file. The usage is as:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>bom generate -c path/to/yaml/config
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="config">Config:&lt;/h2>
+&lt;p>The YAML config looks like:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">namespace&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">https://example.com/ &lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># an URI that serves as namespace for the SPDX doc&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">license&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">Apache-2.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># SPDX license identifier to declare in the SBOM&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">name&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">ExampleBOM &lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic">#name for the document, in contrast to URLs, intended for humans&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">creator&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">person&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">Author Name (email@example.com)&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">tool&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">bom &lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">artifacts&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#204a87;font-weight:bold">type&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">directory&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Valid choices are &amp;#34;directory&amp;#34; or &amp;#34;file&amp;#34; or &amp;#34;image&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">source&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">./bom&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Path to container in registry if type is &amp;#34;image&amp;#34; else path to directory or file&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">license&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">Apache-2.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># SPDX identifier of the license&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">gomodules&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">true&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Boolean. Set it to true if this artifact is a gomodule.&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#204a87;font-weight:bold">type&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">image&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Valid choices are &amp;#34;directory&amp;#34; or &amp;#34;file&amp;#34; or &amp;#34;image&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">source&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">ghcr.io/myorg/myrepo/myimage:tag&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Path to container in registry if type is &amp;#34;image&amp;#34; else path to directory or file&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">license&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">Apache-2.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># SPDX identifier of the license&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#204a87;font-weight:bold">type&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">file&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Valid choices are &amp;#34;directory&amp;#34; or &amp;#34;file&amp;#34; or &amp;#34;image&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">source&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">./demo.py&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Path to container in registry if type is &amp;#34;image&amp;#34; else path to directory or file&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">license&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">Apache-2.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># SPDX identifier of the license&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="namespace">&lt;code>namespace&lt;/code>:&lt;/h3>
+&lt;p>A URI that serves as namespace for the SPDX doc. This is used as value for &lt;code>DocumentNamespace&lt;/code> in the generated SPDX BOM.&lt;/p>
+&lt;h3 id="license">&lt;code>license&lt;/code>:&lt;/h3>
+&lt;p>This is a SPDX license identifier. It&amp;rsquo;s top level for the whole generated SBOM.&lt;/p>
+&lt;h3 id="name">&lt;code>name&lt;/code>:&lt;/h3>
+&lt;p>Name of the generated BOM. Intended for humans.&lt;/p>
+&lt;h3 id="creator-">&lt;code>creator&lt;/code> :&lt;/h3>
+&lt;p>Information about BOM creator.&lt;/p>
+&lt;h4 id="person-">&lt;code>person&lt;/code> :&lt;/h4>
+&lt;p>Name of person who created the BOM.&lt;/p>
+&lt;h4 id="tool-">&lt;code>tool&lt;/code> :&lt;/h4>
+&lt;p>Tool used for creating the BOM.&lt;/p>
+&lt;h3 id="artifacts-">&lt;code>artifacts&lt;/code> :&lt;/h3>
+&lt;h4 id="type-">&lt;code>type&lt;/code> :&lt;/h4>
+&lt;p>Type of artifact. Can be either &amp;ldquo;image&amp;rdquo; or &amp;ldquo;file&amp;rdquo; or &amp;ldquo;directory&amp;rdquo; .&lt;/p>
+&lt;h4 id="source-">&lt;code>source&lt;/code> :&lt;/h4>
+&lt;p>Path to artifact.&lt;/p>
+&lt;p>If artifact type is file, then &lt;code>source&lt;/code> should be a path to the file.&lt;/p>
+&lt;p>If artifact type is directory, then &lt;code>source&lt;/code> should be a path to the directory.&lt;/p>
+&lt;p>If artifact type is image, then &lt;code>source&lt;/code> should be a path to the URI of image in container registry.&lt;/p>
+&lt;h4 id="license-">&lt;code>license&lt;/code> :&lt;/h4>
+&lt;p>Top level SPDX identifier of this artifact.&lt;/p>
+&lt;h4 id="gomodules-">&lt;code>gomodules&lt;/code> :&lt;/h4>
+&lt;p>This is a boolean. If set to true, then bom will assume the artifact to be a go module. The dependencies will also be scanned.&lt;/p></description></item><item><title>Tutorials: Creating Bill of Materials</title><link>https://kubernetes-sigs.github.io/bom/tutorials/creating_bill_of_materials/</link><pubDate>Mon, 27 Jun 2022 00:00:00 +0000</pubDate><guid>https://kubernetes-sigs.github.io/bom/tutorials/creating_bill_of_materials/</guid><description>
+&lt;!-- toc -->
+&lt;ul>
+&lt;li>&lt;a href="#introduction">Introduction&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#what-is-a-bill-of-materials">What is a Bill of Materials?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#bom-a-tool-to-generate-sboms-for-your-project">bom: A tool to generate SBOMs for your Project&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;a href="#spdx-software-package-data-exchange">SPDX: Software Package Data Exchange&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#files-and-packages">Files and Packages&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#relationships">Relationships&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#licensing-information">Licensing Information&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;a href="#create-your-bill-of-materials">Create your Bill of Materials&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#thinking-about-your-release">Thinking about your Release&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#generating-the-sbom">Generating the SBOM&lt;/a>
+&lt;ul>
+&lt;li>&lt;a href="#namespace">Namespace&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#simplest-use-case-one-package">Simplest Use Case: One Package&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#adding-additional-sources">Adding Additional Sources&lt;/a>&lt;/li>
+&lt;li>&lt;a href="#example-generate-an-sbom-for-etcd">Example: Generate an SBOM for etcd&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;!-- /toc -->
+&lt;h2 id="introduction">Introduction&lt;/h2>
+&lt;p>To generate a Bill of Materials for your project, make sure you have &lt;code>bom&lt;/code> installed. See &lt;a href="https://kubernetes-sigs.github.io/bom/quick-start/">how to here&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">cd gitrepo/
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">bom -n &amp;#39;http://mybom.com/&amp;#39; .
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>All of the tool&amp;rsquo;s options are explained on its page. Keep reading
+for more information about our tools, SBOMs, and the SPDX standard.&lt;/p>
+&lt;h3 id="what-is-a-bill-of-materials">What is a Bill of Materials?&lt;/h3>
+&lt;p>A &lt;em>Software Bill of Materials&lt;/em> (often BOM or SBOM for short) is a
+manifest that lists everything included in a software release.
+&amp;ldquo;Everything&amp;rdquo; can take different meanings: software packages or images,
+documentation, tarballs, single files. These pieces can be components
+or source code, variants of the same artifact (eg a binary for different
+platforms).&lt;/p>
+&lt;p>An SBOM can also provide visibility on the dependencies of your project.
+There are many types of dependencies and many reasons that consumers of
+a project need to know them: security, compliance, compatibility.&lt;/p>
+&lt;p>Finally, a Bill of Materials allows software creators to express licensing
+information for their project as a whole, but also for individual pieces
+and its dependencies. You can release your project under the Apache 2.0
+license but have its documentation published under Creative Commons. Then,
+there are all of your dependencies&amp;rsquo; original licenses. A well-written
+SBOM can express all of them in the same document.&lt;/p>
+&lt;h3 id="bom-a-tool-to-generate-sboms-for-your-project">bom: A tool to generate SBOMs for your Project&lt;/h3>
+&lt;p>As part of the effort to produce a bill of materials for Kubernetes, SIG
+Release developed a set of libraries to produce fully compliant SPDX SBOMs.
+Our tools support license scanning, image layer analyzers, processing of
+golang dependencies, and other features. These libraries are available for
+other projects to automate the production of their own Bills of Materials.&lt;/p>
+&lt;p>For simpler use cases, all of our SBOM automation is also available in
+a general-purpose tool called &lt;code>bom&lt;/code>. You can find all the options that
+&lt;code>bom&lt;/code> supports in its README.md.&lt;/p>
+&lt;p>&lt;code>bom&lt;/code> supports generating Bills of Materials in SPDX compliant tag-value
+format. It can process directories, single files, read the contents of
+container images (both from container tar archives and directly from registries),
+and tarred sources.&lt;/p>
+&lt;p>In addition &lt;code>bom&lt;/code> will scan your code to find licensing information. Its
+classifier supports detection of all the SPDX recognized licenses.&lt;/p>
+&lt;h2 id="spdx-software-package-data-exchange">SPDX: Software Package Data Exchange&lt;/h2>
+&lt;p>&lt;a href="https://spdx.dev/">SPDX&lt;/a> or &lt;em>Software Package Data Exchange&lt;/em> is an open standard to create
+bills of materials. It has been in the works for 10+ years, coordinated
+by the SPDX Workgroup, a project of the Linux Foundation.&lt;/p>
+&lt;p>As of June 2020, &lt;a href="https://spdx.github.io/spdx-spec/">the SPDX specification&lt;/a> is
+in version 2.2. The current version allows software authors to include metadata about
+their project describing its contents, relationships among them, and other
+components and licensing.&lt;/p>
+&lt;h3 id="files-and-packages">Files and Packages&lt;/h3>
+&lt;p>There are two main building blocks in an SPDX manifest: Files and Packages.&lt;/p>
+&lt;p>&lt;a href="https://spdx.github.io/spdx-spec/4-file-information/">Files&lt;/a> are what you
+would expect: an individual item in a filesystem tree. The data about a file
+in an SPDX SBOM includes its name, checksums, license, file type, copyright
+data, and other attributes.&lt;/p>
+&lt;p>&lt;a href="https://spdx.github.io/spdx-spec/3-package-information/">Packages&lt;/a> are a
+non-specific element in SPDX representing anything that can group other elements.
+An &lt;code>.rpm&lt;/code> or &lt;code>.deb&lt;/code> package can be an SPDX package, but so can be a container
+image or a tarball. Packages contain files, but can also contain other files
+or a mix of both. An image, for example, can be viewed as a package, which
+contains other packages (its layers), and those, in turn, a set of files.&lt;/p>
+&lt;p>SPDX metadata about packages is similar to metadata about files but it also
+includes data about its version, where it came from, who wrote it, and an
+important one: the package verification code.&lt;/p>
+&lt;p>To provide a mechanism to ensure the integrity of its contents, the
+package construct defines a checksum
+&lt;a href="https://spdx.github.io/spdx-spec/3-package-information/#39-package-verification-code">verification code&lt;/a>.
+This is a SHA1 sum derived from concatenating a hash of each item in the package.&lt;/p>
+&lt;h3 id="relationships">Relationships&lt;/h3>
+&lt;p>The most useful feature of SPDX is the ability to express relationships among
+elements. For example, a &lt;code>Package&lt;/code> &lt;code>CONTAINS&lt;/code> a &lt;code>File&lt;/code>. A SPDX &lt;code>Document&lt;/code>
+&lt;code>DESCRIBES&lt;/code> &lt;code>Package&lt;/code>s and &lt;code>File&lt;/code>s. A &lt;code>File&lt;/code> is &lt;code>GENERATED_FROM&lt;/code> a source
+&lt;code>Package&lt;/code> and so on.&lt;/p>
+&lt;p>The SPDX spec defines a &lt;a href="https://spdx.github.io/spdx-spec/7-relationships-between-SPDX-elements/">rich relationship vocabulary&lt;/a>
+which enables developers to describe very complex interaction among components,
+source code, the artifacts its build produces but also its dependencies and
+build tools.&lt;/p>
+&lt;h3 id="licensing-information">Licensing Information&lt;/h3>
+&lt;p>Independently of source code and artifacts, software licensing is a complex
+problem in itself. SPDX has been thought from the ground up to express licensing
+of each element in the document.&lt;/p>
+&lt;p>The pertinence of a license over a file or package can come from different
+sources: it can be expressed by the file itself, it can be inherited from a package,
+enforced by its dependencies, or perhaps it can be inferred by an automated tool.
+SPDX makes no attempt to make any determination about the licensing of elements
+but it has many different ways to allow authors to express a license and where the
+licensing determination came from.&lt;/p>
+&lt;p>SPDX maintains a large list of open source licenses. All licenses have a tag that
+represents them in a document. For example, the tag for the Mozilla Public License
+2.0 is &lt;code>MPL-2.0&lt;/code>, &lt;code>MIT-0&lt;/code> is MIT without attribution. The SPDX licenses are published
+in a public repository and are available in machine-readable formats such as JSON and XML.&lt;/p>
+&lt;h2 id="create-your-bill-of-materials">Create your Bill of Materials&lt;/h2>
+&lt;p>There are a couple of factors to take into consideration when drafting your Bill
+of Materials.&lt;/p>
+&lt;h3 id="thinking-about-your-release">Thinking about your Release&lt;/h3>
+&lt;p>The first thing you need to consider when planning your Bill of Materials is your release
+structure. What does it look like? What are the main artifacts I want to list in my BOM?
+Is your source code available?&lt;/p>
+&lt;p>But the main focus should be the consumers of the BOM. How is your document going to be
+used? Is it for checking the completeness of your release? Is someone trying to check
+for vulnerabilities in your dependencies? Perhaps your compliance person needs to check
+the licenses that interact with your project. Think about these and other use cases and
+create one or more SPDX documents which are useful for your consumers.&lt;/p>
+&lt;p>As the name implies, open source software releases include a snapshot of the source code
+in time: the state of your repo when a git tag was cut, for example. Do you want to include
+the source code in the same document? When we were testing for the Kubernetes SBOM, the file
+produced was over 11 MB long, so we decided to split the source data to its own SPDX file.&lt;/p>
+&lt;h3 id="generating-the-sbom">Generating the SBOM&lt;/h3>
+&lt;p>When you are ready to generate the BOM for your project, make sure everything you want to
+list in the SPDX document is available. &lt;code>bom&lt;/code> can read container images remotely from their
+registry but everything else has to be available locally.&lt;/p>
+&lt;h4 id="namespace">Namespace&lt;/h4>
+&lt;p>Every SPDX document has to declare its namespace. The namespace is a URI, it must be unique
+for the document you are generating. The purpose of the namespace is to have an anchor point
+to reference your release in the SPDX world. Other software components which rely on your
+project will use the URI to declare they are using your thing.&lt;/p>
+&lt;h4 id="simplest-use-case-one-package">Simplest Use Case: One Package&lt;/h4>
+&lt;p>In the simplest case, you can feed &lt;code>bom&lt;/code> a source and build a single package SBOM.
+For example, to generate SBOM from your git repository run the following (note the
+dot at the end):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">bom generate -n http://example.com/ .
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This command will traverse your repository directory structure, listing everything it finds,
+scanning license files. If your repository is a Go module, it will process the dependencies.
+&lt;code>bom&lt;/code> will use your &lt;code>.gitignore&lt;/code> file and skip any patterns listed in it.&lt;/p>
+&lt;p>After bom runs, all your source code will be expressed as &lt;code>File&lt;/code>s in an SPDX &lt;code>Package&lt;/code>. &lt;code>bom&lt;/code>
+will do some determinations to complete the data it needs to produce the document such as
+generating names for packages and files.&lt;/p>
+&lt;h4 id="adding-additional-sources">Adding Additional Sources&lt;/h4>
+&lt;p>Generally, an SPDX bill of materials will include more than one package. You can pass &lt;code>bom&lt;/code>
+more sources to add to the document. These can be container images, other directories, container
+archives, etc. When you add other sources, bom will add them as top-level packages in the
+document. Some of these will include sub-packages: layers of images, dependencies, etc.&lt;/p>
+&lt;p>Here is a sample of other command line flags you can pass to &lt;code>bom generate&lt;/code> to add more elements
+to your bill of materials:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Short&lt;/th>
+&lt;th>Long Flag&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;/td>
+&lt;td>&amp;ndash;archive&lt;/td>
+&lt;td>list of archives to add as packages (supports tar, tar.gz)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>-d&lt;/td>
+&lt;td>&amp;ndash;dirs&lt;/td>
+&lt;td>List of directories to include in the manifest as packages&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>-f&lt;/td>
+&lt;td>&amp;ndash;file&lt;/td>
+&lt;td>List of files to include&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>-i&lt;/td>
+&lt;td>&amp;ndash;image&lt;/td>
+&lt;td>List of image references&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;/td>
+&lt;td>&amp;ndash;image-archive&lt;/td>
+&lt;td>list of docker archive tarballs to include in the manifest&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h4 id="example-generate-an-sbom-for-etcd">Example: Generate an SBOM for etcd&lt;/h4>
+&lt;p>Let us say you want to generate a bill of materials for etcd, which is at version v3.4.16
+as I write this. If you only want to build an SBOM describing only the source in the
+repository, do the following:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">git clone https://github.com/etcd-io/etcd
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">cd etcd
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> --dirs=.
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This will produce a manifest describing the repo and its golang dependencies
+in &lt;code>etcd-v3.4.16.spdx&lt;/code>.&lt;/p>
+&lt;p>Now, to make your SBOM more complete, you may want to include a container image.
+To do that run the same invocation, but this time adding the image with the
+&lt;code>--image&lt;/code> flag:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> --dirs=.\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> --image=quay.io/coreos/etcd:v3.4.16
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This command will fetch the container image from the coreos repo and add it as a
+package. At this point, your bom will contain two top-level Packages: the directory
+and the image. If you inspect it, you will see the image&amp;rsquo;s layers as subpackages too.&lt;/p>
+&lt;p>Finally, perhaps you want to add a binary distribution file. Download the compressed
+artifact from Github and add it to the SBOM:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">curl -L https://github.com/etcd-io/etcd/releases/download/v3.4.16/etcd-v3.4.16-darwin-amd64.zip \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> -O /tmp/etcd-v3.4.16-darwin-amd64.zip
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">&lt;/span>&lt;span style="color:#a40000">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a40000">&lt;/span>&lt;span style="color:#000;font-style:italic">bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> --dirs=. \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> --image=quay.io/coreos/etcd:v3.4.16 \
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic"> --file=/tmp/etcd-v3.4.16-darwin-amd64.zip
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The resulting sbom from the last invocation will include at the top level of the SBOM
+three things: two &lt;code>Package&lt;/code>s (the directory and the image) and one &lt;code>File&lt;/code>: the binary
+distribution. Note that when listing the zip file as a single file, &lt;code>bom&lt;/code> did not perform
+any special treatment to it. You can see a copy of the resulting file: &lt;code>etcd-v3.4.16.spdx&lt;/code>&lt;/p></description></item></channel></rss>
