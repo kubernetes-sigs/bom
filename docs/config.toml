@@ -1,4 +1,4 @@
-baseURL = "https://sbs2001.github.io/bom"
+baseURL = "https://kubernetes-sigs.github.io/bom"
 title = "BOM"
 
 enableRobotsTXT = true
