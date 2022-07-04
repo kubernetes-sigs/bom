@@ -1,4 +1,11 @@
-# BOM YAML Config
+---
+title: "Configuring BOM via YAML"
+linkTitle: "Configuring BOM via YAML"
+tags: ["tutorial", "reference"]
+date: 2022-06-27
+description: Configure BOM via YAML
+
+---
 
 ## Usage:
 
@@ -83,3 +90,4 @@ Top level SPDX identifier of this artifact.
 #### `gomodules` : 
 
 This is a boolean. If set to true, then bom will assume the artifact to be a go module. The dependencies will also be scanned.
+

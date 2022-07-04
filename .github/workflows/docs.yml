@@ -1,0 +1,33 @@
+name: github pages
+permissions:
+  contents: write
+on:
+  push:
+    paths:
+      - "docs/**"
+    branches:
+      - main  # Set a branch to deploy
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true  # Fetch Hugo themes (true OR recursive)
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@c03b5dbed22245418539b65eb9a3b1d5fdd9a0a6 # v2.5.0
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: cd docs && npm install && hugo --minify
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@e6d003d0839927f5a4b998bfd92ed8e448fde37a # v4.3.4
+        with:
+          folder: ./docs/public # The folder the action should deploy.
