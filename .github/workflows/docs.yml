@@ -26,6 +26,6 @@ jobs:
         run: cd docs && npm install && hugo --minify
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: JamesIves/github-pages-deploy-action@e6d003d0839927f5a4b998bfd92ed8e448fde37a # v4.3.4
         with:
           folder: ./docs/public # The folder the action should deploy.
