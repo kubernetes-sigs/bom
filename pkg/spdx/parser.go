@@ -62,13 +62,27 @@ func OpenDoc(path string) (doc *Document, err error) {
 		}
 	}()
 
+	format, err := DetectSBOMEncoding(file)
+	if err != nil {
+		return nil, fmt.Errorf("detecting sbom encoding: %w", err)
+	}
+
+	switch format {
+	case "spdx":
+		return parseTagValue(file)
+	}
+
+	return nil, errors.New("unknown SBOM encoding")
+}
+
+// parseTagValue parses an SPDX SBOM in tag-value format
+func parseTagValue(file *os.File) (doc *Document, err error) {
 	// Create a blank document
 	doc = &Document{
 		Packages:        map[string]*Package{},
 		Files:           map[string]*File{},
 		ExternalDocRefs: []ExternalDocumentRef{},
 	}
-
 	// Scan the file, looking for tags
 	scanner := bufio.NewScanner(file)
 	i := 0 // Line counter
@@ -317,7 +331,7 @@ func OpenDoc(path string) (doc *Document, err error) {
 	}
 
 	if currentEntity == nil {
-		return nil, fmt.Errorf("invalid file %s", path)
+		return nil, fmt.Errorf("invalid file %s", file.Name())
 	}
 	// Add the last object from the doc
 	currentObject.SetEntity(currentEntity)
