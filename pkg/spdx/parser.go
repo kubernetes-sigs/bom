@@ -44,16 +44,10 @@ func OpenDoc(path string) (doc *Document, err error) {
 	var file *os.File
 	var isTemp bool
 	if path == "-" {
-		file, err = os.CreateTemp("", "temp-sbom")
-		if err != nil {
-			return nil, fmt.Errorf("creating temp file to buffer sbom: %w", err)
-		}
-		if _, err := io.Copy(file, os.Stdin); err != nil {
-			return nil, fmt.Errorf("writing SBOM to temporary file: %w", err)
-		}
 		isTemp = true
-		if _, err := file.Seek(0, 0); err != nil {
-			return doc, fmt.Errorf("rewinding temporary file: %w", err)
+		file, err = bufferSTDIN()
+		if err != nil {
+			return nil, fmt.Errorf("reading STDIN: %w", err)
 		}
 	} else {
 		file, err = os.Open(path)
@@ -418,5 +412,19 @@ func DetectSBOMEncoding(f *os.File) (format string, err error) {
 	}
 	logrus.Warn("Unable to detect SBOM encoding")
 	return "", nil
+}
 
+// buyfferSTDIN buffers all of STDIN to a temp file
+func bufferSTDIN() (*os.File, error) {
+	file, err := os.CreateTemp("", "temp-sbom")
+	if err != nil {
+		return nil, fmt.Errorf("creating temp file to buffer sbom: %w", err)
+	}
+	if _, err := io.Copy(file, os.Stdin); err != nil {
+		return nil, fmt.Errorf("writing SBOM to temporary file: %w", err)
+	}
+	if _, err := file.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("rewinding temporary file: %w", err)
+	}
+	return file, nil
 }
