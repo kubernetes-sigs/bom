@@ -398,3 +398,25 @@ func OpenDoc(path string) (doc *Document, err error) {
 
 	return doc, nil
 }
+
+// detectSBOMEncoding reads a few bytes from the SBOM and returns
+func DetectSBOMEncoding(f *os.File) (format string, err error) {
+	bs := make([]byte, 512)
+	if _, err := f.Read(bs); err != nil {
+		return "", fmt.Errorf("reading SBOM to get format: %w", err)
+	}
+
+	if _, err := f.Seek(0, 0); err != nil {
+		return "", fmt.Errorf("rewinding sbom pointer: %w", err)
+	}
+
+	// In JSON, the spdx version fiel would be quoted
+	if strings.Contains(string(bs), "\"spdxVersion\"") {
+		return "spdx+json", nil
+	} else if strings.Contains(string(bs), "SPDXVersion:") {
+		return "spdx", nil
+	}
+	logrus.Warn("Unable to detect SBOM encoding")
+	return "", nil
+
+}
