@@ -1,0 +1,67 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sbom-sha256:af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58",
+  "spdxVersion": "",
+  "creationInfo": {
+    "created": "1970-01-01T00:00:00Z",
+    "creators": [
+      "Tool: apko (devel)",
+      "Organization: Chainguard, Inc"
+    ],
+    "licenseListVersion": "3.16"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://spdx.org/spdxdocs/apko/",
+  "documentDescribes": [
+    "sha256-af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58"
+  ],
+  "packages": [
+    {
+      "SPDXID": "sha256-af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58",
+      "name": "172.19.0.1:5000/test-nosbom2@sha256:af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Multi-arch image index",
+      "originator": "",
+      "sourceInfo": "Generated at build time by Chainguard apko",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "sha256-af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58",
+      "relationshipType": "VARIANT_OF",
+      "relatedSpdxElement": "DocumentRef-amd64-image-sbom:SPDXRef-Package-sha256-b09ddd04b47e07919402c15ea21bf839a95f6bf38ec0df1594c296425010cf1a"
+    },
+    {
+      "spdxElementId": "sha256-af1c5f9673f78aa7a575d627cd8a210bf6a895b0065f719a098dc035eee55a58",
+      "relationshipType": "VARIANT_OF",
+      "relatedSpdxElement": "DocumentRef-386-image-sbom:SPDXRef-Package-sha256-d0370905ad41c4eb2b1a56f3139fd6a9acfcef203c27e2a9e1655eab28351fd6"
+    }
+  ],
+  "externalDocumentRefs": [
+    {
+      "checksum": {
+        "algorithm": "SHA256",
+        "checksumValue": "430892ae21dd7f8174183be12a500cfc32fc48a824f1e5a88fced42b4193fd1a"
+      },
+      "externalDocumentId": "DocumentRef-amd64-image-sbom",
+      "spdxDocument": "https://172.19.0.1:5000/v2/test-nosbom2/blobs/sha256:430892ae21dd7f8174183be12a500cfc32fc48a824f1e5a88fced42b4193fd1a"
+    },
+    {
+      "checksum": {
+        "algorithm": "SHA256",
+        "checksumValue": "799503c8e7f1fe6a665e089780863d0f3c8d7cca64ded68c71a47544337ff983"
+      },
+      "externalDocumentId": "DocumentRef-386-image-sbom",
+      "spdxDocument": "https://172.19.0.1:5000/v2/test-nosbom2/blobs/sha256:799503c8e7f1fe6a665e089780863d0f3c8d7cca64ded68c71a47544337ff983"
+    }
+  ]
+}

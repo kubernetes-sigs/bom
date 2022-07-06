@@ -1,0 +1,725 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sbom-sha256:38692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+  "spdxVersion": "SPDX-2.2",
+  "creationInfo": {
+    "created": "1970-01-01T00:00:00Z",
+    "creators": [
+      "Tool: apko (devel)",
+      "Organization: Chainguard, Inc"
+    ],
+    "licenseListVersion": "3.16"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://spdx.org/spdxdocs/apko/",
+  "documentDescribes": [
+    "SPDXRef-Package-sha256C58f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-sha256C58f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38",
+      "name": "172.19.0.1:5000/apko-test@sha256:f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38",
+      "versionInfo": "",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "description": "apko container image",
+      "downloadLocation": "NOASSERTION",
+      "originator": "",
+      "sourceInfo": "",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/172.19.0.1:5000%2Fapko-test@sha256:f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38?arch=amd64\u0026tag=latest",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "name": "172.19.0.1:5000/apko-test@sha256:38692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "versionInfo": "Unknown",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "description": "apko operating system layer",
+      "downloadLocation": "NOASSERTION",
+      "originator": "",
+      "sourceInfo": "",
+      "copyrightText": "NOASSERTION",
+      "checksums": [],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/172.19.0.1:5000%2Fapko-test@sha256:38692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e?arch=amd64\u0026tag=latest",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-baselayout-data-3.2.0-r23",
+      "name": "alpine-baselayout-data",
+      "versionInfo": "3.2.0-r23",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Alpine base dir structure and init scripts",
+      "downloadLocation": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "7a406b35fcf4742bb4c80d944af5e3fa7b819467"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/alpine-baselayout-data@3.2.0-r23?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-musl-1.2.3-r0",
+      "name": "musl",
+      "versionInfo": "1.2.3-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "description": "the musl c library (libc) implementation",
+      "downloadLocation": "https://musl.libc.org/",
+      "originator": "Timo Teräs \u003ctimo.teras@iki.fi\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "9a15b39e1bb4a53195ac55e2214e72c23d4283d2"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/musl@1.2.3-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-busybox-1.35.0-r17",
+      "name": "busybox",
+      "versionInfo": "1.35.0-r17",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Size optimized toolbox of many common UNIX utilities",
+      "downloadLocation": "https://busybox.net/",
+      "originator": "Sören Tempel \u003csoeren+alpine@soeren-tempel.net\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1a73346bf4835e388005056cd82d7941a88988ce"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/busybox@1.35.0-r17?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-baselayout-3.2.0-r23",
+      "name": "alpine-baselayout",
+      "versionInfo": "3.2.0-r23",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Alpine base dir structure and init scripts",
+      "downloadLocation": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3ffcbaa6d2716ccd3e79cbb9f4be5f92b51ad3c5"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/alpine-baselayout@3.2.0-r23?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-ifupdown-ng-0.12.1-r0",
+      "name": "ifupdown-ng",
+      "versionInfo": "0.12.1-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "NOASSERTION",
+      "description": "tools for managing network configuration",
+      "downloadLocation": "https://github.com/ifupdown-ng/ifupdown-ng",
+      "originator": "Ariadne Conill \u003cariadne@dereferenced.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "7430ddc81df29919dcd435707ba235588c2992d3"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/ifupdown-ng@0.12.1-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-openrc-0.44.10-r7",
+      "name": "openrc",
+      "versionInfo": "0.44.10-r7",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "description": "OpenRC manages the services, startup and shutdown of a host",
+      "downloadLocation": "https://github.com/OpenRC/openrc",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b7fc7e947211b18c3c7165e7651876b8a59458ce"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/openrc@0.44.10-r7?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-conf-3.14.2-r0",
+      "name": "alpine-conf",
+      "versionInfo": "3.14.2-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Alpine configuration management scripts",
+      "downloadLocation": "https://git.alpinelinux.org/alpine-conf/about",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "da1ae53ad83d6e9ef58cf4fbac5463eda784e200"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/alpine-conf@3.14.2-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-ca-certificates-bundle-20211220-r0",
+      "name": "ca-certificates-bundle",
+      "versionInfo": "20211220-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MPL-2.0 AND MIT",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Pre generated bundle of Mozilla certificates",
+      "downloadLocation": "https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "8c50d5a9766cb31755584381b44807bc7bcedf10"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/ca-certificates-bundle@20211220-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-libcrypto1.1-1.1.1o-r0",
+      "name": "libcrypto1.1",
+      "versionInfo": "1.1.1o-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "OpenSSL",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Crypto library from openssl",
+      "downloadLocation": "https://www.openssl.org/",
+      "originator": "Timo Teras \u003ctimo.teras@iki.fi\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0341ff553ccd2343c18effdfff38cf55153770aa"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/libcrypto1.1@1.1.1o-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-libssl1.1-1.1.1o-r0",
+      "name": "libssl1.1",
+      "versionInfo": "1.1.1o-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "OpenSSL",
+      "licenseDeclared": "NOASSERTION",
+      "description": "SSL shared libraries",
+      "downloadLocation": "https://www.openssl.org/",
+      "originator": "Timo Teras \u003ctimo.teras@iki.fi\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a71a8177c6028bba398800528c95acc49283cc97"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/libssl1.1@1.1.1o-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-sslC95client-1.35.0-r17",
+      "name": "ssl_client",
+      "versionInfo": "1.35.0-r17",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "EXternal ssl_client for busybox wget",
+      "downloadLocation": "https://busybox.net/",
+      "originator": "Sören Tempel \u003csoeren+alpine@soeren-tempel.net\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "01d84cdb68955ecd50bf546f4f4f02a6faeb523d"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/ssl_client@1.35.0-r17?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-zlib-1.2.12-r1",
+      "name": "zlib",
+      "versionInfo": "1.2.12-r1",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Zlib",
+      "licenseDeclared": "NOASSERTION",
+      "description": "A compression/decompression Library",
+      "downloadLocation": "https://zlib.net/",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a7ce4fa3ad7a15db4ca9b951917fa0b002a62030"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/zlib@1.2.12-r1?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-apk-tools-2.12.9-r5",
+      "name": "apk-tools",
+      "versionInfo": "2.12.9-r5",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Alpine Package Keeper - package manager for alpine",
+      "downloadLocation": "https://gitlab.alpinelinux.org/alpine/apk-tools",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "05459cfb088461472927a1f098e5959469635e2d"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/apk-tools@2.12.9-r5?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-busybox-suid-1.35.0-r17",
+      "name": "busybox-suid",
+      "versionInfo": "1.35.0-r17",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "suid binaries of Busybox",
+      "downloadLocation": "https://busybox.net/",
+      "originator": "Sören Tempel \u003csoeren+alpine@soeren-tempel.net\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "e4faaa91f4ab4cec906b1c8f3106078d06ec6e18"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/busybox-suid@1.35.0-r17?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-mdev-conf-4.1-r1",
+      "name": "mdev-conf",
+      "versionInfo": "4.1-r1",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Configuration files for mdev and mdevd",
+      "downloadLocation": "https://git.alpinelinux.org/aports/tree/main/busybox-initscripts",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "dea161df200e348fda5ec2c4bb2a5eb10bfd5615"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/mdev-conf@4.1-r1?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-busybox-initscripts-4.1-r1",
+      "name": "busybox-initscripts",
+      "versionInfo": "4.1-r1",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Init scripts for busybox daemons",
+      "downloadLocation": "https://git.alpinelinux.org/aports/tree/main/busybox-initscripts",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "f55522b51978ef01f5d85bed3c105b81f19f2927"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/busybox-initscripts@4.1-r1?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-scanelf-1.3.4-r0",
+      "name": "scanelf",
+      "versionInfo": "1.3.4-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Scan ELF binaries for stuff",
+      "downloadLocation": "https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "f378d1dd4b2be6e9f8e9f7108dff44fd2e7ad3a1"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/scanelf@1.3.4-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-musl-utils-1.2.3-r0",
+      "name": "musl-utils",
+      "versionInfo": "1.2.3-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT AND BSD AND GPL2+",
+      "licenseDeclared": "NOASSERTION",
+      "description": "the musl c library (libc) implementation",
+      "downloadLocation": "https://musl.libc.org/",
+      "originator": "Timo Teräs \u003ctimo.teras@iki.fi\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "ea81c1ade29e030fba3a0c6b17c8ec98bb6bca49"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/musl-utils@1.2.3-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-libc-utils-0.7.2-r3",
+      "name": "libc-utils",
+      "versionInfo": "0.7.2-r3",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause AND BSD-3-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Meta package to pull in correct libc",
+      "downloadLocation": "https://alpinelinux.org",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "198b8df47662b7bf4a6085232e9b5df6a2676019"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/libc-utils@0.7.2-r3?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-keys-2.4-r1",
+      "name": "alpine-keys",
+      "versionInfo": "2.4-r1",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Public keys for Alpine Linux packages",
+      "downloadLocation": "https://alpinelinux.org",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "903176b2d2a8ddefd1ba6940f19ad17c2c1d4aff"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/alpine-keys@2.4-r1?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-base-3.16.0-r0",
+      "name": "alpine-base",
+      "versionInfo": "3.16.0-r0",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "NOASSERTION",
+      "description": "Meta package for minimal alpine base",
+      "downloadLocation": "https://alpinelinux.org",
+      "originator": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+      "sourceInfo": "Package info from apk database",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "3a4cc74a16e1f495ef76857bdb56c3ed36a6a38b"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:apk/alpine/alpine-base@3.16.0-r0?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-sha256C58f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-baselayout-data-3.2.0-r23"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-musl-1.2.3-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-busybox-1.35.0-r17"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-baselayout-3.2.0-r23"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-ifupdown-ng-0.12.1-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-openrc-0.44.10-r7"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-conf-3.14.2-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-ca-certificates-bundle-20211220-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-libcrypto1.1-1.1.1o-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-libssl1.1-1.1.1o-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-sslC95client-1.35.0-r17"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-zlib-1.2.12-r1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-apk-tools-2.12.9-r5"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-busybox-suid-1.35.0-r17"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-mdev-conf-4.1-r1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-busybox-initscripts-4.1-r1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-scanelf-1.3.4-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-musl-utils-1.2.3-r0"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-libc-utils-0.7.2-r3"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-keys-2.4-r1"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-Package-SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e-alpine-base-3.16.0-r0"
+    }
+  ]
+}
