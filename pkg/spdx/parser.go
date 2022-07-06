@@ -18,6 +18,7 @@ package spdx
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,6 +28,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	spdxJSON "sigs.k8s.io/bom/pkg/spdx/json/v2.2.2"
 )
 
 // Regexp to match the tag-value spdx expressions
@@ -38,7 +40,6 @@ var (
 // OpenDoc opens a file, parses a SPDX tag-value file and returns a loaded
 // spdx.Document object. This functions has the cyclomatic chec disabled as
 // it spans specific cases for each of the tags it recognizes.
-// nolint:gocyclo
 func OpenDoc(path string) (doc *Document, err error) {
 	// support reading SBOMs from STDIN
 	var file *os.File
@@ -70,12 +71,277 @@ func OpenDoc(path string) (doc *Document, err error) {
 	switch format {
 	case "spdx":
 		return parseTagValue(file)
+	case "spdx+json":
+		return parseJSON(file)
 	}
 
 	return nil, errors.New("unknown SBOM encoding")
 }
 
+// parseJSON parses an SPDX document encoded in json
+// nolint:gocyclo
+func parseJSON(file *os.File) (doc *Document, err error) {
+	jsonDoc := &spdxJSON.Document{
+		CreationInfo: spdxJSON.CreationInfo{
+			Creators: []string{},
+		},
+		DocumentDescribes:    []string{},
+		Files:                []spdxJSON.File{},
+		Packages:             []spdxJSON.Package{},
+		Relationships:        []spdxJSON.Relationship{},
+		ExternalDocumentRefs: []spdxJSON.ExternalDocumentRef{},
+	}
+
+	// Read the SPDX doc into the json struct
+	var data []byte
+	data, err = os.ReadFile(file.Name())
+	if err != nil {
+		return nil, fmt.Errorf("reading SBOM file: %w", err)
+	}
+	if err := json.Unmarshal(data, jsonDoc); err != nil {
+		return nil, fmt.Errorf("parsing SBOM json: %w", err)
+	}
+
+	doc = &Document{
+		Version:     jsonDoc.Version,
+		DataLicense: jsonDoc.DataLicense,
+		ID:          jsonDoc.ID,
+		Name:        jsonDoc.Name,
+		Creator: struct {
+			Person       string
+			Organization string
+			Tool         []string
+		}{
+			Tool: []string{},
+		},
+		Namespace:       jsonDoc.Namespace,
+		Packages:        map[string]*Package{},
+		Files:           map[string]*File{},
+		ExternalDocRefs: []ExternalDocumentRef{},
+	}
+
+	for _, c := range jsonDoc.CreationInfo.Creators {
+		// Technical limitation in bom: We only have one person and one org
+		ps := strings.SplitN(c, ":", 2)
+		if len(ps) != 2 {
+			logrus.Errorf("unable to parse creator data: %s", c)
+			continue
+		}
+		ps[1] = strings.TrimSpace(ps[1])
+
+		switch ps[0] {
+		case entPerson:
+			if doc.Creator.Person == "" {
+				doc.Creator.Person = ps[1]
+			} else {
+				logrus.Warnf("Ignoring additional SBOM Creator Person")
+			}
+		case entOrganization:
+			if doc.Creator.Organization == "" {
+				doc.Creator.Organization = ps[1]
+			} else {
+				logrus.Warnf("Ignoring additional SBOM Creator Organization")
+			}
+		case entTool:
+			doc.Creator.Tool = append(doc.Creator.Tool, ps[1])
+		default:
+			logrus.Errorf("Unknown creator record: %s", ps[0])
+		}
+	}
+
+	doc.LicenseListVersion = jsonDoc.CreationInfo.LicenseListVersion
+	if jsonDoc.CreationInfo.Created != "" {
+		t, err := time.Parse("2006-01-02T15:04:05Z", jsonDoc.CreationInfo.Created)
+		if err != nil {
+			logrus.Errorf("unable to parse creation time: %s: %s", jsonDoc.CreationInfo.Created, err)
+		} else {
+			doc.Created = t
+		}
+	}
+
+	allPackages := map[string]*Package{}
+	for i := range jsonDoc.Packages {
+		pData := &jsonDoc.Packages[i]
+		allPackages[pData.ID] = &Package{
+			Entity: Entity{
+				ID:               pData.ID,
+				Name:             pData.Name,
+				DownloadLocation: pData.DownloadLocation,
+				CopyrightText:    pData.CopyrightText,
+				LicenseConcluded: pData.LicenseConcluded,
+				// LicenseComments:  pData.LicenseComments,
+				Relationships: []*Relationship{},
+				Checksum:      map[string]string{},
+			},
+			FilesAnalyzed:        pData.FilesAnalyzed,
+			LicenseInfoFromFiles: []string{},
+			LicenseDeclared:      pData.LicenseDeclared,
+			Version:              pData.Version,
+			VerificationCode:     pData.VerificationCode.Value,
+			// Comment:              pData.Comment,
+			// HomePage:             pData.HomePage,
+			Supplier: struct {
+				Person       string
+				Organization string
+			}{},
+			Originator: struct {
+				Person       string
+				Organization string
+			}{},
+			ExternalRefs: []ExternalRef{},
+		}
+
+		if pData.Checksums != nil {
+			for _, cs := range pData.Checksums {
+				allPackages[pData.ID].Checksum[cs.Algorithm] = cs.Value
+			}
+		}
+
+		if pData.ExternalRefs != nil {
+			for _, eref := range pData.ExternalRefs {
+				allPackages[pData.ID].ExternalRefs = append(allPackages[pData.ID].ExternalRefs, ExternalRef{
+					Category: eref.Category,
+					Type:     eref.Type,
+					Locator:  eref.Locator,
+				})
+			}
+		}
+	}
+
+	allFiles := map[string]*File{}
+	for i := range jsonDoc.Files {
+		fData := &jsonDoc.Files[i]
+		allFiles[fData.ID] = &File{
+			Entity: Entity{
+				ID:               fData.ID,
+				Name:             fData.Name,
+				CopyrightText:    fData.CopyrightText,
+				LicenseConcluded: fData.LicenseConcluded,
+				// LicenseComments:  pData.LicenseComments,
+				Relationships: []*Relationship{},
+				Checksum:      map[string]string{},
+			},
+			FileType:          []string{},
+			LicenseInfoInFile: strings.Join(fData.LicenseInfoInFile, " AND "),
+		}
+
+		if fData.Checksums != nil {
+			for _, cs := range fData.Checksums {
+				allFiles[fData.ID].Checksum[cs.Algorithm] = cs.Value
+			}
+		}
+	}
+
+	seenObjects := map[string]string{}
+
+	// Populate the package and file relationships before adding
+	// the root level elements
+	for _, r := range jsonDoc.Relationships {
+		var source Object
+		var peer Object
+		var relatedID string
+		var externalID string
+
+		// Look for the source element
+		if _, ok := allPackages[r.Element]; ok {
+			source = allPackages[r.Element]
+		} else if _, ok := allFiles[r.Element]; ok {
+			source = allFiles[r.Element]
+		}
+		if source == nil {
+			logrus.Warnf("unable to find SPDX source element %s", r.Element)
+			continue
+		}
+
+		// Look for the peer element, exception: peer may be
+		// an external reference
+		if strings.HasPrefix(r.Related, "DocumentRef-") {
+			externalID = r.Related
+			parts := strings.SplitN(r.Related, ":", 2)
+			if len(parts) != 2 {
+				logrus.Errorf("Unable to parse external reference %s", r.Related)
+				continue
+			}
+			relatedID = parts[1]
+		} else {
+			if _, ok := allPackages[r.Related]; ok {
+				peer = allPackages[r.Related]
+			} else if _, ok := allFiles[r.Related]; ok {
+				peer = allFiles[r.Related]
+			}
+			if peer == nil {
+				logrus.Warnf("unable to find SPDX related element %s", r.Related)
+				continue
+			}
+			relatedID = peer.SPDXID()
+		}
+
+		rel := Relationship{
+			PeerReference:    relatedID,
+			PeerExtReference: externalID,
+			Comment:          "",
+			Type:             RelationshipType(r.Type),
+			Peer:             peer,
+		}
+		source.AddRelationship(&rel)
+
+		// Note those objects we've seen to keep track of any loose items
+		if peer != nil {
+			seenObjects[peer.SPDXID()] = peer.SPDXID()
+		}
+	}
+
+	// Add the top level packages
+	for _, el := range jsonDoc.DocumentDescribes {
+		var p *Package
+		var f *File
+		var ok bool
+
+		if p, ok = allPackages[el]; ok {
+			doc.Packages[p.SPDXID()] = p
+			seenObjects[el] = el
+			continue
+		}
+
+		if f, ok = allFiles[el]; ok {
+			doc.Files[p.SPDXID()] = f
+			seenObjects[el] = el
+			continue
+		}
+		logrus.Errorf("unable to find package %s described by sbom", el)
+	}
+
+	// Delete everything from the all maps to see if we missed anything
+	for _, id := range seenObjects {
+		delete(allPackages, id)
+		delete(allFiles, id)
+	}
+
+	if l := len(allPackages); l > 0 {
+		logrus.Warnf("%d packages could not be assigned to the SBOM", l)
+	}
+
+	if l := len(allFiles); l > 0 {
+		logrus.Warnf("%d files could not be assigned to the SBOM", l)
+	}
+
+	// Assign external references
+	for _, ref := range jsonDoc.ExternalDocumentRefs {
+		extRef := ExternalDocumentRef{
+			ID:  ref.ExternalDocumentID,
+			URI: ref.SPDXDocument,
+			Checksums: map[string]string{
+				ref.Checksum.Algorithm: ref.Checksum.Value,
+			},
+		}
+		doc.ExternalDocRefs = append(doc.ExternalDocRefs, extRef)
+	}
+
+	return doc, nil
+}
+
 // parseTagValue parses an SPDX SBOM in tag-value format
+// nolint:gocyclo
 func parseTagValue(file *os.File) (doc *Document, err error) {
 	// Create a blank document
 	doc = &Document{
@@ -216,9 +482,9 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 				return nil, fmt.Errorf("invalid creator tag syntax at line %d", i)
 			}
 			switch match[1] {
-			case "Person":
+			case entPerson:
 				currentObject.(*Package).Supplier.Person = match[2]
-			case "Organization":
+			case entOrganization:
 				currentObject.(*Package).Supplier.Organization = match[2]
 			default:
 				return nil, fmt.Errorf(
@@ -288,11 +554,11 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 				return nil, fmt.Errorf("invalid creator tag syntax at line %d", i)
 			}
 			switch match[1] {
-			case "Person":
+			case entPerson:
 				doc.Creator.Person = match[2]
-			case "Tool":
+			case entTool:
 				doc.Creator.Tool = append(doc.Creator.Tool, match[2])
-			case "Organization":
+			case entOrganization:
 				doc.Creator.Organization = match[2]
 			default:
 				return nil, fmt.Errorf(
