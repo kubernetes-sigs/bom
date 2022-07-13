@@ -1,4 +1,4 @@
-defaultBaseImage: gcr.io/distroless/static-debian11
+defaultBaseImage: ghcr.io/distroless/go:latest
 
 builds:
 - id: bom
