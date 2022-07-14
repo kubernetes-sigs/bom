@@ -923,7 +923,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 		if i == layerNum && osPackageData != nil {
 			for i := range *osPackageData {
 				ospk := NewPackage()
-				ospk.Name = (*osPackageData)[i].Package + "-" + (*osPackageData)[i].Version
+				ospk.Name = (*osPackageData)[i].Package
 				ospk.Version = (*osPackageData)[i].Version
 				ospk.HomePage = (*osPackageData)[i].HomePage
 				if (*osPackageData)[i].MaintainerName != "" {
