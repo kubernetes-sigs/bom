@@ -234,7 +234,7 @@ func (spdx *SPDX) ExtractTarballTmp(tarPath string) (tmpDir string, err error) {
 	return spdx.impl.ExtractTarballTmp(tarPath)
 }
 
-// PullImagesToArchive
+// PullImagesToArchive downloads all the images found from a reference to disk
 func (spdx *SPDX) PullImagesToArchive(reference, path string) ([]ImageReferenceInfo, error) {
 	return spdx.impl.PullImagesToArchive(reference, path)
 }

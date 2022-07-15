@@ -336,9 +336,9 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 
 	for _, refData := range references {
 		go func(r ImageReferenceInfo) {
-			ref, err := name.ParseReference(refData.Digest)
+			ref, err := name.ParseReference(r.Digest)
 			if err != nil {
-				t.Done(fmt.Errorf("parsing reference %s: %w", referenceString, err))
+				t.Done(fmt.Errorf("parsing reference %s: %w", r.Digest, err))
 				return
 			}
 
@@ -351,7 +351,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 			p := strings.Split(d.DigestStr(), ":")
 			tarPath := filepath.Join(path, p[1]+".tar")
 
-			logrus.Infof("Downloading %s from remote registry to %s", refData.Digest, tarPath)
+			logrus.Infof("Downloading %s from remote registry to %s", r.Digest, tarPath)
 
 			// Download image from remote
 			img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
@@ -369,9 +369,9 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 				t.Done(fmt.Errorf("writing image to disk: %w", err))
 				return
 			}
-			refData.Archive = tarPath
+			r.Archive = tarPath
 			mtx.Lock()
-			images = append(images, refData)
+			images = append(images, r)
 			mtx.Unlock()
 			t.Done(nil)
 		}(refData)
