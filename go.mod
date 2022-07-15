@@ -17,12 +17,13 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.11
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.7.1
+	sigs.k8s.io/release-utils v0.7.2
 )
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
+	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
@@ -43,7 +44,6 @@ require (
 
 require (
 	github.com/acomagu/bufpipe v1.0.3 // indirect
-	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.11.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v20.10.16+incompatible // indirect
