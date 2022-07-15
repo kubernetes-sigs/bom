@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
-
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/bom/pkg/spdx"
 )
@@ -191,33 +190,18 @@ type FakeSpdxImplementation struct {
 		result1 *spdx.Package
 		result2 error
 	}
-	PullImagesToArchiveStub func(string, string) ([]struct {
-		Reference string
-		Archive   string
-		Arch      string
-		OS        string
-	}, error)
+	PullImagesToArchiveStub        func(string, string) ([]spdx.ImageReferenceInfo, error)
 	pullImagesToArchiveMutex       sync.RWMutex
 	pullImagesToArchiveArgsForCall []struct {
 		arg1 string
 		arg2 string
 	}
 	pullImagesToArchiveReturns struct {
-		result1 []struct {
-			Reference string
-			Archive   string
-			Arch      string
-			OS        string
-		}
+		result1 []spdx.ImageReferenceInfo
 		result2 error
 	}
 	pullImagesToArchiveReturnsOnCall map[int]struct {
-		result1 []struct {
-			Reference string
-			Archive   string
-			Arch      string
-			OS        string
-		}
+		result1 []spdx.ImageReferenceInfo
 		result2 error
 	}
 	ReadArchiveManifestStub        func(string) (*spdx.ArchiveManifest, error)
@@ -1026,12 +1010,7 @@ func (fake *FakeSpdxImplementation) PackageFromTarballReturnsOnCall(i int, resul
 	}{result1, result2}
 }
 
-func (fake *FakeSpdxImplementation) PullImagesToArchive(arg1 string, arg2 string) ([]struct {
-	Reference string
-	Archive   string
-	Arch      string
-	OS        string
-}, error) {
+func (fake *FakeSpdxImplementation) PullImagesToArchive(arg1 string, arg2 string) ([]spdx.ImageReferenceInfo, error) {
 	fake.pullImagesToArchiveMutex.Lock()
 	ret, specificReturn := fake.pullImagesToArchiveReturnsOnCall[len(fake.pullImagesToArchiveArgsForCall)]
 	fake.pullImagesToArchiveArgsForCall = append(fake.pullImagesToArchiveArgsForCall, struct {
@@ -1057,12 +1036,7 @@ func (fake *FakeSpdxImplementation) PullImagesToArchiveCallCount() int {
 	return len(fake.pullImagesToArchiveArgsForCall)
 }
 
-func (fake *FakeSpdxImplementation) PullImagesToArchiveCalls(stub func(string, string) ([]struct {
-	Reference string
-	Archive   string
-	Arch      string
-	OS        string
-}, error)) {
+func (fake *FakeSpdxImplementation) PullImagesToArchiveCalls(stub func(string, string) ([]spdx.ImageReferenceInfo, error)) {
 	fake.pullImagesToArchiveMutex.Lock()
 	defer fake.pullImagesToArchiveMutex.Unlock()
 	fake.PullImagesToArchiveStub = stub
@@ -1075,53 +1049,28 @@ func (fake *FakeSpdxImplementation) PullImagesToArchiveArgsForCall(i int) (strin
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeSpdxImplementation) PullImagesToArchiveReturns(result1 []struct {
-	Reference string
-	Archive   string
-	Arch      string
-	OS        string
-}, result2 error) {
+func (fake *FakeSpdxImplementation) PullImagesToArchiveReturns(result1 []spdx.ImageReferenceInfo, result2 error) {
 	fake.pullImagesToArchiveMutex.Lock()
 	defer fake.pullImagesToArchiveMutex.Unlock()
 	fake.PullImagesToArchiveStub = nil
 	fake.pullImagesToArchiveReturns = struct {
-		result1 []struct {
-			Reference string
-			Archive   string
-			Arch      string
-			OS        string
-		}
+		result1 []spdx.ImageReferenceInfo
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSpdxImplementation) PullImagesToArchiveReturnsOnCall(i int, result1 []struct {
-	Reference string
-	Archive   string
-	Arch      string
-	OS        string
-}, result2 error) {
+func (fake *FakeSpdxImplementation) PullImagesToArchiveReturnsOnCall(i int, result1 []spdx.ImageReferenceInfo, result2 error) {
 	fake.pullImagesToArchiveMutex.Lock()
 	defer fake.pullImagesToArchiveMutex.Unlock()
 	fake.PullImagesToArchiveStub = nil
 	if fake.pullImagesToArchiveReturnsOnCall == nil {
 		fake.pullImagesToArchiveReturnsOnCall = make(map[int]struct {
-			result1 []struct {
-				Reference string
-				Archive   string
-				Arch      string
-				OS        string
-			}
+			result1 []spdx.ImageReferenceInfo
 			result2 error
 		})
 	}
 	fake.pullImagesToArchiveReturnsOnCall[i] = struct {
-		result1 []struct {
-			Reference string
-			Archive   string
-			Arch      string
-			OS        string
-		}
+		result1 []spdx.ImageReferenceInfo
 		result2 error
 	}{result1, result2}
 }
