@@ -218,29 +218,6 @@ func getImageReferences(referenceString string) ([]struct {
 		OS     string
 	}{}
 
-	img, err := daemon.Image(ref)
-	if err != nil && (!strings.Contains(err.Error(), "Error: No such image") &&
-		!strings.Contains(err.Error(), "Cannot connect to the Docker daemon at")) {
-		return nil, fmt.Errorf("could not get image reference %s: %s", referenceString, err)
-	}
-
-	if img != nil {
-		if size, err := img.Size(); err == nil && size > 0 {
-			tag, ok := ref.(name.Tag)
-			if !ok {
-				return nil, fmt.Errorf("could not cast tag from reference %s: %w", referenceString, err)
-			}
-
-			logrus.Infof("Adding image tag %s from reference", referenceString)
-			return append(images, struct {
-				Digest string
-				Tag    string
-				Arch   string
-				OS     string
-			}{Tag: tag.String()}), nil
-		}
-	}
-
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return nil, fmt.Errorf("fetching remote descriptor: %w", err)
@@ -445,7 +422,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 			return nil, fmt.Errorf("parsing reference %s: %w", referenceString, err)
 		}
 
-		logrus.Infof("Trying to downloat it %s from remote", refData.Digest)
+		logrus.Infof("Trying to download %s from remote", refData.Digest)
 		// Get the reference image
 		img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 		if err != nil {
