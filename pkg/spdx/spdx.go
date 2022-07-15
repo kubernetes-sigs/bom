@@ -71,6 +71,8 @@ type ImageReferenceInfo struct {
 	Archive   string
 	Arch      string
 	OS        string
+	MediaType string
+	Images    []ImageReferenceInfo
 }
 
 func NewSPDX() *SPDX {

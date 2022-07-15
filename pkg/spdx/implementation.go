@@ -193,30 +193,24 @@ func (di *spdxDefaultImplementation) ReadArchiveManifest(manifestPath string) (m
 
 // getImageReferences gets a reference string and returns all image
 // references from it
-func getImageReferences(referenceString string) ([]ImageReferenceInfo, error) {
+func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 	ref, err := name.ParseReference(referenceString)
 	if err != nil {
 		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
 	}
 
-	images := []ImageReferenceInfo{}
+	images := &ImageReferenceInfo{}
 
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return nil, fmt.Errorf("fetching remote descriptor: %w", err)
 	}
 
-	// If we got a digest, we reuse it as is
-	if _, ok := ref.(name.Digest); ok {
-		images = append(images, ImageReferenceInfo{Digest: ref.(name.Digest).String()})
-		logrus.Infof("Adding image %s", ref)
-		return images, nil
-	}
-
 	// If the reference is not an image, it has to work as a tag
-	tag, ok := ref.(name.Tag)
-	if !ok {
-		return nil, fmt.Errorf("could not cast tag from reference %s: %w", referenceString, err)
+	tag, tok := ref.(name.Tag)
+	dig, dok := ref.(name.Digest)
+	if !tok && !dok {
+		return nil, fmt.Errorf("could not cast tag or digest from reference %s: %w", referenceString, err)
 	}
 	// If the reference points to an image, return it
 	if descr.MediaType.IsImage() {
@@ -232,19 +226,32 @@ func getImageReferences(referenceString string) ([]ImageReferenceInfo, error) {
 			return nil, fmt.Errorf("while calculating image digest: %w", err)
 		}
 
-		dig, err := name.NewDigest(
-			fmt.Sprintf(
-				"%s/%s@%s:%s",
-				tag.RegistryStr(), tag.RepositoryStr(),
-				imageDigest.Algorithm, imageDigest.Hex,
-			),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("building single image digest: %w", err)
+		// If we could not turn the reference to digest then we synthesize one
+		if tag, ok := ref.(name.Tag); ok && !dok {
+			dig, err = name.NewDigest(
+				fmt.Sprintf(
+					"%s/%s@%s:%s",
+					tag.RegistryStr(), tag.RepositoryStr(),
+					imageDigest.Algorithm, imageDigest.Hex,
+				),
+			)
+			if err != nil {
+				return nil, fmt.Errorf("building single image digest: %w", err)
+			}
 		}
 
 		logrus.Infof("Adding image digest %s from reference", dig.String())
-		return append(images, ImageReferenceInfo{Digest: dig.String()}), nil
+		images.Digest = dig.String()
+		mt, err := im.MediaType()
+		if err == nil {
+			images.MediaType = string(mt)
+		}
+		conf, err := im.ConfigFile()
+		if err == nil {
+			images.Arch = conf.Architecture
+			images.OS = conf.OS
+		}
+		return images, nil
 	}
 
 	// Get the image index
@@ -257,6 +264,8 @@ func getImageReferences(referenceString string) ([]ImageReferenceInfo, error) {
 		return nil, fmt.Errorf("getting index manifest from %s: %w", referenceString, err)
 	}
 	logrus.Infof("Reference image index points to %d manifests", len(indexManifest.Manifests))
+	images.MediaType = string(indexManifest.MediaType)
+	images.Images = []ImageReferenceInfo{}
 
 	for _, manifest := range indexManifest.Manifests {
 		dig, err := name.NewDigest(
@@ -279,7 +288,7 @@ func getImageReferences(referenceString string) ([]ImageReferenceInfo, error) {
 			arch = manifest.Platform.Architecture
 			osid = manifest.Platform.OS
 		}
-		images = append(images,
+		images.Images = append(images.Images,
 			ImageReferenceInfo{
 				Digest: dig.String(),
 				Arch:   arch,
@@ -321,7 +330,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		return nil, err
 	}
 
-	if len(references) == 0 {
+	if len(references.Images) == 0 {
 		return nil, fmt.Errorf("the supplied reference did not return any image references: %w", err)
 	}
 
@@ -332,9 +341,9 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	}
 
 	// Download 4 arch at once
-	t := throttler.New(4, len(references))
+	t := throttler.New(4, len(references.Images))
 
-	for _, refData := range references {
+	for _, refData := range references.Images {
 		go func(r ImageReferenceInfo) {
 			ref, err := name.ParseReference(r.Digest)
 			if err != nil {
@@ -593,7 +602,7 @@ func (*spdxDefaultImplementation) purlFromImage(img *ImageReferenceInfo) string 
 	}
 
 	digest := ""
-	// If we have the digest, skip checking it from the resistry
+	// If we have the digest, skip checking it from the registry
 	if _, ok := imageReference.(name.Digest); ok {
 		p := strings.Split(imageReference.(name.Digest).String(), "@")
 		if len(p) < 2 {

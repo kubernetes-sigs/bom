@@ -287,8 +287,12 @@ func TestGetImageReferences(t *testing.T) {
 	}
 	require.NoError(t, err)
 	// This image should have 5 architectures
-	require.Len(t, references, 5)
-	for _, refData := range references {
+	require.Len(t, references.Images, 5)
+	require.Equal(t, references.MediaType, "application/vnd.docker.distribution.manifest.list.v2+json")
+	// INdices should have no platform
+	require.Equal(t, "", references.Arch)
+	require.Equal(t, "", references.OS)
+	for _, refData := range references.Images {
 		_, ok := images[refData.Digest]
 		require.True(t, ok, fmt.Sprintf("Image not found %s", refData.Digest))
 		require.Equal(t, images[refData.Digest].os, refData.OS)
@@ -299,14 +303,20 @@ func TestGetImageReferences(t *testing.T) {
 	singleRef := "registry.k8s.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519"
 	references, err = getImageReferences(singleRef)
 	require.NoError(t, err)
-	require.Len(t, references, 1)
-	require.Equal(t, singleRef, references[0].Digest)
+	require.Len(t, references.Images, 0)
+	require.Equal(t, singleRef, references.Digest)
+	require.Equal(t, "application/vnd.docker.distribution.manifest.v2+json", references.MediaType)
+	require.Equal(t, "ppc64le", references.Arch)
+	require.Equal(t, "linux", references.OS)
 
 	// Tag with a single image. Image 1.0 is a single image
 	references, err = getImageReferences("registry.k8s.io/pause:1.0")
 	require.NoError(t, err)
-	require.Len(t, references, 1)
-	require.Equal(t, "registry.k8s.io/pause@sha256:a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f", references[0].Digest)
+	require.Len(t, references.Images, 0)
+	require.Equal(t, "registry.k8s.io/pause@sha256:a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f", references.Digest)
+	require.Equal(t, "application/vnd.docker.distribution.manifest.v2+json", references.MediaType)
+	require.Equal(t, "amd64", references.Arch)
+	require.Equal(t, "linux", references.OS)
 }
 
 func TestPullImagesToArchive(t *testing.T) {
@@ -451,4 +461,36 @@ func TestRecursiveSearch(t *testing.T) {
 
 	// But also dependencies should be found
 	checkSubPackages(p, "dep")
+}
+
+func TestPurlFromImage(t *testing.T) {
+	for _, tc := range []struct {
+		info     ImageReferenceInfo
+		expected string
+	}{
+		{
+			ImageReferenceInfo{
+				Digest:    "sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
+				Reference: "",
+				Archive:   "",
+				Arch:      "",
+				OS:        "",
+			},
+			"pkg:oci/image@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
+		},
+		{
+			ImageReferenceInfo{
+				Digest:    "index.docker.io/library/nginx@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
+				Reference: "index.docker.io/library/nginx@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
+				Archive:   "",
+				Arch:      "amd64",
+				OS:        "darwin",
+			},
+			"pkg:oci/nginx@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?arch=amd64&repository_url=index.docker.io%2Flibrary",
+		},
+	} {
+		impl := spdxDefaultImplementation{}
+		p := impl.purlFromImage(&tc.info)
+		require.Equal(t, tc.expected, p)
+	}
 }
