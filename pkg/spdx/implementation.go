@@ -579,7 +579,7 @@ func (di *spdxDefaultImplementation) GetDirectoryLicense(
 }
 
 // purlFromImage builds a purl from an image reference
-func (*spdxDefaultImplementation) purlFromImage(img ImageReferenceInfo) string {
+func (*spdxDefaultImplementation) purlFromImage(img *ImageReferenceInfo) string {
 	// OCI type urls don't have a namespace ref:
 	// https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#oci
 
@@ -653,7 +653,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 		if err != nil {
 			return nil, fmt.Errorf("building package from single image: %w", err)
 		}
-		packageurl := di.purlFromImage(imgs[0])
+		packageurl := di.purlFromImage(&imgs[0])
 		if packageurl != "" {
 			p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
 				Category: "PACKAGE-MANAGER",
@@ -678,7 +678,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Now, cycle each image in the index and generate a package from it
-	for _, img := range imgs {
+	for i, img := range imgs {
 		subpkg, err := di.PackageFromImageTarball(opts, img.Archive)
 		if err != nil {
 			return nil, fmt.Errorf("adding image variant package: %w", err)
@@ -694,7 +694,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 			subpkg.Name = img.Reference
 		}
 
-		packageurl := di.purlFromImage(img)
+		packageurl := di.purlFromImage(&imgs[i])
 		if packageurl != "" {
 			subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
 				Category: "PACKAGE-MANAGER",
@@ -718,7 +718,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Add a the topmost package purl
-	packageurl := di.purlFromImage(ImageReferenceInfo{Reference: ref})
+	packageurl := di.purlFromImage(&ImageReferenceInfo{Reference: ref})
 	if packageurl != "" {
 		pkg.ExternalRefs = append(pkg.ExternalRefs, ExternalRef{
 			Category: "PACKAGE-MANAGER",
