@@ -31,8 +31,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/v1/daemon"
-
 	gitignore "github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
@@ -373,67 +371,24 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	}
 
 	for _, refData := range references {
-		if refData.Tag != "" {
-			tagRef, err := name.ParseReference(refData.Tag)
-			if err != nil {
-				return nil, fmt.Errorf("parsing reference %s: %w", referenceString, err)
-			}
-
-			logrus.Infof("Checking the local image cache for %s", refData.Tag)
-
-			img, err := daemon.Image(tagRef)
-			if err != nil {
-				return nil, fmt.Errorf("getting image %s: %w", referenceString, err)
-			}
-
-			if size, err := img.Size(); err == nil && size > 0 {
-				logrus.Infof("%s was found in the local image cache", refData.Tag)
-				// This function is not for digests
-				d, ok := tagRef.(name.Tag)
-				if !ok {
-					return nil, fmt.Errorf("reference is not a tag or digest")
-				}
-				var p string
-				ri := strings.Split(d.RepositoryStr(), "/")
-				if len(ri) > 0 {
-					p = fmt.Sprintf("%s_%s_%s", ri[0], ri[1], d.TagStr())
-				} else {
-					p = fmt.Sprintf("%s_%s", ri[0], d.TagStr())
-				}
-
-				tarPath := filepath.Join(path, p+".tar")
-				err := tarball.WriteToFile(tarPath, tagRef, img)
-				if err != nil {
-					return nil, err
-				}
-				images = append(images, struct {
-					Reference string
-					Archive   string
-					Arch      string
-					OS        string
-				}{refData.Digest, tarPath, refData.Arch, refData.OS})
-				return images, nil
-			}
-		}
-
-		logrus.Infof("%s was not found in the local image cache", refData.Digest)
 		ref, err := name.ParseReference(refData.Digest)
 		if err != nil {
 			return nil, fmt.Errorf("parsing reference %s: %w", referenceString, err)
 		}
 
-		logrus.Infof("Trying to download %s from remote", refData.Digest)
-		// Get the reference image
+		d, ok := ref.(name.Digest)
+		if !ok {
+			return nil, fmt.Errorf("reference is not a tag or digest")
+		}
+
+		logrus.Debugf("Downloading %s from remote registry", refData.Digest)
+
+		// Download image from remote
 		img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 		if err != nil {
 			return nil, fmt.Errorf("getting image: %w", err)
 		}
 
-		// This function is not for digests
-		d, ok := ref.(name.Digest)
-		if !ok {
-			return nil, fmt.Errorf("reference is not a tag or digest")
-		}
 		p := strings.Split(d.DigestStr(), ":")
 		tarPath := filepath.Join(path, p[1]+".tar")
 		if err := tarball.MultiWriteToFile(
