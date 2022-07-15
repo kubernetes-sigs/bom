@@ -344,11 +344,15 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 
 			d, ok := ref.(name.Digest)
 			if !ok {
-				t.Done(fmt.Errorf("reference is not a tag or digest"))
+				t.Done(errors.New("reference is not a tag or digest"))
 				return
 			}
 
 			p := strings.Split(d.DigestStr(), ":")
+			if len(p) < 2 {
+				t.Done(fmt.Errorf("unable to parse digest string %s", d.DigestStr()))
+				return
+			}
 			tarPath := filepath.Join(path, p[1]+".tar")
 
 			logrus.Infof("Downloading %s from remote registry to %s", r.Digest, tarPath)
@@ -356,7 +360,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 			// Download image from remote
 			img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 			if err != nil {
-				t.Done(fmt.Errorf("getting image: %w", err))
+				t.Done(fmt.Errorf("getting image from remote: %w", err))
 				return
 			}
 
