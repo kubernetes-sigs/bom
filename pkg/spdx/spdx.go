@@ -64,6 +64,15 @@ type SPDX struct {
 	options *Options
 }
 
+// ImageReferenceInfo is a type to move information about a container image reference
+type ImageReferenceInfo struct {
+	Digest    string
+	Reference string
+	Archive   string
+	Arch      string
+	OS        string
+}
+
 func NewSPDX() *SPDX {
 	return &SPDX{
 		impl:    &spdxDefaultImplementation{},
@@ -226,13 +235,7 @@ func (spdx *SPDX) ExtractTarballTmp(tarPath string) (tmpDir string, err error) {
 }
 
 // PullImagesToArchive
-func (spdx *SPDX) PullImagesToArchive(reference, path string) ([]struct {
-	Reference string
-	Archive   string
-	Arch      string
-	OS        string
-}, error,
-) {
+func (spdx *SPDX) PullImagesToArchive(reference, path string) ([]ImageReferenceInfo, error) {
 	return spdx.impl.PullImagesToArchive(reference, path)
 }
 

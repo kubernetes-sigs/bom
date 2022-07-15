@@ -30,6 +30,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	gitignore "github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -53,12 +54,7 @@ import (
 type spdxImplementation interface {
 	ExtractTarballTmp(string) (string, error)
 	ReadArchiveManifest(string) (*ArchiveManifest, error)
-	PullImagesToArchive(string, string) ([]struct {
-		Reference string
-		Archive   string
-		Arch      string
-		OS        string
-	}, error)
+	PullImagesToArchive(string, string) ([]ImageReferenceInfo, error)
 	PackageFromImageTarball(*Options, string) (*Package, error)
 	PackageFromTarball(*Options, *TarballOptions, string) (*Package, error)
 	PackageFromDirectory(*Options, string) (*Package, error)
@@ -197,24 +193,13 @@ func (di *spdxDefaultImplementation) ReadArchiveManifest(manifestPath string) (m
 
 // getImageReferences gets a reference string and returns all image
 // references from it
-func getImageReferences(referenceString string) ([]struct {
-	Digest string
-	Tag    string
-	Arch   string
-	OS     string
-}, error,
-) {
+func getImageReferences(referenceString string) ([]ImageReferenceInfo, error) {
 	ref, err := name.ParseReference(referenceString)
 	if err != nil {
 		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
 	}
 
-	images := []struct {
-		Digest string
-		Tag    string
-		Arch   string
-		OS     string
-	}{}
+	images := []ImageReferenceInfo{}
 
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
@@ -223,12 +208,7 @@ func getImageReferences(referenceString string) ([]struct {
 
 	// If we got a digest, we reuse it as is
 	if _, ok := ref.(name.Digest); ok {
-		images = append(images, struct {
-			Digest string
-			Tag    string
-			Arch   string
-			OS     string
-		}{Digest: ref.(name.Digest).String()})
+		images = append(images, ImageReferenceInfo{Digest: ref.(name.Digest).String()})
 		logrus.Infof("Adding image %s", ref)
 		return images, nil
 	}
@@ -264,12 +244,7 @@ func getImageReferences(referenceString string) ([]struct {
 		}
 
 		logrus.Infof("Adding image digest %s from reference", dig.String())
-		return append(images, struct {
-			Digest string
-			Tag    string
-			Arch   string
-			OS     string
-		}{Digest: dig.String()}), nil
+		return append(images, ImageReferenceInfo{Digest: dig.String()}), nil
 	}
 
 	// Get the image index
@@ -305,12 +280,7 @@ func getImageReferences(referenceString string) ([]struct {
 			osid = manifest.Platform.OS
 		}
 		images = append(images,
-			struct {
-				Digest string
-				Tag    string
-				Arch   string
-				OS     string
-			}{
+			ImageReferenceInfo{
 				Digest: dig.String(),
 				Arch:   arch,
 				OS:     osid,
@@ -341,19 +311,10 @@ func PullImageToArchive(referenceString, path string) error {
 // and writes it into a docker tar archive in path
 func (di *spdxDefaultImplementation) PullImagesToArchive(
 	referenceString, path string,
-) (images []struct {
-	Reference string
-	Archive   string
-	Arch      string
-	OS        string
-}, err error,
-) {
-	images = []struct {
-		Reference string
-		Archive   string
-		Arch      string
-		OS        string
-	}{}
+) (images []ImageReferenceInfo, err error) {
+	images = []ImageReferenceInfo{}
+
+	mtx := sync.Mutex{}
 	// Get the image references from the index
 	references, err := getImageReferences(referenceString)
 	if err != nil {
@@ -370,41 +331,56 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		}
 	}
 
+	// Download 4 arch at once
+	t := throttler.New(4, len(references))
+
 	for _, refData := range references {
-		ref, err := name.ParseReference(refData.Digest)
-		if err != nil {
-			return nil, fmt.Errorf("parsing reference %s: %w", referenceString, err)
-		}
+		go func(r ImageReferenceInfo) {
+			ref, err := name.ParseReference(refData.Digest)
+			if err != nil {
+				t.Done(fmt.Errorf("parsing reference %s: %w", referenceString, err))
+				return
+			}
 
-		d, ok := ref.(name.Digest)
-		if !ok {
-			return nil, fmt.Errorf("reference is not a tag or digest")
-		}
+			d, ok := ref.(name.Digest)
+			if !ok {
+				t.Done(fmt.Errorf("reference is not a tag or digest"))
+				return
+			}
 
-		logrus.Debugf("Downloading %s from remote registry", refData.Digest)
+			p := strings.Split(d.DigestStr(), ":")
+			tarPath := filepath.Join(path, p[1]+".tar")
 
-		// Download image from remote
-		img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
-		if err != nil {
-			return nil, fmt.Errorf("getting image: %w", err)
-		}
+			logrus.Infof("Downloading %s from remote registry to %s", refData.Digest, tarPath)
 
-		p := strings.Split(d.DigestStr(), ":")
-		tarPath := filepath.Join(path, p[1]+".tar")
-		if err := tarball.MultiWriteToFile(
-			tarPath,
-			map[name.Tag]v1.Image{
-				d.Repository.Tag(p[1]): img,
-			},
-		); err != nil {
-			return nil, err
+			// Download image from remote
+			img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+			if err != nil {
+				t.Done(fmt.Errorf("getting image: %w", err))
+				return
+			}
+
+			if err := tarball.MultiWriteToFile(
+				tarPath,
+				map[name.Tag]v1.Image{
+					d.Repository.Tag(p[1]): img,
+				},
+			); err != nil {
+				t.Done(fmt.Errorf("writing image to disk: %w", err))
+				return
+			}
+			refData.Archive = tarPath
+			mtx.Lock()
+			images = append(images, refData)
+			mtx.Unlock()
+			t.Done(nil)
+		}(refData)
+		if t.Throttle() > 0 {
+			break
 		}
-		images = append(images, struct {
-			Reference string
-			Archive   string
-			Arch      string
-			OS        string
-		}{refData.Digest, tarPath, refData.Arch, refData.OS})
+	}
+	if err := t.Err(); err != nil {
+		return nil, err
 	}
 	return images, nil
 }
@@ -603,10 +579,7 @@ func (di *spdxDefaultImplementation) GetDirectoryLicense(
 }
 
 // purlFromImage builds a purl from an image reference
-func (*spdxDefaultImplementation) purlFromImage(img struct {
-	Reference, Archive, Arch, OS string
-},
-) string {
+func (*spdxDefaultImplementation) purlFromImage(img ImageReferenceInfo) string {
 	// OCI type urls don't have a namespace ref:
 	// https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#oci
 
@@ -745,7 +718,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Add a the topmost package purl
-	packageurl := di.purlFromImage(struct{ Reference, Archive, Arch, OS string }{ref, "", "", ""})
+	packageurl := di.purlFromImage(ImageReferenceInfo{Reference: ref})
 	if packageurl != "" {
 		pkg.ExternalRefs = append(pkg.ExternalRefs, ExternalRef{
 			Category: "PACKAGE-MANAGER",
