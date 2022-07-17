@@ -199,11 +199,6 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
 	}
 
-	//	ref, err := name.ParseReference(referenceString)
-	if err != nil {
-		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
-	}
-
 	images := &ImageReferenceInfo{
 		Images: []ImageReferenceInfo{},
 	}
@@ -396,7 +391,6 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 			newrefs.Images = append(newrefs.Images, r)
 			mtx.Unlock()
 			t.Done(nil)
-
 		}(refData)
 		t.Throttle()
 	}
@@ -709,7 +703,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Now, cycle each image in the index and generate a package from it
-	for _, img := range references.Images {
+	for i, img := range references.Images {
 		subpkg, err := di.PackageFromImageTarball(opts, img.Archive)
 		if err != nil {
 			return nil, fmt.Errorf("adding image variant package: %w", err)
@@ -720,9 +714,13 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 			return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
 		}
 		subpkg.Name = imageDigest.DigestStr()
+		subpkg.Checksum = map[string]string{
+			"SHA256": strings.TrimPrefix(imageDigest.DigestStr(), "sha256:"),
+		}
+		subpkg.FileName = ""
 		subpkg.BuildID(pkg.Name, subpkg.Name)
 
-		packageurl := di.purlFromImage(&img)
+		packageurl := di.purlFromImage(&references.Images[i])
 		if packageurl != "" {
 			subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
 				Category: "PACKAGE-MANAGER",
@@ -800,14 +798,17 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 		)
 	}
 
-	logrus.Infof("Package describes %s image", manifest.RepoTags[0])
+	logrus.Infof("Package describes image %s", manifest.RepoTags[0])
 
 	// Create the new SPDX package
-	imagePackage = NewPackage()
+	imagePackage, err = di.PackageFromTarball(spdxOpts, tarOpts, tarPath)
+	if err != nil {
+		return nil, fmt.Errorf("generating package from tar archive: %w", err)
+	}
 	imagePackage.Options().WorkDir = tarOpts.ExtractDir
-	imagePackage.Name = manifest.RepoTags[0]
-	imagePackage.BuildID(imagePackage.Name)
-
+	imagePackage.Name = filepath.Base(tarPath)
+	imagePackage.BuildID(manifest.RepoTags[0])
+	imagePackage.Comment = "Container image archive"
 	logrus.Infof("Image manifest lists %d layers", len(manifest.LayerFiles))
 
 	// Scan the container layers for OS information:
@@ -843,6 +844,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 		}
 
 		pkg.Name = "sha256:" + pkg.Checksum["SHA256"]
+		pkg.Comment = "Container image layer from archive"
 
 		// Regenerate the BuildID to avoid clashes when handling multiple
 		// images at the same time.
