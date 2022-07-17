@@ -349,7 +349,6 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	// Populate a new image reference set with the archive data
 	newrefs := *references
 	newrefs.Images = []ImageReferenceInfo{}
-
 	// Download 4 arches at once
 	t := throttler.New(4, len(references.Images))
 	mtx := sync.Mutex{}
@@ -604,9 +603,9 @@ func (di *spdxDefaultImplementation) GetDirectoryLicense(
 func (*spdxDefaultImplementation) purlFromImage(img *ImageReferenceInfo) string {
 	// OCI type urls don't have a namespace ref:
 	// https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#oci
-
-	imageReference, err := name.ParseReference(img.Reference)
+	imageReference, err := name.ParseReference(img.Digest)
 	if err != nil {
+		logrus.Error(err)
 		return ""
 	}
 
@@ -699,7 +698,6 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	logrus.Infof("Generating SBOM for multiarch image %s", references.Digest)
 	pkg := &Package{}
 	indexDigest, err := name.NewDigest(references.Digest)
-
 	if err != nil {
 		return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
 	}
@@ -717,15 +715,12 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 			return nil, fmt.Errorf("adding image variant package: %w", err)
 		}
 
-		if img.Arch != "" || img.OS != "" {
-			subpkg.Name = ref + " (" + img.Arch
-			if img.Arch != "" {
-				subpkg.Name += "/"
-			}
-			subpkg.Name += img.OS + ")"
-		} else {
-			subpkg.Name = img.Reference
+		imageDigest, err := name.NewDigest(img.Digest)
+		if err != nil {
+			return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
 		}
+		subpkg.Name = imageDigest.DigestStr()
+		subpkg.BuildID(pkg.Name, subpkg.Name)
 
 		packageurl := di.purlFromImage(&img)
 		if packageurl != "" {
@@ -751,7 +746,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Add a the topmost package purl
-	packageurl := di.purlFromImage(&ImageReferenceInfo{Reference: ref})
+	packageurl := di.purlFromImage(references)
 	if packageurl != "" {
 		pkg.ExternalRefs = append(pkg.ExternalRefs, ExternalRef{
 			Category: "PACKAGE-MANAGER",
