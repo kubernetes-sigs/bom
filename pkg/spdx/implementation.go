@@ -350,8 +350,6 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	newrefs := *references
 	newrefs.Images = []ImageReferenceInfo{}
 
-	logrus.Infof("Empieza: %+v", references)
-
 	// Download 4 arches at once
 	t := throttler.New(4, len(references.Images))
 	mtx := sync.Mutex{}
@@ -397,7 +395,6 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 			mtx.Lock()
 			r.Archive = tarPath
 			newrefs.Images = append(newrefs.Images, r)
-			logrus.Infof("Imagen %d quedo %+v", len(newrefs.Images), newrefs.Images[len(newrefs.Images)-1])
 			mtx.Unlock()
 			t.Done(nil)
 
@@ -407,7 +404,6 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 	if err := t.Err(); err != nil {
 		return nil, err
 	}
-	logrus.Infof("Todo quedo %+v", newrefs)
 	return &newrefs, nil
 }
 
@@ -695,7 +691,12 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	// Create the package representing the image tag:
 	logrus.Infof("Generating SBOM for multiarch image %s", references.Digest)
 	pkg := &Package{}
-	pkg.Name = ref
+	indexDigest, err := name.NewDigest(references.Digest)
+
+	if err != nil {
+		return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
+	}
+	pkg.Name = indexDigest.DigestStr()
 	pkg.BuildID(pkg.Name)
 
 	if references.Digest != "" {
