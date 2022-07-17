@@ -641,9 +641,16 @@ func (*spdxDefaultImplementation) purlFromImage(img *ImageReferenceInfo) string 
 	if img.Arch != "" {
 		mm["arch"] = img.Arch
 	}
+	if img.OS != "" {
+		mm["os"] = img.OS
+	}
 	if tag, ok := imageReference.(name.Tag); ok {
 		mm["tag"] = tag.String()
 	}
+	if img.MediaType != "" {
+		mm["mediaType"] = img.MediaType
+	}
+
 	packageurl := purl.NewPackageURL(
 		purl.TypeOCI, "", imageName, digest,
 		purl.QualifiersFromMap(mm), "",
