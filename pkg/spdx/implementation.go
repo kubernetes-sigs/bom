@@ -54,7 +54,7 @@ import (
 type spdxImplementation interface {
 	ExtractTarballTmp(string) (string, error)
 	ReadArchiveManifest(string) (*ArchiveManifest, error)
-	PullImagesToArchive(string, string) ([]ImageReferenceInfo, error)
+	PullImagesToArchive(string, string) (*ImageReferenceInfo, error)
 	PackageFromImageTarball(*Options, string) (*Package, error)
 	PackageFromTarball(*Options, *TarballOptions, string) (*Package, error)
 	PackageFromDirectory(*Options, string) (*Package, error)
@@ -199,7 +199,14 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
 	}
 
-	images := &ImageReferenceInfo{}
+	//	ref, err := name.ParseReference(referenceString)
+	if err != nil {
+		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
+	}
+
+	images := &ImageReferenceInfo{
+		Images: []ImageReferenceInfo{},
+	}
 
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
@@ -207,11 +214,19 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 	}
 
 	// If the reference is not an image, it has to work as a tag
-	tag, tok := ref.(name.Tag)
-	dig, dok := ref.(name.Digest)
+	tag, tok := descr.Ref.(name.Tag)
+	dig, dok := descr.Ref.(name.Digest)
 	if !tok && !dok {
 		return nil, fmt.Errorf("could not cast tag or digest from reference %s: %w", referenceString, err)
 	}
+
+	// Add the main digest
+	images.Digest = fmt.Sprintf(
+		"%s/%s@%s:%s",
+		tag.RegistryStr(), tag.RepositoryStr(),
+		descr.Digest.Algorithm, descr.Digest.Hex,
+	)
+
 	// If the reference points to an image, return it
 	if descr.MediaType.IsImage() {
 		logrus.Infof("Reference %s points to a single image", referenceString)
@@ -227,7 +242,7 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 		}
 
 		// If we could not turn the reference to digest then we synthesize one
-		if tag, ok := ref.(name.Tag); ok && !dok {
+		if tok && !dok {
 			dig, err = name.NewDigest(
 				fmt.Sprintf(
 					"%s/%s@%s:%s",
@@ -265,10 +280,9 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 	}
 	logrus.Infof("Reference image index points to %d manifests", len(indexManifest.Manifests))
 	images.MediaType = string(indexManifest.MediaType)
-	images.Images = []ImageReferenceInfo{}
 
 	for _, manifest := range indexManifest.Manifests {
-		dig, err := name.NewDigest(
+		archImgDigest, err := name.NewDigest(
 			fmt.Sprintf(
 				"%s/%s@%s:%s",
 				tag.RegistryStr(), tag.RepositoryStr(),
@@ -278,21 +292,20 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 			return nil, fmt.Errorf("generating digest for image: %w", err)
 		}
 
-		logrus.Infof(
-			"Adding image %s/%s@%s:%s (%s/%s)",
-			tag.RegistryStr(), tag.RepositoryStr(), manifest.Digest.Algorithm, manifest.Digest.Hex,
-			manifest.Platform.Architecture, manifest.Platform.OS,
-		)
 		arch, osid := "", ""
 		if manifest.Platform != nil {
 			arch = manifest.Platform.Architecture
 			osid = manifest.Platform.OS
 		}
+
+		logrus.Infof("Adding image %s (%s/%s)", archImgDigest, arch, osid)
+
 		images.Images = append(images.Images,
 			ImageReferenceInfo{
-				Digest: dig.String(),
-				Arch:   arch,
-				OS:     osid,
+				Digest:    archImgDigest.String(),
+				MediaType: string(manifest.MediaType),
+				Arch:      arch,
+				OS:        osid,
 			})
 	}
 	return images, nil
@@ -320,18 +333,11 @@ func PullImageToArchive(referenceString, path string) error {
 // and writes it into a docker tar archive in path
 func (di *spdxDefaultImplementation) PullImagesToArchive(
 	referenceString, path string,
-) (images []ImageReferenceInfo, err error) {
-	images = []ImageReferenceInfo{}
-
-	mtx := sync.Mutex{}
+) (references *ImageReferenceInfo, err error) {
 	// Get the image references from the index
-	references, err := getImageReferences(referenceString)
+	references, err = getImageReferences(referenceString)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(references.Images) == 0 {
-		return nil, fmt.Errorf("the supplied reference did not return any image references: %w", err)
 	}
 
 	if !util.Exists(path) {
@@ -340,8 +346,15 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		}
 	}
 
-	// Download 4 arch at once
+	// Populate a new image reference set with the archive data
+	newrefs := *references
+	newrefs.Images = []ImageReferenceInfo{}
+
+	logrus.Infof("Empieza: %+v", references)
+
+	// Download 4 arches at once
 	t := throttler.New(4, len(references.Images))
+	mtx := sync.Mutex{}
 
 	for _, refData := range references.Images {
 		go func(r ImageReferenceInfo) {
@@ -364,7 +377,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 			}
 			tarPath := filepath.Join(path, p[1]+".tar")
 
-			logrus.Infof("Downloading %s from remote registry to %s", r.Digest, tarPath)
+			logrus.Debugf("Downloading %s from remote registry to %s", r.Digest, tarPath)
 
 			// Download image from remote
 			img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
@@ -373,29 +386,29 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 				return
 			}
 
+			// Write image to tar archive
 			if err := tarball.MultiWriteToFile(
-				tarPath,
-				map[name.Tag]v1.Image{
-					d.Repository.Tag(p[1]): img,
-				},
+				tarPath, map[name.Tag]v1.Image{d.Repository.Tag(p[1]): img},
 			); err != nil {
 				t.Done(fmt.Errorf("writing image to disk: %w", err))
 				return
 			}
-			r.Archive = tarPath
+
 			mtx.Lock()
-			images = append(images, r)
+			r.Archive = tarPath
+			newrefs.Images = append(newrefs.Images, r)
+			logrus.Infof("Imagen %d quedo %+v", len(newrefs.Images), newrefs.Images[len(newrefs.Images)-1])
 			mtx.Unlock()
 			t.Done(nil)
+
 		}(refData)
-		if t.Throttle() > 0 {
-			break
-		}
+		t.Throttle()
 	}
 	if err := t.Err(); err != nil {
 		return nil, err
 	}
-	return images, nil
+	logrus.Infof("Todo quedo %+v", newrefs)
+	return &newrefs, nil
 }
 
 // PackageFromTarball builds a SPDX package from the contents of a tarball
@@ -650,23 +663,25 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 	defer os.RemoveAll(tmpdir)
 
-	imgs, err := di.PullImagesToArchive(ref, tmpdir)
+	references, err := di.PullImagesToArchive(ref, tmpdir)
 	if err != nil {
 		return nil, fmt.Errorf("while downloading images to archive: %w", err)
 	}
 
-	if len(imgs) == 0 {
-		return nil, fmt.Errorf("could not get any images from reference %s", ref)
-	}
+	logrus.Debugf("Reference %s produced %+v", ref, references)
 
 	// If we just got one image and that image is exactly the same
 	// reference, return a single package:
-	if len(imgs) == 1 && imgs[0].Reference == ref {
-		p, err := di.PackageFromImageTarball(opts, imgs[0].Archive)
-		if err != nil {
-			return nil, fmt.Errorf("building package from single image: %w", err)
+	if len(references.Images) == 0 {
+		logrus.Infof("Generating single image package for %s", ref)
+		p := NewPackage()
+		if references.Archive != "" {
+			p, err = di.PackageFromImageTarball(opts, references.Archive)
+			if err != nil {
+				return nil, fmt.Errorf("building package from single image: %w", err)
+			}
 		}
-		packageurl := di.purlFromImage(&imgs[0])
+		packageurl := di.purlFromImage(references)
 		if packageurl != "" {
 			p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
 				Category: "PACKAGE-MANAGER",
@@ -678,20 +693,17 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Create the package representing the image tag:
+	logrus.Infof("Generating SBOM for multiarch image %s", references.Digest)
 	pkg := &Package{}
 	pkg.Name = ref
 	pkg.BuildID(pkg.Name)
 
-	imageReference, err := name.ParseReference(ref)
-	if err != nil {
-		return nil, fmt.Errorf("parsing image reference %s: %w", ref, err)
-	}
-	if _, ok := imageReference.(name.Digest); ok {
-		pkg.DownloadLocation = imageReference.(name.Digest).String()
+	if references.Digest != "" {
+		pkg.DownloadLocation = references.Digest
 	}
 
 	// Now, cycle each image in the index and generate a package from it
-	for i, img := range imgs {
+	for _, img := range references.Images {
 		subpkg, err := di.PackageFromImageTarball(opts, img.Archive)
 		if err != nil {
 			return nil, fmt.Errorf("adding image variant package: %w", err)
@@ -707,7 +719,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 			subpkg.Name = img.Reference
 		}
 
-		packageurl := di.purlFromImage(&imgs[i])
+		packageurl := di.purlFromImage(&img)
 		if packageurl != "" {
 			subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
 				Category: "PACKAGE-MANAGER",
@@ -748,6 +760,9 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 	spdxOpts *Options, tarPath string,
 ) (imagePackage *Package, err error) {
 	logrus.Infof("Generating SPDX package from image tarball %s", tarPath)
+	if tarPath == "" {
+		return nil, fmt.Errorf("tar path empty")
+	}
 
 	// Extract all files from tarfile
 	tarOpts := &TarballOptions{}
