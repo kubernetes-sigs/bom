@@ -46,6 +46,7 @@ import (
 
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/bom/pkg/osinfo"
+	"sigs.k8s.io/release-utils/hash"
 	"sigs.k8s.io/release-utils/util"
 )
 
@@ -841,6 +842,12 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 		if err != nil {
 			return nil, fmt.Errorf("building package from layer: %w", err)
 		}
+
+		h, err := hash.SHA256ForFile(filepath.Join(tarOpts.ExtractDir, layerFile))
+		if err != nil {
+			return nil, fmt.Errorf("hashing layer tarball: %w", err)
+		}
+		pkg.Name = "sha256:" + h
 
 		// Regenerate the BuildID to avoid clashes when handling multiple
 		// images at the same time.
