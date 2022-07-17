@@ -664,19 +664,24 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 		return nil, fmt.Errorf("while downloading images to archive: %w", err)
 	}
 
+	topDigest, err := name.NewDigest(references.Digest)
+	if err != nil {
+		return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
+	}
 	logrus.Debugf("Reference %s produced %+v", ref, references)
 
 	// If we just got one image and that image is exactly the same
 	// reference, return a single package:
 	if len(references.Images) == 0 {
 		logrus.Infof("Generating single image package for %s", ref)
-		p := NewPackage()
-		if references.Archive != "" {
-			p, err = di.PackageFromImageTarball(opts, references.Archive)
-			if err != nil {
-				return nil, fmt.Errorf("building package from single image: %w", err)
-			}
+		p, err := di.referenceInfoToPackage(opts, references)
+		if err != nil {
+			return nil, fmt.Errorf("generating image package: %w", err)
 		}
+
+		// Rebuild the ID to compose it with the parent element
+		p.Name = topDigest.DigestStr()
+		p.BuildID(p.Name)
 		packageurl := di.purlFromImage(references)
 		if packageurl != "" {
 			p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
@@ -685,17 +690,15 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 				Locator:  packageurl,
 			})
 		}
+
 		return p, nil
 	}
 
 	// Create the package representing the image tag:
 	logrus.Infof("Generating SBOM for multiarch image %s", references.Digest)
 	pkg := &Package{}
-	indexDigest, err := name.NewDigest(references.Digest)
-	if err != nil {
-		return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
-	}
-	pkg.Name = indexDigest.DigestStr()
+
+	pkg.Name = topDigest.DigestStr()
 	pkg.BuildID(pkg.Name)
 
 	if references.Digest != "" {
@@ -703,39 +706,23 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	}
 
 	// Now, cycle each image in the index and generate a package from it
-	for i, img := range references.Images {
-		subpkg, err := di.PackageFromImageTarball(opts, img.Archive)
+	for i := range references.Images {
+		subpkg, err := di.referenceInfoToPackage(opts, &references.Images[i])
 		if err != nil {
-			return nil, fmt.Errorf("adding image variant package: %w", err)
+			return nil, fmt.Errorf("generating image package")
 		}
 
-		imageDigest, err := name.NewDigest(img.Digest)
-		if err != nil {
-			return nil, fmt.Errorf("parsing digest %s: %w", references.Digest, err)
-		}
-		subpkg.Name = imageDigest.DigestStr()
-		subpkg.Checksum = map[string]string{
-			"SHA256": strings.TrimPrefix(imageDigest.DigestStr(), "sha256:"),
-		}
-		subpkg.FileName = ""
+		// Rebuild the ID to compose it with the parent element
 		subpkg.BuildID(pkg.Name, subpkg.Name)
 
-		packageurl := di.purlFromImage(&references.Images[i])
-		if packageurl != "" {
-			subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
-				Category: "PACKAGE-MANAGER",
-				Type:     "purl",
-				Locator:  packageurl,
-			})
-		}
-
-		// Add the package
+		// Add the package to the image
 		pkg.AddRelationship(&Relationship{
 			Peer:       subpkg,
 			Type:       CONTAINS,
 			FullRender: true,
 			Comment:    "Container image lager",
 		})
+		// And add an inverse relationship to the index
 		subpkg.AddRelationship(&Relationship{
 			Peer:    pkg,
 			Type:    VARIANT_OF,
@@ -753,6 +740,34 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 		})
 	}
 	return pkg, nil
+}
+
+func (di *spdxDefaultImplementation) referenceInfoToPackage(opts *Options, img *ImageReferenceInfo) (*Package, error) {
+	subpkg, err := di.PackageFromImageTarball(opts, img.Archive)
+	if err != nil {
+		return nil, fmt.Errorf("adding image variant package: %w", err)
+	}
+
+	imageDigest, err := name.NewDigest(img.Digest)
+	if err != nil {
+		return nil, fmt.Errorf("parsing digest %s: %w", img.Digest, err)
+	}
+	subpkg.Name = imageDigest.DigestStr()
+	subpkg.Checksum = map[string]string{
+		"SHA256": strings.TrimPrefix(imageDigest.DigestStr(), "sha256:"),
+	}
+	subpkg.FileName = ""
+
+	packageurl := di.purlFromImage(img)
+	if packageurl != "" {
+		subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
+			Category: "PACKAGE-MANAGER",
+			Type:     "purl",
+			Locator:  packageurl,
+		})
+	}
+
+	return subpkg, nil
 }
 
 // PackageFromImageTarball reads an OCI image archive and produces a SPDX
