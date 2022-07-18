@@ -334,7 +334,11 @@ func TestPullImagesToArchive(t *testing.T) {
 	// The pause 1.0 image is a single image
 	images, err := impl.PullImagesToArchive("registry.k8s.io/pause:1.0", dir)
 	require.NoError(t, err)
-	require.Len(t, images, 1)
+	require.Equal(t, "registry.k8s.io/pause@sha256:a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f", images.Digest)
+	require.Equal(t, "amd64", images.Arch)
+	require.Equal(t, "linux", images.OS)
+	require.Equal(t, "application/vnd.docker.distribution.manifest.v2+json", images.MediaType)
+	require.Len(t, images.Images, 0) // This is an image, so no child images
 	require.FileExists(t, filepath.Join(dir, "a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f.tar"))
 
 	foundFiles := []string{}
@@ -470,13 +474,13 @@ func TestPurlFromImage(t *testing.T) {
 	}{
 		{
 			ImageReferenceInfo{
-				Digest:    "sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
+				Digest:    "image@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
 				Reference: "",
 				Archive:   "",
 				Arch:      "",
 				OS:        "",
 			},
-			"pkg:oci/image@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57",
+			"pkg:oci/image@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?repository_url=index.docker.io%2Flibrary",
 		},
 		{
 			ImageReferenceInfo{
@@ -486,7 +490,7 @@ func TestPurlFromImage(t *testing.T) {
 				Arch:      "amd64",
 				OS:        "darwin",
 			},
-			"pkg:oci/nginx@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?arch=amd64&repository_url=index.docker.io%2Flibrary",
+			"pkg:oci/nginx@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?arch=amd64&os=darwin&repository_url=index.docker.io%2Flibrary",
 		},
 	} {
 		impl := spdxDefaultImplementation{}
