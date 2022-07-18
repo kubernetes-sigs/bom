@@ -139,6 +139,12 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage v222.Package, e
 		return jsonPackage, fmt.Errorf("computing license list from files: %w", err)
 	}
 
+	externalRefs := make([]v222.ExternalRef, len(p.ExternalRefs))
+	for i, ref := range p.ExternalRefs {
+		externalRefs[i].Category = ref.Category
+		externalRefs[i].Locator = ref.Locator
+		externalRefs[i].Type = ref.Type
+	}
 	jsonPackage = v222.Package{
 		ID:                   p.SPDXID(),
 		Name:                 p.Name,
@@ -151,7 +157,7 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage v222.Package, e
 		CopyrightText:        p.CopyrightText,
 		HasFiles:             []string{},
 		Checksums:            []v222.Checksum{},
-		ExternalRefs:         []v222.ExternalRef{},
+		ExternalRefs:         externalRefs,
 		VerificationCode: v222.PackageVerificationCode{
 			Value: p.VerificationCode,
 		},
