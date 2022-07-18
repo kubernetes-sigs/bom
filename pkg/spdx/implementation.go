@@ -341,56 +341,32 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		}
 	}
 
+	// If we do not have any child images we download the main reference
+	// as it is not an index
+	if len(references.Images) == 0 {
+		tarPath, err := createReferenceArchive(references.Digest, path)
+		if err != nil {
+			return nil, fmt.Errorf("downloading archive of image: %w", err)
+		}
+		references.Archive = tarPath
+	}
+
 	// Populate a new image reference set with the archive data
 	newrefs := *references
 	newrefs.Images = []ImageReferenceInfo{}
+
 	// Download 4 arches at once
 	t := throttler.New(4, len(references.Images))
 	mtx := sync.Mutex{}
 
 	for _, refData := range references.Images {
 		go func(r ImageReferenceInfo) {
-			ref, err := name.ParseReference(r.Digest)
-			if err != nil {
-				t.Done(fmt.Errorf("parsing reference %s: %w", r.Digest, err))
-				return
-			}
-
-			d, ok := ref.(name.Digest)
-			if !ok {
-				t.Done(errors.New("reference is not a tag or digest"))
-				return
-			}
-
-			p := strings.Split(d.DigestStr(), ":")
-			if len(p) < 2 {
-				t.Done(fmt.Errorf("unable to parse digest string %s", d.DigestStr()))
-				return
-			}
-			tarPath := filepath.Join(path, p[1]+".tar")
-
-			logrus.Debugf("Downloading %s from remote registry to %s", r.Digest, tarPath)
-
-			// Download image from remote
-			img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
-			if err != nil {
-				t.Done(fmt.Errorf("getting image from remote: %w", err))
-				return
-			}
-
-			// Write image to tar archive
-			if err := tarball.MultiWriteToFile(
-				tarPath, map[name.Tag]v1.Image{d.Repository.Tag(p[1]): img},
-			); err != nil {
-				t.Done(fmt.Errorf("writing image to disk: %w", err))
-				return
-			}
-
+			tarPath, err := createReferenceArchive(r.Digest, path)
 			mtx.Lock()
 			r.Archive = tarPath
 			newrefs.Images = append(newrefs.Images, r)
 			mtx.Unlock()
-			t.Done(nil)
+			t.Done(err)
 		}(refData)
 		t.Throttle()
 	}
@@ -398,6 +374,40 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		return nil, err
 	}
 	return &newrefs, nil
+}
+
+func createReferenceArchive(digest, path string) (tarPath string, err error) {
+	ref, err := name.ParseReference(digest)
+	if err != nil {
+		return "", fmt.Errorf("parsing reference %s: %w", digest, err)
+	}
+
+	d, ok := ref.(name.Digest)
+	if !ok {
+		return "", errors.New("reference is not a tag or digest")
+	}
+
+	p := strings.Split(d.DigestStr(), ":")
+	if len(p) < 2 {
+		return "", fmt.Errorf("unable to parse digest string %s", d.DigestStr())
+	}
+	tarPath = filepath.Join(path, p[1]+".tar")
+	logrus.Debugf("Downloading %s from remote registry to %s", digest, tarPath)
+
+	// Download image from remote
+	img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	if err != nil {
+		return "", fmt.Errorf("getting image from remote: %w", err)
+	}
+
+	// Write image to tar archive
+	if err := tarball.MultiWriteToFile(
+		tarPath, map[name.Tag]v1.Image{d.Repository.Tag(p[1]): img},
+	); err != nil {
+		return "", fmt.Errorf("writing image to disk: %w", err)
+	}
+
+	return tarPath, nil
 }
 
 // PackageFromTarball builds a SPDX package from the contents of a tarball
@@ -682,14 +692,6 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 		// Rebuild the ID to compose it with the parent element
 		p.Name = topDigest.DigestStr()
 		p.BuildID(p.Name)
-		packageurl := di.purlFromImage(references)
-		if packageurl != "" {
-			p.ExternalRefs = append(p.ExternalRefs, ExternalRef{
-				Category: "PACKAGE-MANAGER",
-				Type:     "purl",
-				Locator:  packageurl,
-			})
-		}
 
 		return p, nil
 	}
