@@ -199,79 +199,57 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 		return nil, fmt.Errorf("parsing image reference %s: %w", referenceString, err)
 	}
 
-	images := &ImageReferenceInfo{
-		Images: []ImageReferenceInfo{},
-	}
-
 	descr, err := remote.Get(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return nil, fmt.Errorf("fetching remote descriptor: %w", err)
 	}
 
-	// If the reference is not an image, it has to work as a tag
-	tag, tok := descr.Ref.(name.Tag)
-	dig, dok := descr.Ref.(name.Digest)
-	if !tok && !dok {
-		return nil, fmt.Errorf("could not cast tag or digest from reference %s: %w", referenceString, err)
-	}
-
-	// Add the main digest
-	images.Digest = fmt.Sprintf(
-		"%s/%s@%s:%s",
-		tag.RegistryStr(), tag.RepositoryStr(),
-		descr.Digest.Algorithm, descr.Digest.Hex,
-	)
-
 	// If the reference points to an image, return it
 	if descr.MediaType.IsImage() {
-		logrus.Infof("Reference %s points to a single image", referenceString)
-		// Check if we can get an image
-		im, err := descr.Image()
-		if err != nil {
-			return nil, fmt.Errorf("getting image from descriptor: %w", err)
-		}
+		return refInfoFromImage(descr)
+	} else if descr.MediaType.IsIndex() {
+		return refInfoFromIndex(descr)
+	}
 
-		imageDigest, err := im.Digest()
-		if err != nil {
-			return nil, fmt.Errorf("while calculating image digest: %w", err)
-		}
+	return nil, fmt.Errorf("unable to recognize reference mediatype (%s)", string(descr.MediaType))
+}
 
-		// If we could not turn the reference to digest then we synthesize one
-		if tok && !dok {
-			dig, err = fullDigest(tag, imageDigest)
-			if err != nil {
-				return nil, fmt.Errorf("building single image digest: %w", err)
-			}
-		}
+func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, err error) {
+	refinfo = &ImageReferenceInfo{Images: []ImageReferenceInfo{}}
+	logrus.Infof("Reference %s points to an index", descr.Ref.String())
 
-		logrus.Infof("Adding image digest %s from reference", dig.String())
-		images.Digest = dig.String()
-		mt, err := im.MediaType()
-		if err == nil {
-			images.MediaType = string(mt)
-		}
-		conf, err := im.ConfigFile()
-		if err == nil {
-			images.Arch = conf.Architecture
-			images.OS = conf.OS
-		}
-		return images, nil
+	if _, ok := descr.Ref.(name.Tag); !ok {
+		return nil, fmt.Errorf("cannot build tag from reference %s", descr.Ref.String())
 	}
 
 	// Get the image index
 	index, err := descr.ImageIndex()
 	if err != nil {
-		return nil, fmt.Errorf("getting image index for %s: %w", referenceString, err)
+		return nil, fmt.Errorf("getting image index for %s: %w", descr.Ref.String(), err)
 	}
+
+	indexDigest, err := index.Digest()
+	if err != nil {
+		return nil, fmt.Errorf("getting image index digest: %w", err)
+	}
+
+	// If we could not turn the reference to digest then we synthesize one
+	dig, err := fullDigest(descr.Ref.(name.Tag), indexDigest)
+	if err != nil {
+		return nil, fmt.Errorf("building single image digest: %w", err)
+	}
+	refinfo.Digest = dig.String()
+
 	indexManifest, err := index.IndexManifest()
 	if err != nil {
-		return nil, fmt.Errorf("getting index manifest from %s: %w", referenceString, err)
+		return nil, fmt.Errorf("getting index manifest from %s: %w", descr.Ref.String(), err)
 	}
 	logrus.Infof("Reference image index points to %d manifests", len(indexManifest.Manifests))
-	images.MediaType = string(indexManifest.MediaType)
+	refinfo.MediaType = string(indexManifest.MediaType)
 
+	// Add all the child images describen in the index
 	for _, manifest := range indexManifest.Manifests {
-		archImgDigest, err := fullDigest(tag, manifest.Digest)
+		archImgDigest, err := fullDigest(descr.Ref.(name.Tag), manifest.Digest)
 		if err != nil {
 			return nil, fmt.Errorf("generating digest for image: %w", err)
 		}
@@ -284,7 +262,7 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 
 		logrus.Infof("Adding image %s (%s/%s)", archImgDigest, arch, osid)
 
-		images.Images = append(images.Images,
+		refinfo.Images = append(refinfo.Images,
 			ImageReferenceInfo{
 				Digest:    archImgDigest.String(),
 				MediaType: string(manifest.MediaType),
@@ -292,7 +270,48 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 				OS:        osid,
 			})
 	}
-	return images, nil
+
+	return refinfo, nil
+}
+
+func refInfoFromImage(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, err error) {
+	refinfo = &ImageReferenceInfo{}
+	logrus.Infof("Reference %s points to a single image", descr.Ref.String())
+
+	if _, ok := descr.Ref.(name.Tag); !ok {
+		return nil, fmt.Errorf("cannot build tag from reference %s", descr.Ref.String())
+	}
+
+	// Check if we can get an image
+	im, err := descr.Image()
+	if err != nil {
+		return nil, fmt.Errorf("getting image from descriptor: %w", err)
+	}
+
+	imageDigest, err := im.Digest()
+	if err != nil {
+		return nil, fmt.Errorf("while calculating image digest: %w", err)
+	}
+
+	// If we could not turn the reference to digest then we synthesize one
+	dig, err := fullDigest(descr.Ref.(name.Tag), imageDigest)
+	if err != nil {
+		return nil, fmt.Errorf("building single image digest: %w", err)
+	}
+
+	refinfo.Digest = dig.String()
+	mt, err := im.MediaType()
+	if err == nil {
+		refinfo.MediaType = string(mt)
+	}
+
+	// Get the platform data
+	conf, err := im.ConfigFile()
+	if err == nil {
+		refinfo.Arch = conf.Architecture
+		refinfo.OS = conf.OS
+	}
+	return refinfo, nil
 }
 
 // fullDigest builds a name.Digest with the registry info from tag
