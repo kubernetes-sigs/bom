@@ -238,13 +238,7 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 
 		// If we could not turn the reference to digest then we synthesize one
 		if tok && !dok {
-			dig, err = name.NewDigest(
-				fmt.Sprintf(
-					"%s/%s@%s:%s",
-					tag.RegistryStr(), tag.RepositoryStr(),
-					imageDigest.Algorithm, imageDigest.Hex,
-				),
-			)
+			dig, err = fullDigest(tag, imageDigest)
 			if err != nil {
 				return nil, fmt.Errorf("building single image digest: %w", err)
 			}
@@ -277,12 +271,7 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 	images.MediaType = string(indexManifest.MediaType)
 
 	for _, manifest := range indexManifest.Manifests {
-		archImgDigest, err := name.NewDigest(
-			fmt.Sprintf(
-				"%s/%s@%s:%s",
-				tag.RegistryStr(), tag.RepositoryStr(),
-				manifest.Digest.Algorithm, manifest.Digest.Hex,
-			))
+		archImgDigest, err := fullDigest(tag, manifest.Digest)
 		if err != nil {
 			return nil, fmt.Errorf("generating digest for image: %w", err)
 		}
@@ -304,6 +293,22 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 			})
 	}
 	return images, nil
+}
+
+// fullDigest builds a name.Digest with the registry info from tag
+// and the value from hash
+func fullDigest(tag name.Tag, hash v1.Hash) (name.Digest, error) {
+	dig, err := name.NewDigest(
+		fmt.Sprintf(
+			"%s/%s@%s:%s",
+			tag.RegistryStr(), tag.RepositoryStr(),
+			hash.Algorithm, hash.Hex,
+		),
+	)
+	if err != nil {
+		return name.Digest{}, fmt.Errorf("building digest: %w", err)
+	}
+	return dig, nil
 }
 
 func PullImageToArchive(referenceString, path string) error {
@@ -779,7 +784,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 ) (imagePackage *Package, err error) {
 	logrus.Infof("Generating SPDX package from image tarball %s", tarPath)
 	if tarPath == "" {
-		return nil, fmt.Errorf("tar path empty")
+		return nil, errors.New("tar path empty")
 	}
 
 	// Extract all files from tarfile
