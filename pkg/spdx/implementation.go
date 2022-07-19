@@ -218,7 +218,8 @@ func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	refinfo = &ImageReferenceInfo{Images: []ImageReferenceInfo{}}
 	logrus.Infof("Reference %s points to an index", descr.Ref.String())
 
-	if _, ok := descr.Ref.(name.Tag); !ok {
+	tag := descr.Ref.Context().Tag(descr.Ref.String())
+	if tag.String() == "" {
 		return nil, fmt.Errorf("cannot build tag from reference %s", descr.Ref.String())
 	}
 
@@ -234,7 +235,7 @@ func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	}
 
 	// If we could not turn the reference to digest then we synthesize one
-	dig, err := fullDigest(descr.Ref.(name.Tag), indexDigest)
+	dig, err := fullDigest(tag, indexDigest)
 	if err != nil {
 		return nil, fmt.Errorf("building single image digest: %w", err)
 	}
@@ -278,7 +279,8 @@ func refInfoFromImage(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	refinfo = &ImageReferenceInfo{}
 	logrus.Infof("Reference %s points to a single image", descr.Ref.String())
 
-	if _, ok := descr.Ref.(name.Tag); !ok {
+	tag := descr.Ref.Context().Tag(descr.Ref.String())
+	if tag.String() == "" {
 		return nil, fmt.Errorf("cannot build tag from reference %s", descr.Ref.String())
 	}
 
@@ -294,7 +296,7 @@ func refInfoFromImage(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	}
 
 	// If we could not turn the reference to digest then we synthesize one
-	dig, err := fullDigest(descr.Ref.(name.Tag), imageDigest)
+	dig, err := fullDigest(tag, imageDigest)
 	if err != nil {
 		return nil, fmt.Errorf("building single image digest: %w", err)
 	}
@@ -408,7 +410,7 @@ func createReferenceArchive(digest, path string) (tarPath string, err error) {
 
 	d, ok := ref.(name.Digest)
 	if !ok {
-		return "", errors.New("reference is not a tag or digest")
+		return "", errors.New("reference is not a digest")
 	}
 
 	p := strings.Split(d.DigestStr(), ":")
