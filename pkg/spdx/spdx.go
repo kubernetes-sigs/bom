@@ -71,6 +71,8 @@ type ImageReferenceInfo struct {
 	Archive   string
 	Arch      string
 	OS        string
+	MediaType string
+	Images    []ImageReferenceInfo
 }
 
 func NewSPDX() *SPDX {
@@ -235,7 +237,7 @@ func (spdx *SPDX) ExtractTarballTmp(tarPath string) (tmpDir string, err error) {
 }
 
 // PullImagesToArchive downloads all the images found from a reference to disk
-func (spdx *SPDX) PullImagesToArchive(reference, path string) ([]ImageReferenceInfo, error) {
+func (spdx *SPDX) PullImagesToArchive(reference, path string) (*ImageReferenceInfo, error) {
 	return spdx.impl.PullImagesToArchive(reference, path)
 }
 
