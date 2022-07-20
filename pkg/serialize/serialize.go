@@ -24,7 +24,7 @@ import (
 
 	"sigs.k8s.io/bom/pkg/query"
 	"sigs.k8s.io/bom/pkg/spdx"
-	v222 "sigs.k8s.io/bom/pkg/spdx/json/v2.2.2"
+	v222 "sigs.k8s.io/bom/pkg/spdx/json/v2.2"
 )
 
 type Serializer interface {

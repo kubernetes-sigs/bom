@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	spdxJSON "sigs.k8s.io/bom/pkg/spdx/json/v2.2.2"
+	spdxJSON "sigs.k8s.io/bom/pkg/spdx/json/v2.2"
 )
 
 // Regexp to match the tag-value spdx expressions
