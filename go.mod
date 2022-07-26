@@ -17,7 +17,7 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.11
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.7.2
+	sigs.k8s.io/release-utils v0.7.3
 )
 
 require (
