@@ -3,7 +3,7 @@ module sigs.k8s.io/bom
 go 1.18
 
 require (
-	github.com/carolynvs/magex v0.8.1
+	github.com/carolynvs/magex v0.9.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-containerregistry v0.11.0
 	github.com/google/licenseclassifier/v2 v2.0.0-pre6
@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
