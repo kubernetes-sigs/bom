@@ -252,7 +252,7 @@ func EnsureKO(version string) error {
 	}
 
 	fmt.Printf("Checking if `ko` version %s is installed\n", versionToInstall)
-	found, err := pkg.IsCommandAvailable("ko", versionToInstall, "version")
+	found, err := pkg.IsCommandAvailable("ko", "version", "version")
 	if err != nil {
 		return err
 	}
