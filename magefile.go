@@ -149,7 +149,12 @@ func BuildImagesLocal() error {
 		return err
 	}
 
-	os.Setenv("BOM_LDFLAGS", generateLDFlags())
+	ldFlag, err := mage.GenerateLDFlags()
+	if err != nil {
+		return err
+	}
+
+	os.Setenv("BOM_LDFLAGS", ldFlag)
 	os.Setenv("KOCACHE", "/tmp/ko")
 
 	return sh.RunV("ko", "build", "--bare",
@@ -237,11 +242,6 @@ func getBuildDateTime() string {
 
 	date, _ := sh.Output("date", "+%Y-%m-%dT%H:%M:%SZ")
 	return date
-}
-
-func generateLDFlags() string {
-	pkg := "sigs.k8s.io/bom/pkg/version"
-	return fmt.Sprintf("-X %[1]s.GitVersion=%[2]s -X %[1]s.gitCommit=%[3]s -X %[1]s.gitTreeState=%[4]s -X %[1]s.buildDate=%[5]s", pkg, getVersion(), getCommit(), getGitState(), getBuildDateTime())
 }
 
 // Maybe we can  move this to release-utils
