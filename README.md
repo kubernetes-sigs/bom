@@ -21,7 +21,7 @@ Other features include Golang dependency analysis and full `.gitignore`
 support when scanning git repositories.
 
 For more in-depth instructions on how to create an SBOM for your project, see
-["Generating a Bill of Materials for Your Project"](/docs/create-a-bill-of-materials.md).
+["Generating a Bill of Materials for Your Project"](https://kubernetes-sigs.github.io/bom/tutorials/creating_bill_of_materials/).
 
 The guide includes information about what a Software Bill of Materials is,
 the SPDX standard, and instructions to add files, images, directories, and
