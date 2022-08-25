@@ -121,9 +121,9 @@ var PackagePurposes = []string{
 }
 
 var ExternalRefCategories = map[string][]string{
-	"SECURITY":        {"cpe22Type", "cpe23Type"},
+	"SECURITY":        {"cpe22Type", "cpe23Type", "advisory", "fix", "url", "swid"},
 	"PACKAGE-MANAGER": {"maven-central", "npm", "nuget", "bower", "purl"},
-	"PERSISTENT-ID":   {"swh"},
+	"PERSISTENT-ID":   {"swh", "gitoid"},
 	"OTHER":           {},
 }
 
