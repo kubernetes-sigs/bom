@@ -463,6 +463,19 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 			currentObject.(*Package).FileName = value
 		case "PackageHomePage":
 			currentObject.(*Package).HomePage = value
+		case "PrimaryPackagePurpose":
+			purpose := ""
+			for _, pp := range PackagePurposes {
+				if pp == value {
+					purpose = value
+				}
+			}
+			if purpose == "" {
+				// TODO: Be less strict when parsing
+				// TODO: Check if the doc is SPDX 2.3 or higher
+				return nil, fmt.Errorf("invalid package purpose found %s", value)
+			}
+			currentObject.(*Package).PrimaryPurpose = purpose
 		case "PackageLicenseInfoFromFiles":
 			have := false
 			// Check if we already have the license
