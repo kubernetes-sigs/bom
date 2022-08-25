@@ -120,6 +120,13 @@ var PackagePurposes = []string{
 	"DEVICE", "FIRMWARE", "SOURCE", "ARCHIVE", "FILE", "INSTALL", "OTHER",
 }
 
+var ExternalRefCategories = map[string][]string{
+	"SECURITY":        {"cpe22Type", "cpe23Type"},
+	"PACKAGE-MANAGER": {"maven-central", "npm", "nuget", "bower", "purl"},
+	"PERSISTENT-ID":   {"swh"},
+	"OTHER":           {},
+}
+
 func NewPackage() (p *Package) {
 	p = &Package{}
 	p.Entity.Opts = &ObjectOptions{}

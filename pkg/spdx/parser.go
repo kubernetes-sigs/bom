@@ -593,6 +593,24 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 				if len(parts) != 3 {
 					return nil, errors.New("malformed external reference")
 				}
+
+				// Check the external ref category
+				if _, ok := ExternalRefCategories[parts[0]]; !ok {
+					return nil, fmt.Errorf("invalid external reference category: %s", parts[0])
+				}
+
+				// And the type
+				validType := false
+				for _, t := range ExternalRefCategories[parts[0]] {
+					if parts[1] == t {
+						validType = true
+						break
+					}
+				}
+				if !validType && parts[0] != "OTHER" {
+					return nil, fmt.Errorf("invalid external reference type: %s", parts[1])
+				}
+
 				currentObject.(*Package).ExternalRefs = append(currentObject.(*Package).ExternalRefs, ExternalRef{
 					Category: parts[0],
 					Type:     parts[1],
