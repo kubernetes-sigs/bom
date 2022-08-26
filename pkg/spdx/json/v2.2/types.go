@@ -32,7 +32,7 @@ type Document struct {
 	Files                []File                `json:"files,omitempty"`
 	Packages             []Package             `json:"packages"`
 	Relationships        []Relationship        `json:"relationships"`
-	ExternalDocumentRefs []ExternalDocumentRef `json:"externalDocumentRefs"`
+	ExternalDocumentRefs []ExternalDocumentRef `json:"externalDocumentRefs,omitempty"`
 }
 
 type CreationInfo struct {

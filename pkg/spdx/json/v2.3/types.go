@@ -32,7 +32,7 @@ type Document struct {
 	Files                []File                `json:"files,omitempty"`
 	Packages             []Package             `json:"packages"`
 	Relationships        []Relationship        `json:"relationships"`
-	ExternalDocumentRefs []ExternalDocumentRef `json:"externalDocumentRefs"`
+	ExternalDocumentRefs []ExternalDocumentRef `json:"externalDocumentRefs,omitempty"`
 }
 
 type CreationInfo struct {
@@ -53,7 +53,7 @@ type Package struct {
 	Originator           string                  `json:"originator,omitempty"`
 	SourceInfo           string                  `json:"sourceInfo,omitempty"`
 	CopyrightText        string                  `json:"copyrightText"`
-	PrimaryPurpose       string                  `json:"primaryPackagePurpose"`
+	PrimaryPurpose       string                  `json:"primaryPackagePurpose,omitempty"`
 	HasFiles             []string                `json:"hasFiles,omitempty"`
 	LicenseInfoFromFiles []string                `json:"licenseInfoFromFiles,omitempty"`
 	Checksums            []Checksum              `json:"checksums"`
