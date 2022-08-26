@@ -24,12 +24,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"sigs.k8s.io/bom/pkg/spdx/json/document"
 	spdx22JSON "sigs.k8s.io/bom/pkg/spdx/json/v2.2"
 	spdx23JSON "sigs.k8s.io/bom/pkg/spdx/json/v2.3"
 )
@@ -82,9 +82,10 @@ func OpenDoc(path string) (doc *Document, err error) {
 }
 
 // parseJSON parses an SPDX document encoded in json
-// nolint:gocyclo
+//
+//nolint:gocyclo
 func parseJSON(file *os.File) (doc *Document, err error) {
-	var jsonDoc interface{}
+	var jsonDoc document.Document
 
 	// Read the SPDX doc into the json struct
 	var data []byte
@@ -110,7 +111,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			return nil, fmt.Errorf("parsing SBOM json: %w", err)
 		}
 		spdxVersion = "2.3"
-		jsonDoc = doc
+		jsonDoc = &doc
 	} else {
 		doc := spdx22JSON.Document{
 			CreationInfo: spdx22JSON.CreationInfo{
@@ -126,16 +127,14 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			return nil, fmt.Errorf("parsing SBOM json: %w", err)
 		}
 		spdxVersion = "2.2"
-		jsonDoc = doc
+		jsonDoc = &doc
 	}
 
-	jsonValue := reflect.ValueOf(jsonDoc)
-
 	doc = &Document{
-		Version:     jsonValue.FieldByName("Version").String(),
-		DataLicense: jsonValue.FieldByName("DataLicense").String(),
-		ID:          jsonValue.FieldByName("ID").String(),
-		Name:        jsonValue.FieldByName("Name").String(),
+		Version:     jsonDoc.GetVersion(),
+		DataLicense: jsonDoc.GetDataLicense(),
+		ID:          jsonDoc.GetID(),
+		Name:        jsonDoc.GetName(),
 		Creator: struct {
 			Person       string
 			Organization string
@@ -143,14 +142,14 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		}{
 			Tool: []string{},
 		},
-		Namespace:       jsonValue.FieldByName("Namespace").String(),
+		Namespace:       jsonDoc.GetNamespace(),
 		Packages:        map[string]*Package{},
 		Files:           map[string]*File{},
 		ExternalDocRefs: []ExternalDocumentRef{},
 	}
 
-	creationInfo := jsonValue.FieldByName("CreationInfo")
-	for _, c := range creationInfo.FieldByName("Creators").Interface().([]string) {
+	creationInfo := jsonDoc.GetCreationInfo()
+	for _, c := range creationInfo.GetCreators() {
 		// Technical limitation in bom: We only have one person and one org
 		ps := strings.SplitN(c, ":", 2)
 		if len(ps) != 2 {
@@ -179,8 +178,8 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		}
 	}
 
-	doc.LicenseListVersion = creationInfo.FieldByName("LicenseListVersion").String()
-	createdDate := creationInfo.FieldByName("Created").String()
+	doc.LicenseListVersion = creationInfo.GetLicenseListVersion()
+	createdDate := creationInfo.GetCreated()
 	if createdDate != "" {
 		t, err := time.Parse("2006-01-02T15:04:05Z", createdDate)
 		if err != nil {
@@ -191,25 +190,24 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 	}
 
 	allPackages := map[string]*Package{}
-	for i := 0; i < jsonValue.FieldByName("Packages").Len(); i++ {
-		pData := jsonValue.FieldByName("Packages").Index(i)
-		packageID := pData.FieldByName("ID").String()
+	for _, pData := range jsonDoc.GetPackages() {
+		packageID := pData.GetID()
 		allPackages[packageID] = &Package{
 			Entity: Entity{
-				ID:               pData.FieldByName("ID").String(),
-				Name:             pData.FieldByName("Name").String(),
-				DownloadLocation: pData.FieldByName("DownloadLocation").String(),
-				CopyrightText:    pData.FieldByName("CopyrightText").String(),
-				LicenseConcluded: pData.FieldByName("LicenseConcluded").String(),
+				ID:               pData.GetID(),
+				Name:             pData.GetName(),
+				DownloadLocation: pData.GetDownloadLocation(),
+				CopyrightText:    pData.GetCopyrightText(),
+				LicenseConcluded: pData.GetLicenseDeclared(),
 				// LicenseComments:  pData.LicenseComments,
 				Relationships: []*Relationship{},
 				Checksum:      map[string]string{},
 			},
-			FilesAnalyzed:        pData.FieldByName("FilesAnalyzed").Bool(),
+			FilesAnalyzed:        pData.GetFilesAnalyzed(),
 			LicenseInfoFromFiles: []string{},
-			LicenseDeclared:      pData.FieldByName("LicenseDeclared").String(),
-			Version:              pData.FieldByName("Version").String(),
-			VerificationCode:     pData.FieldByName("VerificationCode").FieldByName("Value").String(),
+			LicenseDeclared:      pData.GetLicenseDeclared(),
+			Version:              pData.GetVersion(),
+			VerificationCode:     pData.GetVerificationCode().GetValue(),
 			// Comment:              pData.Comment,
 			// HomePage:             pData.HomePage,
 			Supplier: struct {
@@ -224,58 +222,45 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		}
 
 		if spdxVersion == "2.3" {
-			allPackages[packageID].PrimaryPurpose = pData.FieldByName("PrimaryPurpose").String()
+			allPackages[packageID].PrimaryPurpose = pData.GetPrimaryPurpose()
 		}
 
-		checksums := pData.FieldByName("Checksums")
-		if checksums.IsValid() {
-			for j := 0; j < checksums.Len(); j++ {
-				cs := checksums.Index(j)
-				allPackages[packageID].Checksum[cs.FieldByName("Algorithm").String()] = cs.FieldByName("Value").String()
-			}
+		for _, cs := range pData.GetChecksums() {
+			allPackages[packageID].Checksum[cs.GetAlgorithm()] = cs.GetValue()
 		}
 
-		extRefs := pData.FieldByName("ExternalRefs")
-		if extRefs.IsValid() {
-			for j := 0; j < extRefs.Len(); j++ {
-				eref := extRefs.Index(j)
-				allPackages[packageID].ExternalRefs = append(
-					allPackages[packageID].ExternalRefs, ExternalRef{
-						Category: eref.FieldByName("Category").String(),
-						Type:     eref.FieldByName("Type").String(),
-						Locator:  eref.FieldByName("Locator").String(),
-					},
-				)
-			}
+		for _, eref := range pData.GetExternalRefs() {
+			allPackages[packageID].ExternalRefs = append(
+				allPackages[packageID].ExternalRefs, ExternalRef{
+					Category: eref.GetCategory(),
+					Type:     eref.GetType(),
+					Locator:  eref.GetLocator(),
+				},
+			)
 		}
 	}
 
 	allFiles := map[string]*File{}
-	for i := 0; i < jsonValue.FieldByName("Files").Len(); i++ {
-		fData := jsonValue.FieldByName("Files").Index(i)
-		fileID := fData.FieldByName("ID").String()
+	for _, fData := range jsonDoc.GetFiles() {
+		fileID := fData.GetID()
 		allFiles[fileID] = &File{
 			Entity: Entity{
 				ID:               fileID,
-				Name:             fData.FieldByName("Name").String(),
-				CopyrightText:    fData.FieldByName("CopyrightText").String(),
-				LicenseConcluded: fData.FieldByName("LicenseConcluded").String(),
+				Name:             fData.GetName(),
+				CopyrightText:    fData.GetCopyrightText(),
+				LicenseConcluded: fData.GetLicenseConcluded(),
 				// LicenseComments:  pData.LicenseComments,
 				Relationships: []*Relationship{},
 				Checksum:      map[string]string{},
 			},
 			FileType: []string{},
 			LicenseInfoInFile: strings.Join(
-				fData.FieldByName("LicenseInfoInFile").Interface().([]string), " AND ",
+				fData.GetLicenseInfoInFile(), " AND ",
 			),
 		}
 
-		checksums := fData.FieldByName("Checksums")
-		if checksums.IsValid() {
-			for j := 0; j < checksums.Len(); j++ {
-				cs := checksums.Index(j)
-				allFiles[fileID].Checksum[cs.FieldByName("Algorithm").String()] = cs.FieldByName("Value").String()
-			}
+		for _, cs := range fData.GetChecksums() {
+			allFiles[fileID].Checksum[cs.GetAlgorithm()] = cs.GetValue()
 		}
 	}
 
@@ -283,16 +268,15 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 
 	// Populate the package and file relationships before adding
 	// the root level elements
-	for i := 0; i < jsonValue.FieldByName("Relationships").Len(); i++ {
+	for _, r := range jsonDoc.GetRelationships() {
 		var source Object
 		var peer Object
 		var relatedID string
 		var externalID string
 
-		r := jsonValue.FieldByName("Relationships").Index(i)
-		elementID := r.FieldByName("Element").String()
-		relatedID = r.FieldByName("Related").String()
-		typeID := r.FieldByName("Type").String()
+		elementID := r.GetElement()
+		relatedID = r.GetRelated()
+		typeID := r.GetType()
 
 		// Look for the source element
 		if _, ok := allPackages[elementID]; ok {
@@ -344,7 +328,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 	}
 
 	// Add the top level packages
-	for _, el := range jsonValue.FieldByName("DocumentDescribes").Interface().([]string) {
+	for _, el := range jsonDoc.GetDocumentDescribes() {
 		var p *Package
 		var f *File
 		var ok bool
@@ -378,20 +362,16 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 	}
 
 	// Assign external references
-	extRefs := jsonValue.FieldByName("ExternalDocumentRefs")
-	if extRefs.IsValid() {
-		for j := 0; j < extRefs.Len(); j++ {
-			ref := extRefs.Index(j)
-			cs := ref.FieldByName("Checksum")
-			extRef := ExternalDocumentRef{
-				ID:  ref.FieldByName("ExternalDocumentID").String(),
-				URI: ref.FieldByName("SPDXDocument").String(),
-				Checksums: map[string]string{
-					cs.FieldByName("Algorithm").String(): cs.FieldByName("Value").String(),
-				},
-			}
-			doc.ExternalDocRefs = append(doc.ExternalDocRefs, extRef)
+	for _, ref := range jsonDoc.GetExternalDocumentRefs() {
+		cs := ref.GetChecksum()
+		extRef := ExternalDocumentRef{
+			ID:  ref.GetExternalDocumentID(),
+			URI: ref.GetSPDXDocument(),
+			Checksums: map[string]string{
+				cs.GetAlgorithm(): cs.GetValue(),
+			},
 		}
+		doc.ExternalDocRefs = append(doc.ExternalDocRefs, extRef)
 	}
 	fmt.Printf("%+v\n", doc)
 	fmt.Printf("PACKAGE:  %+v\n", doc.Packages["SPDXRef-Package-sha256-a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f"])
@@ -399,7 +379,8 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 }
 
 // parseTagValue parses an SPDX SBOM in tag-value format
-// nolint:gocyclo
+//
+//nolint:gocyclo
 func parseTagValue(file *os.File) (doc *Document, err error) {
 	// Create a blank document
 	doc = &Document{
