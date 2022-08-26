@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v22
+package v23
 
 const (
 	NOASSERTION = "NOASSERTION"
-	Version     = "SPDX-2.2"
+	Version     = "SPDX-2.3"
 )
 
 type Document struct {
@@ -53,6 +53,7 @@ type Package struct {
 	Originator           string                  `json:"originator,omitempty"`
 	SourceInfo           string                  `json:"sourceInfo,omitempty"`
 	CopyrightText        string                  `json:"copyrightText"`
+	PrimaryPurpose       string                  `json:"primaryPackagePurpose,omitempty"`
 	HasFiles             []string                `json:"hasFiles,omitempty"`
 	LicenseInfoFromFiles []string                `json:"licenseInfoFromFiles,omitempty"`
 	Checksums            []Checksum              `json:"checksums"`
