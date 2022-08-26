@@ -1,0 +1,44 @@
+name: Validate SPDX Conformance
+
+on:
+  pull_request:
+    branches: ['main']
+
+jobs:
+  check-spdx:
+    name: Check SPDX SBOMs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
+        with:
+          go-version: 1.18
+          check-latest: true
+
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+      - run: |
+          go run ./cmd/bom/main.go generate -i registry.k8s.io/pause > example-image-pause.spdx
+          go run ./cmd/bom/main.go generate --format=json -i registry.k8s.io/pause > example-image-pause.spdx.json
+
+      - uses: chainguard-dev/actions/setup-spdx@d886686603afb809f7ef9b734b333e20b7ce5cda
+        with:
+          spdx-tools-version: 1.1.0
+
+      - uses: chainguard-dev/actions/setup-spdx@d886686603afb809f7ef9b734b333e20b7ce5cda
+        with:
+          download: false
+          spdx-tools-version: 1.1.0
+          sbom-path: example-image-pause.spdx
+
+      - uses: chainguard-dev/actions/setup-spdx@d886686603afb809f7ef9b734b333e20b7ce5cda
+        with:
+          download: false
+          spdx-tools-version: 1.1.0
+          sbom-path: example-image-pause.spdx.json
+
+      - uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8  # v3.1.0
+        if: ${{ always() }}
+        with:
+          name: Example SBOMs
+          path: |
+            example-image-pause.spdx
+            example-image-pause.spdx.json
