@@ -30,7 +30,7 @@ To generate a Bill of Materials for your project, make sure you have `bom` insta
 
 ```console
 cd gitrepo/
-bom -n 'http://mybom.com/' . 
+bom generate -n 'http://mybom.com/' . 
 ```
 
 All of the tool's options are explained on its page. Keep reading
