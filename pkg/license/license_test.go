@@ -102,8 +102,9 @@ func TestUSPDXWriteLicensesAsText(t *testing.T) {
 	// Check the call works:
 	require.Nil(t, spdx.WriteLicensesAsText(tempdir))
 
-	// Check we have one file
-	require.Nil(t, CheckFileExists(t, filepath.Join(tempdir, testLicenseID+".txt")))
+	// Check the files where written in the expected paths
+	require.Nil(t, CheckFileExists(t, filepath.Join(tempdir, "assets", testLicenseID, "license.txt")))
+	require.Nil(t, CheckFileExists(t, filepath.Join(tempdir, "assets", testLicenseID2, "license.txt")))
 }
 
 func TestUSPDXGetLicense(t *testing.T) {
