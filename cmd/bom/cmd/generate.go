@@ -343,22 +343,22 @@ func generateBOM(opts *generateOptions) error {
 		return fmt.Errorf("generating doc: %w", err)
 	}
 
-	if opts.outputFile == "" {
-		var renderer serialize.Serializer
-		if opts.format == "json" {
-			renderer = &serialize.JSON{}
-		} else {
-			renderer = &serialize.TagValue{}
-		}
-
-		markup, err := renderer.Serialize(doc)
-		if err != nil {
-			return fmt.Errorf("serializing document: %w", err)
-		}
-
-		fmt.Println(markup)
+	var renderer serialize.Serializer
+	if opts.format == "json" {
+		renderer = &serialize.JSON{}
+	} else {
+		renderer = &serialize.TagValue{}
 	}
 
+	markup, err := renderer.Serialize(doc)
+	if err != nil {
+		return fmt.Errorf("serializing document: %w", err)
+	}
+	if opts.outputFile == "" {
+		fmt.Println(markup)
+	} else {
+		os.WriteFile(opts.outputFile, []byte(markup), 0664)
+	}
 	// Export the SBOM as in-toto provenance
 	if opts.provenancePath != "" {
 		if err := doc.WriteProvenanceStatement(
