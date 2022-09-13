@@ -357,7 +357,9 @@ func generateBOM(opts *generateOptions) error {
 	if opts.outputFile == "" {
 		fmt.Println(markup)
 	} else {
-		os.WriteFile(opts.outputFile, []byte(markup), 0664)
+		if err := os.WriteFile(opts.outputFile, []byte(markup), 0o664); err != nil { //nolint:gosec // G306: Expect WriteFile
+			return fmt.Errorf("writing SBOM: %w", err)
+		}
 	}
 	// Export the SBOM as in-toto provenance
 	if opts.provenancePath != "" {
