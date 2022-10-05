@@ -108,7 +108,7 @@ bom will try to add useful information to the oultine but, if needed, you can
 set the --spdx-ids to only output the IDs of the entities.
 
 `,
-		Use:           "outline SPDX_FILE",
+		Use:           "outline SPDX_FILE|URL",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
