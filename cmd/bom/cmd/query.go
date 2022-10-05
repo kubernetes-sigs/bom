@@ -52,7 +52,7 @@ Example:
   bom document query sbom.spdx "depth:2 name:log4j"
 
 `,
-		Use:           "query SPDX_FILE \"query expression\" ",
+		Use:           "query SPDX_FILE|URL \"query expression\" ",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

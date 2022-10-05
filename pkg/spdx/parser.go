@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -32,6 +33,7 @@ import (
 	"sigs.k8s.io/bom/pkg/spdx/json/document"
 	spdx22JSON "sigs.k8s.io/bom/pkg/spdx/json/v2.2"
 	spdx23JSON "sigs.k8s.io/bom/pkg/spdx/json/v2.3"
+	"sigs.k8s.io/release-utils/http"
 )
 
 // Regexp to match the tag-value spdx expressions
@@ -53,6 +55,12 @@ func OpenDoc(path string) (doc *Document, err error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading STDIN: %w", err)
 		}
+	} else if isURL(path) {
+		file, err = tempFileFromURL(path)
+		if err != nil {
+			return nil, fmt.Errorf("get temp file from url: %w", err)
+		}
+		isTemp = true
 	} else {
 		file, err = os.Open(path)
 		if err != nil {
@@ -79,6 +87,29 @@ func OpenDoc(path string) (doc *Document, err error) {
 	}
 
 	return nil, errors.New("unknown SBOM encoding")
+}
+
+func tempFileFromURL(query string) (*os.File, error) {
+	response, err := http.GetURLResponse(query, false)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving URL resposne from %s: %w", query, err)
+	}
+	file, err := os.CreateTemp("", "sbom-")
+	if err != nil {
+		return nil, fmt.Errorf("create temp file for URL response: %w", err)
+	}
+	if _, err := file.WriteString(response); err != nil {
+		return nil, fmt.Errorf("write response to file: %w", err)
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("seek file start: %w", err)
+	}
+	return file, nil
+}
+
+func isURL(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
 // parseJSON parses an SPDX document encoded in json

@@ -263,3 +263,23 @@ func TestComputeLicenseList(t *testing.T) {
 	require.NoError(t, p.ComputeLicenseList())
 	require.Equal(t, noLicenses, p.LicenseInfoFromFiles)
 }
+
+func TestIsURL(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		given string
+		isURL bool
+	}{
+		{"", false},
+		{"/", false},
+		{"/foo/bar", false},
+		{"http://", false},
+		{"http//foo.bar/baz", false},
+		{"https://foo.bar", true},
+		{"https://foo.bar/baz", true},
+	} {
+		res := isURL(tc.given)
+		require.Equal(t, tc.isURL, res)
+	}
+}
