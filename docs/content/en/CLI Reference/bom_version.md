@@ -1,6 +1,6 @@
 ---
-title: "bom generate"
-linkTitle: "bom generate"
+title: "bom version"
+linkTitle: "bom version"
 tags: ["reference"]
 date: 2022-06-27
 description: bom version →  prints the version
