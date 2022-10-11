@@ -1,4 +1,4 @@
-defaultBaseImage: ghcr.io/distroless/go:latest
+defaultBaseImage: ghcr.io/chainguard-images/go:latest
 
 builds:
 - id: bom

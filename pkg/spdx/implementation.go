@@ -171,7 +171,7 @@ func sanitizeExtractPath(tmpDir, filePath string) (string, error) {
 }
 
 // readArchiveManifest extracts the manifest json from an image tar
-//    archive and returns the data as a struct
+// archive and returns the data as a struct
 func (di *spdxDefaultImplementation) ReadArchiveManifest(manifestPath string) (manifest *ArchiveManifest, err error) {
 	// Check that we have the archive manifest.json file
 	if !util.Exists(manifestPath) {

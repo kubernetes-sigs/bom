@@ -139,7 +139,7 @@ completed by a later stage in your CI/CD pipeline. See the
 			}
 
 			if err := genOpts.Validate(); err != nil {
-				cmd.Help() // nolint:errcheck // We already errored
+				cmd.Help() //nolint:errcheck // We already errored
 				return fmt.Errorf("validating command line options: %w", err)
 			}
 

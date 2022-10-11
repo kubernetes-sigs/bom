@@ -17,7 +17,6 @@ limitations under the License.
 package spdx
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -25,11 +24,11 @@ import (
 )
 
 func createTempFile(name string) (*os.File, string, error) {
-	dir, err := ioutil.TempDir("", "tests")
+	dir, err := os.MkdirTemp("", "tests")
 	if err != nil {
 		return nil, "", err
 	}
-	file, err := ioutil.TempFile(dir, name)
+	file, err := os.CreateTemp(dir, name)
 	if err != nil {
 		return nil, "", err
 	}

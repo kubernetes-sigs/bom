@@ -12,7 +12,7 @@ jobs:
   deploy:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
         with:
           submodules: true  # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
@@ -27,6 +27,6 @@ jobs:
         run: cd docs && npm install && hugo --minify
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@e6d003d0839927f5a4b998bfd92ed8e448fde37a # v4.3.4
+        uses: JamesIves/github-pages-deploy-action@13046b614c663b56cba4dda3f30b9736a748b80d # v4.4.0
         with:
           folder: ./docs/public # The folder the action should deploy.

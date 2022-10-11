@@ -358,7 +358,8 @@ func (p *Package) SetEntity(e *Entity) {
 }
 
 // Draw renders the package data as a tree-like structure
-// nolint:gocritic
+//
+//nolint:gocritic
 func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen *map[string]struct{}) {
 	title := p.SPDXID()
 	(*seen)[p.SPDXID()] = struct{}{}
