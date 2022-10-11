@@ -57,7 +57,7 @@ Example:
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
-				cmd.Help() // nolint:errcheck
+				cmd.Help() //nolint:errcheck
 				return errors.New("you should only specify one file")
 			}
 

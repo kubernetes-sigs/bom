@@ -225,8 +225,9 @@ func (spdx *SPDX) FileFromPath(filePath string) (*File, error) {
 }
 
 // AnalyzeLayer uses the collection of image analyzers to see if
-//  it matches a known image from which a spdx package can be
-//  enriched with more information
+//
+//	it matches a known image from which a spdx package can be
+//	enriched with more information
 func (spdx *SPDX) AnalyzeImageLayer(layerPath string, pkg *Package) error {
 	return spdx.impl.AnalyzeImageLayer(layerPath, pkg)
 }
@@ -243,11 +244,11 @@ func (spdx *SPDX) PullImagesToArchive(reference, path string) (*ImageReferenceIn
 
 // ImageRefToPackage gets an image reference (tag or digest) and returns
 // a spdx package describing it. It can take two forms:
-//  - When the reference is a digest (or single image), a single package
-//    describing the layers is returned
-//  - When the reference is an image index, the returned package is a
-//    package referencing each of the images, each in its own packages.
-//  All subpackages are returned with a relationship of VARIANT_OF
+//   - When the reference is a digest (or single image), a single package
+//     describing the layers is returned
+//   - When the reference is an image index, the returned package is a
+//     package referencing each of the images, each in its own packages.
+//     All subpackages are returned with a relationship of VARIANT_OF
 func (spdx *SPDX) ImageRefToPackage(reference string) (pkg *Package, err error) {
 	return spdx.impl.ImageRefToPackage(reference, spdx.Options())
 }
@@ -262,7 +263,8 @@ func Banner() string {
 
 // recursiveIDSearch is a function that recursively searches an object's peers
 // to find the specified SPDX ID. If found, returns a copy of the object.
-// nolint:gocritic // seen is a pointer recursively populated
+//
+//nolint:gocritic // seen is a pointer recursively populated
 func recursiveIDSearch(id string, o Object, seen *map[string]struct{}) Object {
 	if o.SPDXID() == id {
 		return o
@@ -290,7 +292,8 @@ func recursiveIDSearch(id string, o Object, seen *map[string]struct{}) Object {
 // recursivePurlSearch is a function that recursively searches an object's peers
 // to find those that match the purl parts defined. If found, returns a copy of
 // the object.
-// nolint:gocritic // seen is a pointer recursively populated
+//
+//nolint:gocritic // seen is a pointer recursively populated
 func recursivePurlSearch(purlSpec *purl.PackageURL, o Object, seen *map[string]struct{}, opts ...PurlSearchOption) []*Package {
 	foundPackages := []*Package{}
 	// Only packages can express purls

@@ -112,7 +112,8 @@ func (f *File) SetEntity(e *Entity) {
 }
 
 // Draw renders the file data as a tree-like structure
-// nolint:gocritic
+//
+//nolint:gocritic
 func (f *File) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen *map[string]struct{}) {
 	connector := connectorT
 	if o.LastItem {

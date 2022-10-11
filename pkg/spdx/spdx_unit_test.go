@@ -23,7 +23,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -184,7 +183,7 @@ func writeTestTarball(t *testing.T, zipped bool) *os.File {
 	zipreader, err := gzip.NewReader(reader)
 	require.Nil(t, err)
 
-	bindata, err := ioutil.ReadAll(zipreader)
+	bindata, err := io.ReadAll(zipreader)
 	require.Nil(t, err)
 
 	require.Nil(t, os.WriteFile(
