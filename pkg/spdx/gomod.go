@@ -122,16 +122,18 @@ func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 	return spdxPackage, nil
 }
 
+func nsAndNameFromImportPath(importPath string) (string, string) {
+	lastSlashIndex := strings.LastIndex(importPath, "/")
+	if lastSlashIndex == -1 {
+		return "", ""
+	}
+	return importPath[0:lastSlashIndex], importPath[lastSlashIndex+1:]
+}
+
 // PackageURL returns a purl if the go package has enough data to generate
 // one. If data is missing, it will return an empty string
 func (pkg *GoPackage) PackageURL() string {
-	parts := strings.Split(pkg.ImportPath, "/")
-	if len(parts) < 2 {
-		return ""
-	}
-	pname := parts[len(parts)-1]
-	namespace := strings.TrimSuffix(parts[0], "/"+pname)
-
+	namespace, pname := nsAndNameFromImportPath(pkg.ImportPath)
 	// We require type, package, namespace and version at the very
 	// least to generate a purl
 	if pname == "" || pkg.Revision == "" || namespace == "" {
