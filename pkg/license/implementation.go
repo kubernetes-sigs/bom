@@ -91,7 +91,7 @@ func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
 		// Get the license corresponding to the ID label
 		license := d.catalog.GetLicense(label)
 		if license == nil {
-			logrus.Debug("got an unknown license label from classifier: %s", label)
+			logrus.Debugf("Got an unknown license label from classifier: %s", label)
 			unrecognizedPaths = append(unrecognizedPaths, f)
 			continue
 		}
@@ -141,7 +141,7 @@ func (d *ReaderDefaultImpl) LicenseFromFile(path string) (license *License, err 
 
 // FindLicenseFiles will scan a directory and return files that may be licenses
 func (d *ReaderDefaultImpl) FindLicenseFiles(path string) ([]string, error) {
-	logrus.Infof("Scanning %s for license files", path)
+	logrus.Debugf("Scanning %s for license files", path)
 	licenseList := []string{}
 	re := regexp.MustCompile(licenseFilanameRe)
 	if err := filepath.Walk(path,
@@ -167,7 +167,7 @@ func (d *ReaderDefaultImpl) FindLicenseFiles(path string) ([]string, error) {
 		}); err != nil {
 		return nil, fmt.Errorf("scanning the directory for license files: %w", err)
 	}
-	logrus.Infof("%d license files found in directory", len(licenseList))
+	logrus.Debugf("%d license files found in directory %s", len(licenseList), path)
 	return licenseList, nil
 }
 

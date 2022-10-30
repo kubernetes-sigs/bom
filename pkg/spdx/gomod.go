@@ -206,6 +206,8 @@ func (mod *GoModule) ScanLicenses() error {
 		return fmt.Errorf("creating license scanner: %w", err)
 	}
 
+	logrus.Infof("Scanning licenses for %d go packages", len(mod.Packages))
+
 	// Create a new Throttler that will get parallelDownloads urls at a time
 	t := throttler.New(10, len(mod.Packages))
 	// Do a quick re-check for missing downloads
@@ -214,7 +216,7 @@ func (mod *GoModule) ScanLicenses() error {
 		// Launch a goroutine to fetch the package contents
 		go func(curPkg *GoPackage) {
 			logrus.WithField(
-				"package", curPkg.ImportPath).Infof(
+				"package", curPkg.ImportPath).Debugf(
 				"Downloading package (%d total)", len(mod.Packages),
 			)
 			defer t.Done(err)
@@ -228,7 +230,7 @@ func (mod *GoModule) ScanLicenses() error {
 					return
 				}
 			} else {
-				logrus.WithField("package", curPkg.ImportPath).Infof(
+				logrus.WithField("package", curPkg.ImportPath).Debugf(
 					"There is a local copy of %s@%s", curPkg.ImportPath, curPkg.Revision,
 				)
 			}
@@ -401,7 +403,7 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, opts *GoModuleOption
 		return nil
 	}
 
-	logrus.WithField("package", pkg.ImportPath).Infof("Downloading package %s@%s", pkg.ImportPath, pkg.Revision)
+	logrus.WithField("package", pkg.ImportPath).Debugf("Downloading package %s@%s", pkg.ImportPath, pkg.Revision)
 	repo, err := vcs.RepoRootForImportPath(pkg.ImportPath, true)
 	if err != nil {
 		repoName := "[unknown repo]"
@@ -499,14 +501,14 @@ func (di *GoModDefaultImpl) ScanPackageLicense(
 	}
 
 	if licenseResult != nil {
-		logrus.Infof(
+		logrus.Debugf(
 			"Package %s license is %s", pkg.ImportPath,
 			licenseResult.License.LicenseID,
 		)
 		pkg.LicenseID = licenseResult.License.LicenseID
 		pkg.CopyrightText = licenseResult.Text
 	} else {
-		logrus.Infof("Could not find licensing information for package %s", pkg.ImportPath)
+		logrus.Warnf("Could not find licensing information for package %s", pkg.ImportPath)
 	}
 	return nil
 }
