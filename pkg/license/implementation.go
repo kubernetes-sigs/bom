@@ -63,7 +63,6 @@ func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTa
 			moreTags = append(moreTags, t)
 		}
 	}
-	logrus.Infof("File %s classified as license %s plus %+v", path, licenseTag, moreTags)
 	return licenseTag, moreTags, nil
 }
 
@@ -85,8 +84,9 @@ func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
 		// Get the license corresponding to the ID label
 		license := d.catalog.GetLicense(label)
 		if license == nil {
-			return nil, unrecognizedPaths,
-				fmt.Errorf("ID does not correspond to a valid license: '%s'", label)
+			logrus.Debug("got an unknown license label from classifier: %s", label)
+			unrecognizedPaths = append(unrecognizedPaths, f)
+			continue
 		}
 		licenseText, err := os.ReadFile(f)
 		if err != nil {
@@ -125,7 +125,8 @@ func (d *ReaderDefaultImpl) LicenseFromFile(path string) (license *License, err 
 	// Get the license corresponding to the ID label
 	license = d.catalog.GetLicense(label)
 	if license == nil {
-		return nil, fmt.Errorf("ID does not correspond to a valid license: %s", label)
+		logrus.Debugf("ID returned by classifier does not correspond to a valid license tag: %s", label)
+		return nil, nil
 	}
 
 	return license, nil
