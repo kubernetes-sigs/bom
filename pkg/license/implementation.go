@@ -45,17 +45,26 @@ func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTa
 	res, err := d.Classifier().MatchFrom(file)
 	if res.Matches.Len() == 0 {
 		logrus.Debugf("File does not match a known license: %s", path)
+		return "", moreTags, nil
 	}
 	var highestConf float64
 	moreTags = []string{}
+	allTags := map[string]struct{}{}
 	for _, match := range res.Matches {
 		if match.Confidence > highestConf {
 			highestConf = match.Confidence
 			licenseTag = match.Name
-			moreTags = append(moreTags, match.Name)
+		}
+		allTags[match.Name] = struct{}{}
+	}
+
+	for t := range allTags {
+		if t != licenseTag {
+			moreTags = append(moreTags, t)
 		}
 	}
-	return licenseTag, []string{}, nil
+	logrus.Infof("File %s classified as license %s plus %+v", path, licenseTag, moreTags)
+	return licenseTag, moreTags, nil
 }
 
 // ClassifyLicenseFiles takes a list of paths and tries to find return all licenses found in it
