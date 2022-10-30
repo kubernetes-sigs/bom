@@ -51,6 +51,13 @@ func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTa
 	moreTags = []string{}
 	allTags := map[string]struct{}{}
 	for _, match := range res.Matches {
+		// As of v2.0.0, the license classifier returns "Copyright"
+		// as one of the license tags. If we let it go the license module
+		// will ignore it but it will write it to the debug output.
+		// So we simply skip it.
+		if match.Name == "Copyright" {
+			continue
+		}
 		if match.Confidence > highestConf {
 			highestConf = match.Confidence
 			licenseTag = match.Name
@@ -96,7 +103,7 @@ func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
 		licenseList = append(licenseList, &ClassifyResult{f, string(licenseText), license})
 	}
 	if len(paths) != len(licenseList) {
-		logrus.Infof(
+		logrus.Debugf(
 			"License classifier recognized %d/%d (%d%%) of the license files",
 			len(licenseList), len(paths), (len(licenseList)/len(paths))*100,
 		)
