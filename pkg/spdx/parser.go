@@ -371,7 +371,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		}
 
 		if f, ok = allFiles[el]; ok {
-			doc.Files[p.SPDXID()] = f
+			doc.Files[f.SPDXID()] = f
 			seenObjects[el] = el
 			continue
 		}
