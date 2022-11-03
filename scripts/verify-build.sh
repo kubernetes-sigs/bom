@@ -38,4 +38,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
 
     echo "Building project for $PLATFORM"
     CGO_ENABLED=0 GOARCH="$ARCH" GOOS="$OS" go build -trimpath -ldflags "${BOM_LDFLAGS}" -o output/$output_name ./cmd/bom/main.go
+    pushd output
+    sha256sum $output_name >> checksums.txt
+    popd
 done
