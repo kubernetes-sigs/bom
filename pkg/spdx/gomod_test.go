@@ -67,6 +67,8 @@ func TestPackageURL(t *testing.T) {
 		{GoPackage{ImportPath: "package", Revision: "v1.0.0"}, ""},
 		// No revision
 		{GoPackage{ImportPath: "package/name", Revision: ""}, ""},
+		// Check namespace
+		{GoPackage{ImportPath: "github.com/jbenet/go-context", Revision: "v0.0.1"}, "pkg:golang/github.com/jbenet/go-context@v0.0.1"},
 	} {
 		require.Equal(t, tc.expected, tc.pkg.PackageURL())
 	}

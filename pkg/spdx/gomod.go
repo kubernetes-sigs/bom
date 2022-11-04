@@ -122,12 +122,14 @@ func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 	return spdxPackage, nil
 }
 
-func nsAndNameFromImportPath(importPath string) (string, string) {
+func nsAndNameFromImportPath(importPath string) (namespace, packageName string) {
 	lastSlashIndex := strings.LastIndex(importPath, "/")
 	if lastSlashIndex == -1 {
 		return "", ""
 	}
-	return importPath[0:lastSlashIndex], importPath[lastSlashIndex+1:]
+	namespace = importPath[0:lastSlashIndex]
+	packageName = importPath[lastSlashIndex+1:]
+	return namespace, packageName
 }
 
 // PackageURL returns a purl if the go package has enough data to generate
