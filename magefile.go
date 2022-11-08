@@ -20,17 +20,22 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/pkg/archive"
 	"github.com/carolynvs/magex/pkg/downloads"
 	"github.com/magefile/mage/sh"
+	"github.com/nozzle/throttler"
+	"github.com/sirupsen/logrus"
 
+	"sigs.k8s.io/release-utils/http"
 	"sigs.k8s.io/release-utils/mage"
 )
 
@@ -39,8 +44,10 @@ import (
 var Default = Verify
 
 const (
-	binDir    = "bin"
-	scriptDir = "scripts"
+	binDir              = "bin"
+	scriptDir           = "scripts"
+	LicenseDataURL      = "https://spdx.org/licenses/"
+	LicenseListFilename = "licenses.json"
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
@@ -297,4 +304,89 @@ func InstallKO(version string) error {
 	}
 
 	return archive.DownloadToGopathBin(opts)
+}
+
+func DownloadLicenseData() error {
+	if err := os.MkdirAll("./licenses", os.ModePerm); err != nil {
+		return err
+	}
+
+	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
+	// Get the list of licenses
+	licensesJSON, err := http.NewAgent().Get(LicenseDataURL + LicenseListFilename)
+	if err != nil {
+		return fmt.Errorf("fetching licenses list: %w", err)
+	}
+
+	// SPDXLicense is a license described in JSON
+	type License struct {
+		IsDeprecatedLicenseID         bool     `json:"isDeprecatedLicenseId"`
+		IsFsfLibre                    bool     `json:"isFsfLibre"`
+		IsOsiApproved                 bool     `json:"isOsiApproved"`
+		LicenseText                   string   `json:"licenseText"`
+		StandardLicenseHeaderTemplate string   `json:"standardLicenseHeaderTemplate"`
+		StandardLicenseTemplate       string   `json:"standardLicenseTemplate"`
+		Name                          string   `json:"name"`
+		LicenseID                     string   `json:"licenseId"`
+		StandardLicenseHeader         string   `json:"standardLicenseHeader"`
+		SeeAlso                       []string `json:"seeAlso"`
+	}
+	// ListEntry a license entry in the list
+	type ListEntry struct {
+		IsOsiApproved   bool     `json:"isOsiApproved"`
+		IsDeprectaed    bool     `json:"isDeprecatedLicenseId"`
+		Reference       string   `json:"reference"`
+		DetailsURL      string   `json:"detailsUrl"`
+		ReferenceNumber int      `json:"referenceNumber"`
+		Name            string   `json:"name"`
+		LicenseID       string   `json:"licenseId"`
+		SeeAlso         []string `json:"seeAlso"`
+	}
+
+	type List struct {
+		Version           string      `json:"licenseListVersion"`
+		ReleaseDateString string      `json:"releaseDate "`
+		LicenseData       []ListEntry `json:"licenses"`
+		Licenses          map[string]*License
+	}
+
+	licenseList := &List{}
+	if err := json.Unmarshal(licensesJSON, licenseList); err != nil {
+		return fmt.Errorf("parsing SPDX licence list: %w", err)
+	}
+
+	logrus.Infof("Read data for %d licenses. Downloading.", len(licenseList.LicenseData))
+
+	downloadCount := 0
+	t := throttler.New(10, len(licenseList.LicenseData))
+	// Create a new Throttler that will get `parallelDownloads` urls at a time
+	for _, l := range licenseList.LicenseData {
+		licURL := l.DetailsURL
+		// If the license URLs have a local reference
+		if strings.HasPrefix(licURL, "./") {
+			licURL = LicenseDataURL + strings.TrimPrefix(licURL, "./")
+		}
+		// Launch a goroutine to fetch the URL.
+		go func(url string) {
+			logrus.Debugf("Downloading license data from %s", url)
+			licenseJSON, err := http.NewAgent().Get(url)
+			defer t.Done(err)
+			logrus.Debugf("Downloaded %d bytes from %s", len(licenseJSON), url)
+			if err != nil {
+				logrus.Error(err)
+				return
+			}
+			license := &License{}
+			if err := json.Unmarshal(licenseJSON, license); err != nil {
+				panic(err)
+			}
+			if err := os.WriteFile("./licenses/"+l.LicenseID+".json",
+				licensesJSON, 0644,
+			); err != nil {
+				panic(err)
+			}
+		}(licURL)
+		t.Throttle()
+	}
+	return nil
 }
