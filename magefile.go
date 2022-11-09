@@ -32,7 +32,6 @@ import (
 	"github.com/carolynvs/magex/pkg/archive"
 	"github.com/carolynvs/magex/pkg/downloads"
 	"github.com/magefile/mage/sh"
-	"github.com/nozzle/throttler"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/release-utils/http"
@@ -47,7 +46,8 @@ const (
 	binDir              = "bin"
 	scriptDir           = "scripts"
 	LicenseDataURL      = "https://spdx.org/licenses/"
-	LicenseListFilename = "licenses.json"
+	LicenseListFilename = "licenseList.json"
+	LicenseDataDirPath  = "./pkg/license/licenseData/"
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
@@ -307,13 +307,13 @@ func InstallKO(version string) error {
 }
 
 func DownloadLicenseData() error {
-	if err := os.MkdirAll("./licenses", os.ModePerm); err != nil {
+	if err := os.MkdirAll(LicenseDataDirPath, os.ModePerm); err != nil {
 		return err
 	}
 
 	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
 	// Get the list of licenses
-	licensesJSON, err := http.NewAgent().Get(LicenseDataURL + LicenseListFilename)
+	licensesJSON, err := http.NewAgent().Get(LicenseDataURL + "licenses.json")
 	if err != nil {
 		return fmt.Errorf("fetching licenses list: %w", err)
 	}
@@ -355,38 +355,35 @@ func DownloadLicenseData() error {
 		return fmt.Errorf("parsing SPDX licence list: %w", err)
 	}
 
+	if err := os.WriteFile(LicenseDataDirPath+LicenseListFilename, licensesJSON, 0644); err != nil {
+		panic(err)
+	}
 	logrus.Infof("Read data for %d licenses. Downloading.", len(licenseList.LicenseData))
 
-	downloadCount := 0
-	t := throttler.New(10, len(licenseList.LicenseData))
-	// Create a new Throttler that will get `parallelDownloads` urls at a time
 	for _, l := range licenseList.LicenseData {
 		licURL := l.DetailsURL
 		// If the license URLs have a local reference
 		if strings.HasPrefix(licURL, "./") {
 			licURL = LicenseDataURL + strings.TrimPrefix(licURL, "./")
 		}
-		// Launch a goroutine to fetch the URL.
-		go func(url string) {
-			logrus.Debugf("Downloading license data from %s", url)
-			licenseJSON, err := http.NewAgent().Get(url)
-			defer t.Done(err)
-			logrus.Debugf("Downloaded %d bytes from %s", len(licenseJSON), url)
-			if err != nil {
-				logrus.Error(err)
-				return
-			}
-			license := &License{}
-			if err := json.Unmarshal(licenseJSON, license); err != nil {
-				panic(err)
-			}
-			if err := os.WriteFile("./licenses/"+l.LicenseID+".json",
-				licensesJSON, 0644,
-			); err != nil {
-				panic(err)
-			}
-		}(licURL)
-		t.Throttle()
+		logrus.Debugf("Downloading license data from %s", licURL)
+		licenseData, err := http.NewAgent().Get(licURL)
+		if err != nil {
+			return err
+		}
+		logrus.Debugf("Downloaded %d bytes from %s", len(licenseData), licURL)
+		license := &License{}
+		if err := json.Unmarshal(licenseData, license); err != nil {
+			panic(err)
+		}
+		if license.LicenseID == "" {
+			panic(fmt.Errorf("%+v", license))
+		}
+		if err := os.WriteFile(LicenseDataDirPath+l.LicenseID+".json",
+			licenseData, 0644,
+		); err != nil {
+			panic(err)
+		}
 	}
 	return nil
 }

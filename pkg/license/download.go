@@ -25,14 +25,15 @@ package license
 
 import (
 	"crypto/sha1"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/nozzle/throttler"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/release-utils/http"
@@ -42,7 +43,7 @@ import (
 // ListURL is the json list of all spdx licenses
 const (
 	LicenseDataURL      = "https://spdx.org/licenses/"
-	LicenseListFilename = "licenses.json"
+	LicenseListFilename = "licenseList.json"
 )
 
 // NewDownloader returns a downloader with the default options
@@ -138,54 +139,42 @@ func (ddi *DefaultDownloaderImpl) SetOptions(opts *DownloaderOptions) {
 	ddi.Options = opts
 }
 
+//go:embed licenseData
+var licenseContent embed.FS
+
 // GetLicenses downloads the main json file listing all SPDX supported licenses
 func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
-	// TODO: Cache licenselist
-	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
-
-	// Get the list of licenses
-	licensesJSON, err := http.NewAgent().Get(LicenseDataURL + LicenseListFilename)
-	if err != nil {
-		return nil, fmt.Errorf("fetching licenses list: %w", err)
-	}
-
-	licenseList := &List{}
-	if err := json.Unmarshal(licensesJSON, licenseList); err != nil {
-		return nil, fmt.Errorf("parsing SPDX licence list: %w", err)
-	}
-
-	logrus.Infof("Read data for %d licenses. Downloading.", len(licenseList.LicenseData))
-
-	// Create a new Throttler that will get `parallelDownloads` urls at a time
-	t := throttler.New(ddi.Options.parallelDownloads, len(licenseList.LicenseData))
-	for _, l := range licenseList.LicenseData {
-		licURL := l.DetailsURL
-		// If the license URLs have a local reference
-		if strings.HasPrefix(licURL, "./") {
-			licURL = LicenseDataURL + strings.TrimPrefix(licURL, "./")
+	lics := List{}
+	err = fs.WalkDir(licenseContent, ".", func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
 		}
-		// Launch a goroutine to fetch the URL.
-		go func(url string) {
-			var lic *License
-			defer t.Done(err)
-			lic, err = ddi.getLicenseFromURL(url)
+		if strings.Contains(path, LicenseListFilename) {
+			l := List{}
+			data, err := fs.ReadFile(licenseContent, path)
 			if err != nil {
-				logrus.Error(err)
-				return
+				return fmt.Errorf("error while reading %s: %+v", path, err)
 			}
-			logrus.Debugf("Got license: %s from %s", l.LicenseID, url)
-			licenseList.Add(lic)
-		}(licURL)
-		t.Throttle()
-	}
-
-	logrus.Infof("Downloaded %d licenses", len(licenseList.Licenses))
-
-	// If the throttler collected errors, return those
-	if t.Err() != nil {
-		return nil, t.Err()
-	}
-	return licenseList, nil
+			if err := json.Unmarshal(data, &l); err != nil {
+				return fmt.Errorf("error while reading %s: %+v", path, err)
+			}
+			// TODO: FIX this hack and do this properly
+			l.Licenses = lics.Licenses
+			lics = l
+		} else {
+			l := License{}
+			data, err := fs.ReadFile(licenseContent, path)
+			if err != nil {
+				return fmt.Errorf("error while reading %s: %+v", path, err)
+			}
+			if err := json.Unmarshal(data, &l); err != nil {
+				return fmt.Errorf("error while reading %s: %+v", path, err)
+			}
+			lics.Add(&l)
+		}
+		return nil
+	})
+	return &lics, err
 }
 
 // cacheFileName return the cache filename for an URL
