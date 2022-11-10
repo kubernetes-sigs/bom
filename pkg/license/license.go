@@ -25,7 +25,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/sirupsen/logrus"
 
@@ -299,7 +298,6 @@ func HasKubernetesBoilerPlate(filePath string) (bool, error) {
 
 // List abstracts the list of licenses published by SPDX.org
 type List struct {
-	sync.RWMutex
 	Version           string      `json:"licenseListVersion"`
 	ReleaseDateString string      `json:"releaseDate "`
 	LicenseData       []ListEntry `json:"licenses"`
@@ -308,8 +306,6 @@ type List struct {
 
 // Add appends a license to the license list
 func (list *List) Add(license *License) {
-	list.Lock()
-	defer list.Unlock()
 	if list.Licenses == nil {
 		list.Licenses = map[string]*License{}
 	}
