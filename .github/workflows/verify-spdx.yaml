@@ -15,6 +15,13 @@ jobs:
           check-latest: true
 
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+
+      - name: Run mage target to download licenses
+        uses: magefile/mage-action@2c1951143e54356ebe6a0c6c971bae325b5b50f1
+        with:
+          version: v1.14.0
+          args: downloadLicenseData
+
       - run: |
           go run ./cmd/bom/main.go generate -i registry.k8s.io/pause > example-image-pause.spdx
           go run ./cmd/bom/main.go generate --format=json -i registry.k8s.io/pause > example-image-pause.spdx.json
