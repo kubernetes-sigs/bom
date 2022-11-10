@@ -67,6 +67,9 @@ func All() error {
 
 // Test runs various test functions
 func Test() error {
+	if err := DownloadLicenseData(); err != nil {
+		return err
+	}
 	if err := mage.TestGo(true); err != nil {
 		return err
 	}
@@ -98,6 +101,10 @@ func Verify() error {
 
 	fmt.Println("Running golangci-lint...")
 	if err := mage.RunGolangCILint("v1.50.1", false); err != nil {
+		return err
+	}
+
+	if err := DownloadLicenseData(); err != nil {
 		return err
 	}
 
