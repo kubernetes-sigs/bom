@@ -94,6 +94,10 @@ func Verify() error {
 		return err
 	}
 
+	if err := DownloadLicenseData(); err != nil {
+		return err
+	}
+
 	fmt.Println("Running go module linter...")
 	if err := mage.VerifyGoMod(scriptDir); err != nil {
 		return err
@@ -101,10 +105,6 @@ func Verify() error {
 
 	fmt.Println("Running golangci-lint...")
 	if err := mage.RunGolangCILint("v1.50.1", false); err != nil {
-		return err
-	}
-
-	if err := DownloadLicenseData(); err != nil {
 		return err
 	}
 
