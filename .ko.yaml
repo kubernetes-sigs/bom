@@ -1,4 +1,4 @@
-defaultBaseImage: ghcr.io/chainguard-images/go:latest
+defaultBaseImage: cgr.dev/chainguard/go:latest
 
 builds:
 - id: bom
