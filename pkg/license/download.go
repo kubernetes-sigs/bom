@@ -30,8 +30,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -179,7 +179,7 @@ func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
 	if err != nil {
 		return nil, err
 	}
-	licensesJSON, err := ioutil.ReadAll(licensesFile)
+	licensesJSON, err := io.ReadAll(licensesFile)
 	if err != nil {
 		return nil, err
 	}
@@ -187,6 +187,9 @@ func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
 		return nil, fmt.Errorf("parsing SPDX licence list: %w", err)
 	}
 	err = fs.WalkDir(reader, fmt.Sprintf("license-list-data-%s/json/details", tag[1:]), func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if d.IsDir() {
 			return nil
 		}
@@ -194,7 +197,7 @@ func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
 		if err != nil {
 			return err
 		}
-		data, err := ioutil.ReadAll(licenseFile)
+		data, err := io.ReadAll(licenseFile)
 		if err != nil {
 			return err
 		}
