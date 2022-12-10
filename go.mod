@@ -2,7 +2,6 @@ module sigs.k8s.io/bom
 
 go 1.19
 
-replace github.com/google/licenseclassifier/v2 => /Users/shivamsandbhor/work/bom/licenseclassifier/v2
 require (
 	github.com/carolynvs/magex v0.9.0
 	github.com/go-git/go-git/v5 v5.4.2
