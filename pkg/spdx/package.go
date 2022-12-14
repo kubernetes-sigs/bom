@@ -363,9 +363,16 @@ func (p *Package) SetEntity(e *Entity) {
 func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen *map[string]struct{}) {
 	title := p.SPDXID()
 	(*seen)[p.SPDXID()] = struct{}{}
-	if p.Name != "" {
+
+	if o.Purls && p.Purl() != nil && p.Purl().Name != "" {
+		title = p.Purl().String()
+	} else if p.Name != "" {
 		title = p.Name
+		if o.Version && p.Version != "" {
+			title += "@" + p.Version
+		}
 	}
+
 	if !o.SkipName {
 		fmt.Fprintln(builder, treeLines(o, depth-1, connectorT)+title)
 	}
@@ -400,7 +407,14 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 
 			if !o.OnlyIDs {
 				if _, ok := rel.Peer.(*Package); ok {
-					name = rel.Peer.(*Package).Name
+					if o.Purls && rel.Peer.(*Package).Purl() != nil && rel.Peer.(*Package).Purl().Name != "" {
+						name = rel.Peer.(*Package).Purl().String()
+					} else {
+						name = rel.Peer.(*Package).Name
+						if o.Version && rel.Peer.(*Package).Version != "" {
+							name = name + "@" + rel.Peer.(*Package).Version
+						}
+					}
 					etype = "PACKAGE"
 				}
 
