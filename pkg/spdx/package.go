@@ -370,6 +370,20 @@ func (p *Package) drawTitle(o *DrawingOptions) string {
 	return title
 }
 
+// drawName returns the name string to be used in the outline
+func (p *Package) drawName(o *DrawingOptions) string {
+	name := p.SPDXID()
+	if o.Purls && p.Purl() != nil && p.Purl().Name != "" {
+		name = p.Purl().String()
+	} else if p.Name != "" {
+		name = p.Name
+		if o.Version && p.Version != "" {
+			name = name + "@" + p.Version
+		}
+	}
+	return name
+}
+
 // Draw renders the package data as a tree-like structure
 //
 //nolint:gocritic
@@ -411,14 +425,7 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 
 			if !o.OnlyIDs {
 				if _, ok := rel.Peer.(*Package); ok {
-					if o.Purls && rel.Peer.(*Package).Purl() != nil && rel.Peer.(*Package).Purl().Name != "" {
-						name = rel.Peer.(*Package).Purl().String()
-					} else {
-						name = rel.Peer.(*Package).Name
-						if o.Version && rel.Peer.(*Package).Version != "" {
-							name = name + "@" + rel.Peer.(*Package).Version
-						}
-					}
+					name = rel.Peer.(*Package).drawName(o)
 					etype = "PACKAGE"
 				}
 
