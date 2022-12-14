@@ -357,13 +357,8 @@ func (p *Package) SetEntity(e *Entity) {
 	p.Entity = *e
 }
 
-// Draw renders the package data as a tree-like structure
-//
-//nolint:gocritic
-func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen *map[string]struct{}) {
+func (p *Package) drawTitle(o *DrawingOptions) string {
 	title := p.SPDXID()
-	(*seen)[p.SPDXID()] = struct{}{}
-
 	if o.Purls && p.Purl() != nil && p.Purl().Name != "" {
 		title = p.Purl().String()
 	} else if p.Name != "" {
@@ -372,7 +367,16 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 			title += "@" + p.Version
 		}
 	}
+	return title
+}
 
+// Draw renders the package data as a tree-like structure
+//
+//nolint:gocritic
+func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen *map[string]struct{}) {
+	(*seen)[p.SPDXID()] = struct{}{}
+
+	title := p.drawTitle(o)
 	if !o.SkipName {
 		fmt.Fprintln(builder, treeLines(o, depth-1, connectorT)+title)
 	}
