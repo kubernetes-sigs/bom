@@ -433,15 +433,6 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 			line += " (external)"
 		}
 
-		// Version is useful for dependencies, so add it:
-		if rel.Type == DEPENDS_ON {
-			if _, ok := rel.Peer.(*Package); ok {
-				if rel.Peer.(*Package).Version != "" {
-					line += fmt.Sprintf(" (version %s)", rel.Peer.(*Package).Version)
-				}
-			}
-		}
-
 		// If it is a file, print the name
 		if _, ok := rel.Peer.(*File); ok {
 			if rel.Peer.(*File).Name != "" {
