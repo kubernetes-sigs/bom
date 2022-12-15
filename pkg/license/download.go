@@ -24,15 +24,18 @@ limitations under the License.
 package license
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
+	"time"
 
-	"github.com/nozzle/throttler"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/release-utils/http"
@@ -43,6 +46,8 @@ import (
 const (
 	LicenseDataURL      = "https://spdx.org/licenses/"
 	LicenseListFilename = "licenses.json"
+	BaseReleaseURL      = "https://github.com/spdx/license-list-data/archive/refs/tags/"
+	LatestReleaseURL    = "https://api.github.com/repos/spdx/license-list-data/releases/latest"
 )
 
 // NewDownloader returns a downloader with the default options
@@ -138,54 +143,75 @@ func (ddi *DefaultDownloaderImpl) SetOptions(opts *DownloaderOptions) {
 	ddi.Options = opts
 }
 
+func getLatestTag() (string, error) {
+	data, err := http.NewAgent().Get(LatestReleaseURL)
+	if err != nil {
+		return "", err
+	}
+	type GHReleaseResp struct {
+		TagName string `json:"tag_name"`
+	}
+	resp := GHReleaseResp{}
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return "", err
+	}
+	return resp.TagName, nil
+}
+
 // GetLicenses downloads the main json file listing all SPDX supported licenses
 func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
 	// TODO: Cache licenselist
 	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
-
-	// Get the list of licenses
-	licensesJSON, err := http.NewAgent().Get(LicenseDataURL + LicenseListFilename)
+	tag, err := getLatestTag()
 	if err != nil {
-		return nil, fmt.Errorf("fetching licenses list: %w", err)
+		return nil, err
 	}
-
-	licenseList := &List{}
-	if err := json.Unmarshal(licensesJSON, licenseList); err != nil {
+	link := BaseReleaseURL + tag + ".zip"
+	zipData, err := http.NewAgent().WithTimeout(time.Hour).Get(link)
+	if err != nil {
+		return nil, err
+	}
+	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
+	if err != nil {
+		return nil, err
+	}
+	licensesFile, err := reader.Open(fmt.Sprintf("license-list-data-%s/json/licenses.json", tag[1:]))
+	if err != nil {
+		return nil, err
+	}
+	licensesJSON, err := io.ReadAll(licensesFile)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(licensesJSON, &licenses); err != nil {
 		return nil, fmt.Errorf("parsing SPDX licence list: %w", err)
 	}
-
-	logrus.Infof("Read data for %d licenses. Downloading.", len(licenseList.LicenseData))
-
-	// Create a new Throttler that will get `parallelDownloads` urls at a time
-	t := throttler.New(ddi.Options.parallelDownloads, len(licenseList.LicenseData))
-	for _, l := range licenseList.LicenseData {
-		licURL := l.DetailsURL
-		// If the license URLs have a local reference
-		if strings.HasPrefix(licURL, "./") {
-			licURL = LicenseDataURL + strings.TrimPrefix(licURL, "./")
+	err = fs.WalkDir(reader, fmt.Sprintf("license-list-data-%s/json/details", tag[1:]), func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-		// Launch a goroutine to fetch the URL.
-		go func(url string) {
-			var lic *License
-			defer t.Done(err)
-			lic, err = ddi.getLicenseFromURL(url)
-			if err != nil {
-				logrus.Error(err)
-				return
-			}
-			logrus.Debugf("Got license: %s from %s", l.LicenseID, url)
-			licenseList.Add(lic)
-		}(licURL)
-		t.Throttle()
+		if d.IsDir() {
+			return nil
+		}
+		licenseFile, err := reader.Open(path)
+		if err != nil {
+			return err
+		}
+		data, err := io.ReadAll(licenseFile)
+		if err != nil {
+			return err
+		}
+		license, err := ParseLicense(data)
+		if err != nil {
+			return err
+		}
+		licenses.Add(license)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-
-	logrus.Infof("Downloaded %d licenses", len(licenseList.Licenses))
-
-	// If the throttler collected errors, return those
-	if t.Err() != nil {
-		return nil, t.Err()
-	}
-	return licenseList, nil
+	return licenses, nil
 }
 
 // cacheFileName return the cache filename for an URL

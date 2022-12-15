@@ -193,7 +193,7 @@ func (d *ReaderDefaultImpl) Initialize(opts *ReaderOptions) error {
 
 	logrus.Infof("Writing license data to %s", opts.CachePath())
 
-	// Write the licenses to disk as th classifier will need them
+	// Write the licenses to disk as the classifier will need them
 	if err := catalog.WriteLicensesAsText(opts.LicensesPath()); err != nil {
 		return fmt.Errorf("writing license data to disk: %w", err)
 	}
