@@ -116,9 +116,13 @@ func (d *Downloader) SetImplementation(di DownloaderImplementation) {
 // GetLicenses is the mina function of the downloader. Returns a license list
 // or an error if could get them
 func (d *Downloader) GetLicenses() (*List, error) {
-	tag, err := d.impl.GetLatestTag()
-	if err != nil {
-		return nil, fmt.Errorf("getting latest license list tag")
+	tag := d.impl.Version()
+	var err error
+	if tag == "" {
+		tag, err = d.impl.GetLatestTag()
+		if err != nil {
+			return nil, fmt.Errorf("getting latest license list tag")
+		}
 	}
 
 	return d.impl.GetLicenses(tag)
@@ -156,10 +160,25 @@ func (ddi *DefaultDownloaderImpl) SetOptions(opts *DownloaderOptions) {
 	ddi.Options = opts
 }
 
+// GetLatestTag gets the latest version of the license list from github
 func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
-	data, err := http.NewAgent().Get(LatestReleaseURL)
-	if err != nil {
-		return "", err
+	var data []byte
+	var err error
+	if ddi.Options.EnableCache {
+		data, err = ddi.getCachedData(LatestReleaseURL)
+		if err != nil {
+			return "", fmt.Errorf("getting latest version from cache: %w", err)
+		}
+		if err := ddi.cacheData(LatestReleaseURL, data); err != nil {
+			return "", fmt.Errorf("caching latest version: %w", err)
+		}
+	}
+
+	if data == nil {
+		data, err = http.NewAgent().Get(LatestReleaseURL)
+		if err != nil {
+			return "", err
+		}
 	}
 	type GHReleaseResp struct {
 		TagName string `json:"tag_name"`
@@ -189,14 +208,18 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 		if err != nil {
 			return nil, fmt.Errorf("downloading license tarball: %w", err)
 		}
-		ddi.cacheData(link, zipData)
+		if err := ddi.cacheData(link, zipData); err != nil {
+			return nil, fmt.Errorf("caching license list: %w", err)
+		}
 	}
 
 	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
 		return nil, err
 	}
-	licensesFile, err := reader.Open(fmt.Sprintf("license-list-data-%s/json/licenses.json", tag[1:]))
+	licensesFile, err := reader.Open(
+		fmt.Sprintf("license-list-data-%s/json/licenses.json", tag[1:]),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -278,6 +301,6 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading cached data file: %w", err)
 	}
-	logrus.Debug("Reusing cached data from %s", url)
+	logrus.Debugf("Reusing cached data from %s", url)
 	return cachedData, nil
 }
