@@ -124,6 +124,7 @@ func (d *Downloader) GetLicenses() (*List, error) {
 type DownloaderImplementation interface {
 	GetLicenses() (*List, error)
 	SetOptions(*DownloaderOptions)
+	getLatestTag() (string, error)
 }
 
 // DefaultDownloaderOpts set of options for the license downloader
@@ -143,7 +144,7 @@ func (ddi *DefaultDownloaderImpl) SetOptions(opts *DownloaderOptions) {
 	ddi.Options = opts
 }
 
-func getLatestTag() (string, error) {
+func (ddi *DefaultDownloaderImpl) getLatestTag() (string, error) {
 	data, err := http.NewAgent().Get(LatestReleaseURL)
 	if err != nil {
 		return "", err
@@ -162,7 +163,7 @@ func getLatestTag() (string, error) {
 func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
 	// TODO: Cache licenselist
 	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
-	tag, err := getLatestTag()
+	tag, err := ddi.getLatestTag()
 	if err != nil {
 		return nil, err
 	}
