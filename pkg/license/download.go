@@ -167,10 +167,24 @@ func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
 		return nil, err
 	}
 	link := BaseReleaseURL + tag + ".zip"
-	zipData, err := http.NewAgent().WithTimeout(time.Hour).Get(link)
-	if err != nil {
-		return nil, err
+
+	var zipData []byte
+	if ddi.Options.EnableCache {
+		zipData, err = ddi.getCachedData(link)
+		if err != nil {
+			return nil, fmt.Errorf("getting cached data: %w", err)
+		}
 	}
+
+	// No cached data available
+	if zipData == nil {
+		zipData, err = http.NewAgent().WithTimeout(time.Hour).Get(link)
+		if err != nil {
+			return nil, fmt.Errorf("downloading license tarball: %w", err)
+		}
+		ddi.cacheData(link, zipData)
+	}
+
 	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
 		return nil, err
@@ -253,9 +267,10 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 		logrus.Warn("Cached file is empty, removing")
 		return nil, fmt.Errorf("removing corrupt cached file: %w", os.Remove(cacheFileName))
 	}
-	licensesJSON, err := os.ReadFile(cacheFileName)
+	cachedData, err := os.ReadFile(cacheFileName)
 	if err != nil {
 		return nil, fmt.Errorf("reading cached data file: %w", err)
 	}
-	return licensesJSON, nil
+	logrus.Debug("Reusing cached data from %s", url)
+	return cachedData, nil
 }
