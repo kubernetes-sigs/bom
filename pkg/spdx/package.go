@@ -357,15 +357,40 @@ func (p *Package) SetEntity(e *Entity) {
 	p.Entity = *e
 }
 
+func (p *Package) drawTitle(o *DrawingOptions) string {
+	title := p.SPDXID()
+	if o.Purls && p.Purl() != nil && p.Purl().Name != "" {
+		title = p.Purl().String()
+	} else if p.Name != "" {
+		title = p.Name
+		if o.Version && p.Version != "" {
+			title += "@" + p.Version
+		}
+	}
+	return title
+}
+
+// drawName returns the name string to be used in the outline
+func (p *Package) drawName(o *DrawingOptions) string {
+	name := p.SPDXID()
+	if o.Purls && p.Purl() != nil && p.Purl().Name != "" {
+		name = p.Purl().String()
+	} else if p.Name != "" {
+		name = p.Name
+		if o.Version && p.Version != "" {
+			name = name + "@" + p.Version
+		}
+	}
+	return name
+}
+
 // Draw renders the package data as a tree-like structure
 //
 //nolint:gocritic
 func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen *map[string]struct{}) {
-	title := p.SPDXID()
 	(*seen)[p.SPDXID()] = struct{}{}
-	if p.Name != "" {
-		title = p.Name
-	}
+
+	title := p.drawTitle(o)
 	if !o.SkipName {
 		fmt.Fprintln(builder, treeLines(o, depth-1, connectorT)+title)
 	}
@@ -400,7 +425,7 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 
 			if !o.OnlyIDs {
 				if _, ok := rel.Peer.(*Package); ok {
-					name = rel.Peer.(*Package).Name
+					name = rel.Peer.(*Package).drawName(o)
 					etype = "PACKAGE"
 				}
 
@@ -417,15 +442,6 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 		// If the peer is external, state it
 		if rel.PeerExtReference != "" {
 			line += " (external)"
-		}
-
-		// Version is useful for dependencies, so add it:
-		if rel.Type == DEPENDS_ON {
-			if _, ok := rel.Peer.(*Package); ok {
-				if rel.Peer.(*Package).Version != "" {
-					line += fmt.Sprintf(" (version %s)", rel.Peer.(*Package).Version)
-				}
-			}
 		}
 
 		// If it is a file, print the name

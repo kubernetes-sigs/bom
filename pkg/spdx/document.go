@@ -124,6 +124,8 @@ type DrawingOptions struct {
 	SkipName    bool
 	OnlyIDs     bool
 	ASCIIOnly   bool
+	Purls       bool
+	Version     bool
 }
 
 // String returns the SPDX string of the external document ref
