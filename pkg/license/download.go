@@ -74,6 +74,7 @@ type DownloaderOptions struct {
 	EnableCache       bool   // Should we use the cache or not
 	CacheDir          string // Directory where data will be cached, defaults to temporary dir
 	parallelDownloads int    // Number of license downloads we'll do at once
+	Version           string // Version of the licenses to download  (eg v3.19) or blank for latest
 }
 
 // Validate Checks the downloader options
@@ -130,6 +131,7 @@ type DownloaderImplementation interface {
 	GetLicenses(versionTag string) (*List, error)
 	SetOptions(*DownloaderOptions)
 	GetLatestTag() (string, error)
+	Version() string
 }
 
 // DefaultDownloaderOpts set of options for the license downloader
@@ -142,6 +144,11 @@ var DefaultDownloaderOpts = &DownloaderOptions{
 // DefaultDownloaderImpl is the default implementation that gets licenses
 type DefaultDownloaderImpl struct {
 	Options *DownloaderOptions
+}
+
+// Version returns the version from the options
+func (ddi *DefaultDownloaderImpl) Version() string {
+	return ddi.Options.Version
 }
 
 // SetOptions sets the implementation options
