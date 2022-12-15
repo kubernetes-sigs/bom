@@ -96,26 +96,3 @@ func TestFindLicenseFiles(t *testing.T) {
 	require.NotContains(t, res, filepath.Join(tempdir, "license.go"))
 	require.NotContains(t, res, filepath.Join(tempdir, "README.md"))
 }
-
-func TestGetLicenseFromURL(t *testing.T) {
-	tempdir, err := os.MkdirTemp("", testDirPrefix)
-	require.Nil(t, err)
-	defer func() { require.Nil(t, os.RemoveAll(tempdir)) }()
-
-	testURL := "http://www.example.com"
-
-	opts := DefaultDownloaderOpts
-	opts.CacheDir = tempdir
-
-	// Create a default implementation with caching enabled
-	impl := DefaultDownloaderImpl{Options: opts}
-
-	// First, cache the data artificially
-	require.Nil(t, impl.cacheData(testURL, []byte(testFullLicense)))
-
-	// Now, get tej license from the URL, should be cached
-	l, err := impl.getLicenseFromURL(testURL)
-	require.Nil(t, err)
-	require.NotNil(t, l)
-	require.Equal(t, l.LicenseID, "Apache-2.0")
-}
