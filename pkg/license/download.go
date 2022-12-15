@@ -115,14 +115,19 @@ func (d *Downloader) SetImplementation(di DownloaderImplementation) {
 // GetLicenses is the mina function of the downloader. Returns a license list
 // or an error if could get them
 func (d *Downloader) GetLicenses() (*List, error) {
-	return d.impl.GetLicenses()
+	tag, err := d.impl.GetLatestTag()
+	if err != nil {
+		return nil, fmt.Errorf("getting latest license list tag")
+	}
+
+	return d.impl.GetLicenses(tag)
 }
 
 //counterfeiter:generate . DownloaderImplementation
 
 // DownloaderImplementation has only one method
 type DownloaderImplementation interface {
-	GetLicenses() (*List, error)
+	GetLicenses(versionTag string) (*List, error)
 	SetOptions(*DownloaderOptions)
 	GetLatestTag() (string, error)
 }
@@ -160,13 +165,7 @@ func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
 }
 
 // GetLicenses downloads the main json file listing all SPDX supported licenses
-func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
-	// TODO: Cache licenselist
-	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
-	tag, err := ddi.GetLatestTag()
-	if err != nil {
-		return nil, err
-	}
+func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
 	link := BaseReleaseURL + tag + ".zip"
 
 	var zipData []byte
