@@ -74,6 +74,7 @@ type DownloaderOptions struct {
 	EnableCache       bool   // Should we use the cache or not
 	CacheDir          string // Directory where data will be cached, defaults to temporary dir
 	parallelDownloads int    // Number of license downloads we'll do at once
+	Version           string // Version of the licenses to download  (eg v3.19) or blank for latest
 }
 
 // Validate Checks the downloader options
@@ -115,15 +116,26 @@ func (d *Downloader) SetImplementation(di DownloaderImplementation) {
 // GetLicenses is the mina function of the downloader. Returns a license list
 // or an error if could get them
 func (d *Downloader) GetLicenses() (*List, error) {
-	return d.impl.GetLicenses()
+	tag := d.impl.Version()
+	var err error
+	if tag == "" {
+		tag, err = d.impl.GetLatestTag()
+		if err != nil {
+			return nil, fmt.Errorf("getting latest license list tag")
+		}
+	}
+
+	return d.impl.GetLicenses(tag)
 }
 
 //counterfeiter:generate . DownloaderImplementation
 
 // DownloaderImplementation has only one method
 type DownloaderImplementation interface {
-	GetLicenses() (*List, error)
+	GetLicenses(versionTag string) (*List, error)
 	SetOptions(*DownloaderOptions)
+	GetLatestTag() (string, error)
+	Version() string
 }
 
 // DefaultDownloaderOpts set of options for the license downloader
@@ -138,15 +150,35 @@ type DefaultDownloaderImpl struct {
 	Options *DownloaderOptions
 }
 
+// Version returns the version from the options
+func (ddi *DefaultDownloaderImpl) Version() string {
+	return ddi.Options.Version
+}
+
 // SetOptions sets the implementation options
 func (ddi *DefaultDownloaderImpl) SetOptions(opts *DownloaderOptions) {
 	ddi.Options = opts
 }
 
-func getLatestTag() (string, error) {
-	data, err := http.NewAgent().Get(LatestReleaseURL)
-	if err != nil {
-		return "", err
+// GetLatestTag gets the latest version of the license list from github
+func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
+	var data []byte
+	var err error
+	if ddi.Options.EnableCache {
+		data, err = ddi.getCachedData(LatestReleaseURL)
+		if err != nil {
+			return "", fmt.Errorf("getting latest version from cache: %w", err)
+		}
+		if err := ddi.cacheData(LatestReleaseURL, data); err != nil {
+			return "", fmt.Errorf("caching latest version: %w", err)
+		}
+	}
+
+	if data == nil {
+		data, err = http.NewAgent().Get(LatestReleaseURL)
+		if err != nil {
+			return "", err
+		}
 	}
 	type GHReleaseResp struct {
 		TagName string `json:"tag_name"`
@@ -159,23 +191,35 @@ func getLatestTag() (string, error) {
 }
 
 // GetLicenses downloads the main json file listing all SPDX supported licenses
-func (ddi *DefaultDownloaderImpl) GetLicenses() (licenses *List, err error) {
-	// TODO: Cache licenselist
-	logrus.Debugf("Downloading main SPDX license data from " + LicenseDataURL)
-	tag, err := getLatestTag()
-	if err != nil {
-		return nil, err
-	}
+func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
 	link := BaseReleaseURL + tag + ".zip"
-	zipData, err := http.NewAgent().WithTimeout(time.Hour).Get(link)
-	if err != nil {
-		return nil, err
+
+	var zipData []byte
+	if ddi.Options.EnableCache {
+		zipData, err = ddi.getCachedData(link)
+		if err != nil {
+			return nil, fmt.Errorf("getting cached data: %w", err)
+		}
 	}
+
+	// No cached data available
+	if zipData == nil {
+		zipData, err = http.NewAgent().WithTimeout(time.Hour).Get(link)
+		if err != nil {
+			return nil, fmt.Errorf("downloading license tarball: %w", err)
+		}
+		if err := ddi.cacheData(link, zipData); err != nil {
+			return nil, fmt.Errorf("caching license list: %w", err)
+		}
+	}
+
 	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
 		return nil, err
 	}
-	licensesFile, err := reader.Open(fmt.Sprintf("license-list-data-%s/json/licenses.json", tag[1:]))
+	licensesFile, err := reader.Open(
+		fmt.Sprintf("license-list-data-%s/json/licenses.json", tag[1:]),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -253,48 +297,10 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 		logrus.Warn("Cached file is empty, removing")
 		return nil, fmt.Errorf("removing corrupt cached file: %w", os.Remove(cacheFileName))
 	}
-	licensesJSON, err := os.ReadFile(cacheFileName)
+	cachedData, err := os.ReadFile(cacheFileName)
 	if err != nil {
 		return nil, fmt.Errorf("reading cached data file: %w", err)
 	}
-	return licensesJSON, nil
-}
-
-// getLicenseFromURL downloads a license in json and returns it parsed into a struct
-func (ddi *DefaultDownloaderImpl) getLicenseFromURL(url string) (license *License, err error) {
-	licenseJSON := []byte{}
-	// Determine the cache file name
-	if ddi.Options.EnableCache {
-		licenseJSON, err = ddi.getCachedData(url)
-		if err != nil {
-			return nil, fmt.Errorf("checking download cache: %w", err)
-		}
-		if len(licenseJSON) > 0 {
-			logrus.Debugf("Data for %s is already cached", url)
-		}
-	}
-
-	// If we still don't have json data, download it
-	if len(licenseJSON) == 0 {
-		logrus.Debugf("Downloading license data from %s", url)
-		licenseJSON, err = http.NewAgent().Get(url)
-		if err != nil {
-			return nil, fmt.Errorf("getting %s: %w", url, err)
-		}
-
-		logrus.Debugf("Downloaded %d bytes from %s", len(licenseJSON), url)
-
-		if ddi.Options.EnableCache {
-			if err := ddi.cacheData(url, licenseJSON); err != nil {
-				return nil, fmt.Errorf("caching url data: %w", err)
-			}
-		}
-	}
-
-	// Parse the SPDX license from the JSON data
-	l, err := ParseLicense(licenseJSON)
-	if err != nil {
-		return nil, fmt.Errorf("parsing license json data: %w", err)
-	}
-	return l, err
+	logrus.Debugf("Reusing cached data from %s", url)
+	return cachedData, nil
 }
