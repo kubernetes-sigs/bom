@@ -15,7 +15,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/mod v0.7.0
 	golang.org/x/term v0.4.0
-	golang.org/x/tools v0.4.0
+	golang.org/x/tools v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.7.3
 )
@@ -65,7 +65,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/net v0.3.0 // indirect
+	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.4.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
