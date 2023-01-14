@@ -1,14 +1,22 @@
-# bom (Bill of Materials)
+# `bom`: The SBOM Multitool
 
 [![PkgGoDev](https://pkg.go.dev/badge/sigs.k8s.io/bom)](https://pkg.go.dev/sigs.k8s.io/bom)
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/bom)](https://goreportcard.com/report/sigs.k8s.io/bom)
 [![Slack](https://img.shields.io/badge/Slack-%23release--management-blueviolet)](https://kubernetes.slack.com/archives/C2C40FMNF)
 
-Create SPDX-compliant Bill of Materials
+ ![bom The SBOM Multitool](logo/logo.png)
 
-`bom` is a utility that leverages the code written for the Kubernetes
-Bill of Materials project. It enables software authors to generate an
+
+
+## What is `bom`?
+
+`bom` is a utility that lets you create, view and transform Software Bills of
+Materials (SBOMs). `bom` was created as part of the project to create an SBOM
+for the Kubernetes project. It enables software authors to generate an
 SBOM for their projects in a simple, yet powerful way.
+
+bom is a project incubating in the Linux Foundation's 
+[Automating Compliance Toling TAC](https://github.com/act-project/TAC)
 
 [![terminal demo](https://asciinema.org/a/418528.svg)](https://asciinema.org/a/418528?autoplay=1)
 
@@ -79,32 +87,92 @@ Flags:
   -c, --config string           path to yaml SBOM configuration file
   -d, --dirs strings            list of directories to include in the manifest as packages
   -f, --file strings            list of files to include
+      --format string           format of the document (supports tag-value, json) (default "tag-value")
   -h, --help                    help for generate
       --ignore strings          list of regexp patterns to ignore when scanning directories
   -i, --image strings           list of images
       --image-archive strings   list of docker archive tarballs to include in the manifest
   -l, --license string          SPDX license identifier to declare in the SBOM
+      --name string             name for the document, in contrast to URLs, intended for humans
   -n, --namespace string        an URI that servers as namespace for the SPDX doc
       --no-gitignore            don't use exclusions from .gitignore files
       --no-gomod                don't perform go.mod analysis, sbom will not include data about go packages
       --no-transient            don't include transient go dependencies, only direct deps from go.mod
   -o, --output string           path to the file where the document will be written (defaults to STDOUT)
       --provenance string       path to export the SBOM as an in-toto provenance statement
+      --scan-images             scan container images to look for OS information (currently debian only) (default true)
 
 Global Flags:
       --log-level string   the logging verbosity, either 'panic', 'fatal', 'error', 'warning', 'info', 'debug', 'trace' (default "info")
+
 ```
 
 ### `bom document`
 
-`bom document` → Work with SPDX documents
+The `bom document subcommand` can visualize SBOMs as well as query them for
+information.
 
 ```console
+bom document → Work with SPDX documents
+
 Usage:
   bom document [command]
 
 Available Commands:
   outline     bom document outline → Draw structure of a SPDX document
+  query       bom document query → Search for information in an SBOM
+```
+
+### `bom document outline`
+
+Using `bom document outline` SBOM contents can be rendered too see how the
+information they contain is structured. Here is an example rendering the
+`debian:bookworm-slim` image for amd64:
+
+```
+bom generate --output=debian.spdx --image \
+  debian@sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491 | bom document outline -
+
+bom document outline debian.spdx
+
+               _      
+ ___ _ __   __| |_  __
+/ __| '_ \ / _` \ \/ /
+\__ \ |_) | (_| |>  < 
+|___/ .__/ \__,_/_/\_\
+    |_|               
+
+ 📂 SPDX Document SBOM-SPDX-71f1009c-dc17-4f4d-b4ec-72210c1a8d7f
+  │ 
+  │ 📦 DESCRIBES 1 Packages
+  │ 
+  ├ sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491
+  │  │ 🔗 1 Relationships
+  │  └ CONTAINS PACKAGE sha256:b37cbf60a964400132f658413bf66b67e5e67da35b9c080be137ff3c37cc7f65
+  │  │  │ 🔗 86 Relationships
+  │  │  ├ CONTAINS PACKAGE apt@2.5.4
+  │  │  ├ CONTAINS PACKAGE base-files@12.3
+  │  │  ├ CONTAINS PACKAGE base-passwd@3.6.1
+  │  │  ├ CONTAINS PACKAGE bash@5.2.15-2
+  │  │  ├ CONTAINS PACKAGE bsdutils@1:2.38.1-4
+  │  │  ├ CONTAINS PACKAGE coreutils@9.1-1
+  │  │  ├ CONTAINS PACKAGE dash@0.5.11+git20210903+057cd650a4ed-9
+  │  │  ├ CONTAINS PACKAGE debconf@1.5.81
+  │  │  ├ CONTAINS PACKAGE debian-archive-keyring@2021.1.1
+  │  │  ├ CONTAINS PACKAGE debianutils@5.7-0.4
+  │  │  ├ CONTAINS PACKAGE diffutils@1:3.8-3
+  │  │  ├ CONTAINS PACKAGE dpkg@1.21.13
+  │  │  ├ CONTAINS PACKAGE e2fsprogs@1.46.6~rc1-1+b1
+  │  │  ├ CONTAINS PACKAGE findutils@4.9.0-3
+  │  │  ├ CONTAINS PACKAGE gcc-12-base@12.2.0-13
+  │  │  ├ CONTAINS PACKAGE gpgv@2.2.40-1
+  │  │  ├ CONTAINS PACKAGE grep@3.8-3
+  │  │  ├ CONTAINS PACKAGE gzip@1.12-1
+  │  │  ├ CONTAINS PACKAGE hostname@3.23+nmu1
+  │  │  ├ CONTAINS PACKAGE init-system-helpers@1.65.2
+
+[trimmed]
+
 ```
 
 ## Examples
@@ -147,3 +215,8 @@ bom generate -n http://example.com/ \
 ## Code of conduct
 
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
+
+
+| | | |
+| --- | --- | -- |
+| ![ACT TAC](logo/act-tac.png) |  ![SPDX](logo/spdx.png) | ![Kubernetes](logo/kubernetes.png) |
