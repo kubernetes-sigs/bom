@@ -122,8 +122,10 @@ var PackagePurposes = []string{
 
 var ExternalRefCategories = map[string][]string{
 	"SECURITY":        {"cpe22Type", "cpe23Type", "advisory", "fix", "url", "swid"},
+	"PACKAGE_MANAGER": {"maven-central", "npm", "nuget", "bower", "purl"},
 	"PACKAGE-MANAGER": {"maven-central", "npm", "nuget", "bower", "purl"},
 	"PERSISTENT-ID":   {"swh", "gitoid"},
+	"PERSISTENT_ID":   {"swh", "gitoid"},
 	"OTHER":           {},
 }
 
@@ -503,14 +505,14 @@ func (p *Package) GetElementByID(id string) Object {
 }
 
 // Purl searches the external refs in the package and returns
-// a pursed purl if it finds a purl PACKAGE-MANAGER
+// a parsed purl if it finds a purl PACKAGE_MANAGER extref:
 func (p *Package) Purl() *purl.PackageURL {
 	if p.ExternalRefs == nil {
 		return nil
 	}
 	purlString := ""
 	for _, er := range p.ExternalRefs {
-		if er.Category == "PACKAGE-MANAGER" && er.Type == "purl" {
+		if (er.Category == "PACKAGE-MANAGER" || er.Category == "PACKAGE_MANAGER") && er.Type == "purl" {
 			purlString = er.Locator
 		}
 	}
@@ -520,7 +522,7 @@ func (p *Package) Purl() *purl.PackageURL {
 	// Parse the purl
 	purlObject, err := purl.FromString(purlString)
 	if err != nil {
-		logrus.Warnf("Invalid Purl in package %s: %s", p.SPDXID(), purlString)
+		logrus.Warnf("Invalid purl in package %s: %s", p.SPDXID(), purlString)
 		return nil
 	}
 	return &purlObject

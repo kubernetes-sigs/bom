@@ -114,7 +114,7 @@ func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 	spdxPackage.CopyrightText = pkg.CopyrightText
 	if packageurl := pkg.PackageURL(); packageurl != "" {
 		spdxPackage.ExternalRefs = append(spdxPackage.ExternalRefs, ExternalRef{
-			Category: "PACKAGE-MANAGER",
+			Category: CatPackageManager,
 			Type:     "purl",
 			Locator:  packageurl,
 		})

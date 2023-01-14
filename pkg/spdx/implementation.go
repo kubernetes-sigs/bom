@@ -762,7 +762,7 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	packageurl := di.purlFromImage(references)
 	if packageurl != "" {
 		pkg.ExternalRefs = append(pkg.ExternalRefs, ExternalRef{
-			Category: "PACKAGE-MANAGER",
+			Category: CatPackageManager,
 			Type:     "purl",
 			Locator:  packageurl,
 		})
@@ -789,7 +789,7 @@ func (di *spdxDefaultImplementation) referenceInfoToPackage(opts *Options, img *
 	packageurl := di.purlFromImage(img)
 	if packageurl != "" {
 		subpkg.ExternalRefs = append(subpkg.ExternalRefs, ExternalRef{
-			Category: "PACKAGE-MANAGER",
+			Category: CatPackageManager,
 			Type:     "purl",
 			Locator:  packageurl,
 		})
@@ -917,7 +917,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 				}
 				if (*osPackageData)[i].PackageURL() != "" {
 					ospk.ExternalRefs = append(ospk.ExternalRefs, ExternalRef{
-						Category: "PACKAGE-MANAGER",
+						Category: CatPackageManager,
 						Type:     "purl",
 						Locator:  (*osPackageData)[i].PackageURL(),
 					})

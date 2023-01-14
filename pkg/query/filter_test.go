@@ -38,7 +38,7 @@ func testPackages() map[string]*spdx.Package {
 		}
 		p.ExternalRefs = []spdx.ExternalRef{
 			{
-				Category: "PACKAGE-MANAGER",
+				Category: spdx.CatPackageManager,
 				Type:     "purl",
 				Locator: fmt.Sprintf(
 					"pkg:oci/%s@%s?repository_url=%s&tag=nginx", s, dg, repo,
