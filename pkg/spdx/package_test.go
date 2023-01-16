@@ -27,6 +27,15 @@ import (
 func TestPurl(t *testing.T) {
 	pkg := NewPackage()
 	pkg.ExternalRefs = []ExternalRef{{
+		Category: CatPackageManager,
+		Type:     "purl",
+		Locator:  "pkg:deb/debian/libtiff5@4.2.0-1?arch=amd64",
+	}}
+
+	require.NotNil(t, pkg.Purl())
+
+	// We need support both hyphens in PACKAGE[-_]MANAGER:
+	pkg.ExternalRefs = []ExternalRef{{
 		Category: "PACKAGE-MANAGER",
 		Type:     "purl",
 		Locator:  "pkg:deb/debian/libtiff5@4.2.0-1?arch=amd64",
@@ -36,7 +45,7 @@ func TestPurl(t *testing.T) {
 
 	// Invalid
 	pkg.ExternalRefs = []ExternalRef{{
-		Category: "PACKAGE-MANAGER",
+		Category: CatPackageManager,
 		Type:     "purl",
 		Locator:  "pkg: lsa slkdj l lkjlsl kjsl l sl kjs",
 	}}
@@ -45,7 +54,7 @@ func TestPurl(t *testing.T) {
 
 	// Validate the purl fields
 	pkg.ExternalRefs = []ExternalRef{{
-		Category: "PACKAGE-MANAGER",
+		Category: CatPackageManager,
 		Type:     "purl",
 		Locator:  "pkg:deb/debian/libicu67@67.1-7?arch=s390x",
 	}}
@@ -131,7 +140,7 @@ func TestPurlMatches(t *testing.T) {
 	} {
 		sut := NewPackage()
 		sut.ExternalRefs = append(sut.ExternalRefs, ExternalRef{
-			Category: "PACKAGE-MANAGER",
+			Category: CatPackageManager,
 			Type:     "purl",
 			Locator:  tc.purl,
 		})

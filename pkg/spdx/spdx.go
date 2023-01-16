@@ -48,6 +48,8 @@ const (
 	entTool         = "Tool"
 	entOrganization = "Organization"
 
+	CatPackageManager = "PACKAGE-MANAGER"
+
 	termBanner = `ICAgICAgICAgICAgICAgXyAgICAgIAogX19fIF8gX18gICBfX3wgfF8gIF9fCi8gX198ICdfIFwg
 LyBfYCBcIFwvIC8KXF9fIFwgfF8pIHwgKF98IHw+ICA8IAp8X19fLyAuX18vIFxfXyxfL18vXF9c
 CiAgICB8X3wgICAgICAgICAgICAgICAK`
