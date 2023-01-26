@@ -143,3 +143,20 @@ func TestPackageURL(t *testing.T) {
 		require.Equal(t, tc.dbe.Architecture, parsed.Query().Get("arch"))
 	}
 }
+
+func TestParseApkDB(t *testing.T) {
+	ct := &ContainerScanner{}
+
+	// Test we have the expected packages
+	pk, err := ct.parseApkDB("testdata/apkdb")
+	require.NoError(t, err)
+	require.NotNil(t, pk)
+	require.Len(t, *pk, 39)
+
+	// Test package data
+	require.Equal(t, "ca-certificates-bundle", (*pk)[0].Package)
+	require.Equal(t, "20220614-r2", (*pk)[0].Version)
+	require.Equal(t, "x86_64", (*pk)[0].Architecture)
+	require.Equal(t, "MPL-2.0 AND MIT", (*pk)[0].License)
+	require.Equal(t, "e07d34854d632d6491a45dd854cdabd177e990cc", (*pk)[0].Checksums["sha1"])
+}
