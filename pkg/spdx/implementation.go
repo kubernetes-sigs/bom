@@ -248,9 +248,9 @@ func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	logrus.Infof("Reference image index points to %d manifests", len(indexManifest.Manifests))
 	refinfo.MediaType = string(indexManifest.MediaType)
 
-	// Add all the child images describen in the index
+	// Add all the child images described in the index
 	for _, manifest := range indexManifest.Manifests {
-		archImgDigest, err := fullDigest(descr.Ref.(name.Tag), manifest.Digest)
+		archImgDigest, err := fullDigest(tag, manifest.Digest)
 		if err != nil {
 			return nil, fmt.Errorf("generating digest for image: %w", err)
 		}
