@@ -184,10 +184,10 @@ describing different packages.
 ### Generate a SBOM from the Current Directory
 
 To process a directory as a source for your SBOM, use the `-d` flag or simply pass
-the path as the first argument to `bom`:
+the path (or current dir) as the first argument to `bom generate`:
 
 ```bash
-bom generate -n http://example.com/ .
+bom generate .
 ```
 
 ### Process a Container Image
