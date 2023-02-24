@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/release-utils/util"
 )
@@ -77,7 +77,7 @@ func TestReadSubjectsFromDir(t *testing.T) {
 func TestAddSubject(t *testing.T) {
 	s := NewSLSAStatement()
 	sha1 := "cd7f2fdcbd859060732c8a9677d9e838babfa6b9"
-	s.AddSubject("https://www.example.com/", slsa.DigestSet{"sha1": sha1})
+	s.AddSubject("https://www.example.com/", common.DigestSet{"sha1": sha1})
 	require.Equal(t, 1, len(s.Subject))
 	require.Equal(t, sha1, s.Subject[0].Digest["sha1"])
 }

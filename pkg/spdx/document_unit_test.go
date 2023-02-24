@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/in-toto/in-toto-golang/in_toto"
-	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -61,7 +61,7 @@ func testStatement() *provenance.Statement {
 	statement.Subject = append(statement.Subject,
 		in_toto.Subject{
 			Name: "file0.txt",
-			Digest: v02.DigestSet{
+			Digest: common.DigestSet{
 				"sha1":   "a9993e364706816aba3e25717850c26c9cd0d89d",
 				"sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
 				"sha512": "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
@@ -69,7 +69,7 @@ func testStatement() *provenance.Statement {
 		},
 		in_toto.Subject{
 			Name: "file1.txt",
-			Digest: v02.DigestSet{
+			Digest: common.DigestSet{
 				"sha1":   "5af13954a67eab2973b4ade01186602dd8739787",
 				"sha256": "08a018a9549220d707e11c5c4fe94d8dd60825f010e71efaa91e5e784f364d7b",
 				"sha512": "7c487d7160da126d2c7b4509cf72e90b5e35594d1ef10c5077c8a958e26201d18cdea513abfd5731ed4d43287cf0879c4515f59f3a03843141ca2bfc623719dd",
@@ -77,7 +77,7 @@ func testStatement() *provenance.Statement {
 		},
 		in_toto.Subject{
 			Name: "file2.txt",
-			Digest: v02.DigestSet{
+			Digest: common.DigestSet{
 				"sha1":   "66b27417d37e024c46526c2f6d358a754fc552f3",
 				"sha256": "3608bca1e44ea6c4d268eb6db02260269892c0b42b86bbf1e77a6fa16c3c9282",
 				"sha512": "4a3ed8147e37876adc8f76328e5abcc1b470e6acfc18efea0135f983604953a58e183c1a6086e91ba3e821d926f5fdeb37761c7ca0328a963f5e92870675b728",
