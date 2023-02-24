@@ -21,17 +21,17 @@ import (
 	"sync"
 
 	"github.com/in-toto/in-toto-golang/in_toto"
-	v02 "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"sigs.k8s.io/bom/pkg/provenance"
 )
 
 type FakeStatementImplementation struct {
-	AddSubjectStub        func(*provenance.Statement, string, v02.DigestSet)
+	AddSubjectStub        func(*provenance.Statement, string, common.DigestSet)
 	addSubjectMutex       sync.RWMutex
 	addSubjectArgsForCall []struct {
 		arg1 *provenance.Statement
 		arg2 string
-		arg3 v02.DigestSet
+		arg3 common.DigestSet
 	}
 	ClonePredicateStub        func(*provenance.Statement, string) error
 	clonePredicateMutex       sync.RWMutex
@@ -111,12 +111,12 @@ type FakeStatementImplementation struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeStatementImplementation) AddSubject(arg1 *provenance.Statement, arg2 string, arg3 v02.DigestSet) {
+func (fake *FakeStatementImplementation) AddSubject(arg1 *provenance.Statement, arg2 string, arg3 common.DigestSet) {
 	fake.addSubjectMutex.Lock()
 	fake.addSubjectArgsForCall = append(fake.addSubjectArgsForCall, struct {
 		arg1 *provenance.Statement
 		arg2 string
-		arg3 v02.DigestSet
+		arg3 common.DigestSet
 	}{arg1, arg2, arg3})
 	stub := fake.AddSubjectStub
 	fake.recordInvocation("AddSubject", []interface{}{arg1, arg2, arg3})
@@ -132,13 +132,13 @@ func (fake *FakeStatementImplementation) AddSubjectCallCount() int {
 	return len(fake.addSubjectArgsForCall)
 }
 
-func (fake *FakeStatementImplementation) AddSubjectCalls(stub func(*provenance.Statement, string, v02.DigestSet)) {
+func (fake *FakeStatementImplementation) AddSubjectCalls(stub func(*provenance.Statement, string, common.DigestSet)) {
 	fake.addSubjectMutex.Lock()
 	defer fake.addSubjectMutex.Unlock()
 	fake.AddSubjectStub = stub
 }
 
-func (fake *FakeStatementImplementation) AddSubjectArgsForCall(i int) (*provenance.Statement, string, v02.DigestSet) {
+func (fake *FakeStatementImplementation) AddSubjectArgsForCall(i int) (*provenance.Statement, string, common.DigestSet) {
 	fake.addSubjectMutex.RLock()
 	defer fake.addSubjectMutex.RUnlock()
 	argsForCall := fake.addSubjectArgsForCall[i]
