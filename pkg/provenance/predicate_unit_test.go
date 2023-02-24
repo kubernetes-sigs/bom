@@ -20,7 +20,7 @@ import (
 	"os"
 	"testing"
 
-	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +41,7 @@ func TestWrite(t *testing.T) {
 func TestAddMaterial(t *testing.T) {
 	p := NewSLSAPredicate()
 	sha1 := "c91cc89922941ace4f79113227a0166f24b8a98b"
-	p.AddMaterial("https://www.example.com/", slsa.DigestSet{"sha1": sha1})
+	p.AddMaterial("https://www.example.com/", common.DigestSet{"sha1": sha1})
 	require.Equal(t, 1, len(p.Materials))
 	require.Equal(t, sha1, p.Materials[0].Digest["sha1"])
 }
