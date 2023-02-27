@@ -8,7 +8,7 @@ require (
 	github.com/google/go-containerregistry v0.13.0
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.3.0
-	github.com/in-toto/in-toto-golang v0.6.0
+	github.com/in-toto/in-toto-golang v0.7.0
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
@@ -59,13 +59,13 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/package-url/packageurl-go v0.1.1-0.20220203205134-d70459300c8a
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/secure-systems-lab/go-securesystemslib v0.4.0 // indirect
+	github.com/secure-systems-lab/go-securesystemslib v0.5.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/net v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.5.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
