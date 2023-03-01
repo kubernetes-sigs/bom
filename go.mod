@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/carolynvs/magex v0.9.0
-	github.com/go-git/go-git/v5 v5.5.2
+	github.com/go-git/go-git/v5 v5.6.0
 	github.com/google/go-containerregistry v0.13.0
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.3.0
