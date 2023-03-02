@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -37,6 +38,8 @@ require (
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	gitlab.alpinelinux.org/alpine/go v0.6.0 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
 require (
