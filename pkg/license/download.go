@@ -121,7 +121,7 @@ func (d *Downloader) GetLicenses() (*List, error) {
 	if tag == "" {
 		tag, err = d.impl.GetLatestTag()
 		if err != nil {
-			return nil, fmt.Errorf("getting latest license list tag")
+			return nil, fmt.Errorf("getting latest license list tag: %w", err)
 		}
 	}
 
@@ -169,15 +169,16 @@ func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("getting latest version from cache: %w", err)
 		}
-		if err := ddi.cacheData(LatestReleaseURL, data); err != nil {
-			return "", fmt.Errorf("caching latest version: %w", err)
-		}
 	}
 
 	if data == nil {
 		data, err = http.NewAgent().Get(LatestReleaseURL)
 		if err != nil {
 			return "", err
+		}
+
+		if err := ddi.cacheData(LatestReleaseURL, data); err != nil {
+			return "", fmt.Errorf("caching latest version: %w", err)
 		}
 	}
 	type GHReleaseResp struct {
@@ -277,6 +278,7 @@ func (ddi *DefaultDownloaderImpl) cacheData(url string, data []byte) error {
 	if err = os.WriteFile(cacheFileName, data, os.FileMode(0o644)); err != nil {
 		return fmt.Errorf("writing cache file: %w", err)
 	}
+	logrus.Debugf("Cached %s to %s", url, cacheFileName)
 	return nil
 }
 
