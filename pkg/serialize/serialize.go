@@ -127,7 +127,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 }
 
 // buildJSONPackage converts a SPDX package struct to a json package
-// TODO(pueco): Validate package information to make sure its a valid package
+// TODO(puerco): Validate package information to make sure its a valid package
 func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Package, err error) {
 	// Update the Verification code
 	if err := p.ComputeVerificationCode(); err != nil {
@@ -159,10 +159,14 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 		HasFiles:             []string{},
 		Checksums:            []spdxJSON.Checksum{},
 		ExternalRefs:         externalRefs,
-		VerificationCode: spdxJSON.PackageVerificationCode{
-			Value: p.VerificationCode,
-		},
 	}
+
+	if p.VerificationCode != "" {
+		jsonPackage.VerificationCode = &spdxJSON.PackageVerificationCode{
+			Value: p.VerificationCode,
+		}
+	}
+
 	if jsonPackage.LicenseConcluded == "" {
 		jsonPackage.LicenseConcluded = spdx.NOASSERTION
 	}
