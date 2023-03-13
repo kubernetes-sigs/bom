@@ -14,19 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// SHA1 is the currently accepted hash algorithm for SPDX documents, used for
-// file integrity checks, NOT security.
-// Instances of G401 and G505 can be safely ignored in this file.
-//
-// ref: https://github.com/spdx/spdx-spec/issues/11
-//
-//nolint:gosec
 package license
 
 import (
 	"archive/zip"
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -262,7 +255,7 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 // cacheFileName return the cache filename for an URL
 func (ddi *DefaultDownloaderImpl) cacheFileName(url string) string {
 	return filepath.Join(
-		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha1.Sum([]byte(url))),
+		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha256.New().Sum([]byte(url))),
 	)
 }
 
