@@ -294,7 +294,7 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 	}
 
 	if finfo.Size() == 0 {
-		logrus.Warn("Cached file is empty, removing")
+		logrus.Warnf("Cached file %s is empty, removing", cacheFileName)
 		return nil, fmt.Errorf("removing corrupt cached file: %w", os.Remove(cacheFileName))
 	}
 	cachedData, err := os.ReadFile(cacheFileName)
