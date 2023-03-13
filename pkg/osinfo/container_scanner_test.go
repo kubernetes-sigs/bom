@@ -158,5 +158,5 @@ func TestParseApkDB(t *testing.T) {
 	require.Equal(t, "20220614-r2", (*pk)[0].Version)
 	require.Equal(t, "x86_64", (*pk)[0].Architecture)
 	require.Equal(t, "MPL-2.0 AND MIT", (*pk)[0].License)
-	require.Equal(t, "e07d34854d632d6491a45dd854cdabd177e990cc", (*pk)[0].Checksums["sha1"])
+	require.Equal(t, "e07d34854d632d6491a45dd854cdabd177e990cc", (*pk)[0].Checksums["SHA1"])
 }

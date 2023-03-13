@@ -257,9 +257,9 @@ func (ct *ContainerScanner) parseApkDB(dbPath string) (*[]PackageDBEntry, error)
 	for _, p := range apks {
 		cs := map[string]string{}
 		if strings.HasPrefix(p.ChecksumString(), "Q1") {
-			cs["sha1"] = fmt.Sprintf("%x", p.Checksum)
+			cs["SHA1"] = fmt.Sprintf("%x", p.Checksum)
 		} else if p.ChecksumString() != "" {
-			cs["md5"] = fmt.Sprintf("%x", p.Checksum)
+			cs["MD5"] = fmt.Sprintf("%x", p.Checksum)
 		}
 
 		packages = append(packages, PackageDBEntry{
