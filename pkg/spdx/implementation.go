@@ -909,6 +909,17 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 				ospk.Name = (*osPackageData)[i].Package
 				ospk.Version = (*osPackageData)[i].Version
 				ospk.HomePage = (*osPackageData)[i].HomePage
+				ospk.Originator = struct {
+					Person       string
+					Organization string
+				}{
+					Person: (*osPackageData)[i].MaintainerName,
+				}
+				if (*osPackageData)[i].License != "" {
+					ospk.LicenseDeclared = (*osPackageData)[i].License
+				}
+				ospk.Checksum = (*osPackageData)[i].Checksums
+
 				if (*osPackageData)[i].MaintainerName != "" {
 					ospk.Supplier.Person = (*osPackageData)[i].MaintainerName
 					if (*osPackageData)[i].MaintainerEmail != "" {
