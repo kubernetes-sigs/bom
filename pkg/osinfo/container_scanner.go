@@ -93,8 +93,8 @@ func (ct *ContainerScanner) ReadDebianPackages(layers []string) (layer int, pk *
 			return 0, pk, fmt.Errorf("opening temp dpkg file: %w", err)
 		}
 		dpkgPath := dpkgDB.Name()
-		defer os.Remove(dpkgDB.Name())
 		if err := loss.extractFileFromTar(lp, "var/lib/dpkg/status", dpkgPath); err != nil {
+			os.Remove(dpkgDB.Name())
 			if _, ok := err.(ErrFileNotFoundInTar); ok {
 				continue
 			}
@@ -109,7 +109,7 @@ func (ct *ContainerScanner) ReadDebianPackages(layers []string) (layer int, pk *
 		logrus.Info("dbdata is blank")
 		return layer, nil, nil
 	}
-
+	defer os.Remove(dpkgDatabase)
 	pk, err = ct.parseDpkgDB(dpkgDatabase)
 	return layer, pk, err
 }
@@ -124,8 +124,8 @@ func (ct *ContainerScanner) ReadApkPackages(layers []string) (layer int, pk *[]P
 			return 0, pk, fmt.Errorf("opening temporary apkdb file: %w", err)
 		}
 		tmpDBPath := tmpDB.Name()
-		defer os.Remove(tmpDBPath)
 		if err := loss.extractFileFromTar(lp, apkDBPath, tmpDBPath); err != nil {
+			os.Remove(tmpDBPath)
 			if _, ok := err.(ErrFileNotFoundInTar); ok {
 				continue
 			}
@@ -140,6 +140,7 @@ func (ct *ContainerScanner) ReadApkPackages(layers []string) (layer int, pk *[]P
 		logrus.Info("apk database data is empty")
 		return layer, nil, nil
 	}
+	defer os.Remove(apkDatabase)
 
 	pk, err = ct.parseApkDB(apkDatabase)
 	if err != nil {
