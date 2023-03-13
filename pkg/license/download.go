@@ -14,19 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// SHA1 is the currently accepted hash algorithm for SPDX documents, used for
-// file integrity checks, NOT security.
-// Instances of G401 and G505 can be safely ignored in this file.
-//
-// ref: https://github.com/spdx/spdx-spec/issues/11
-//
-//nolint:gosec
 package license
 
 import (
 	"archive/zip"
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -121,7 +114,7 @@ func (d *Downloader) GetLicenses() (*List, error) {
 	if tag == "" {
 		tag, err = d.impl.GetLatestTag()
 		if err != nil {
-			return nil, fmt.Errorf("getting latest license list tag")
+			return nil, fmt.Errorf("getting latest license list tag: %w", err)
 		}
 	}
 
@@ -169,15 +162,16 @@ func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("getting latest version from cache: %w", err)
 		}
-		if err := ddi.cacheData(LatestReleaseURL, data); err != nil {
-			return "", fmt.Errorf("caching latest version: %w", err)
-		}
 	}
 
 	if data == nil {
 		data, err = http.NewAgent().Get(LatestReleaseURL)
 		if err != nil {
 			return "", err
+		}
+
+		if err := ddi.cacheData(LatestReleaseURL, data); err != nil {
+			return "", fmt.Errorf("caching latest version: %w", err)
 		}
 	}
 	type GHReleaseResp struct {
@@ -261,7 +255,7 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 // cacheFileName return the cache filename for an URL
 func (ddi *DefaultDownloaderImpl) cacheFileName(url string) string {
 	return filepath.Join(
-		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha1.Sum([]byte(url))),
+		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha256.New().Sum([]byte(url))),
 	)
 }
 
@@ -277,6 +271,7 @@ func (ddi *DefaultDownloaderImpl) cacheData(url string, data []byte) error {
 	if err = os.WriteFile(cacheFileName, data, os.FileMode(0o644)); err != nil {
 		return fmt.Errorf("writing cache file: %w", err)
 	}
+	logrus.Debugf("Cached %s to %s", url, cacheFileName)
 	return nil
 }
 
@@ -294,7 +289,7 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 	}
 
 	if finfo.Size() == 0 {
-		logrus.Warn("Cached file is empty, removing")
+		logrus.Warnf("Cached file %s is empty, removing", cacheFileName)
 		return nil, fmt.Errorf("removing corrupt cached file: %w", os.Remove(cacheFileName))
 	}
 	cachedData, err := os.ReadFile(cacheFileName)

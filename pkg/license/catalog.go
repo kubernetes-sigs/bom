@@ -91,7 +91,6 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 	}
 
 	var wg errgroup.Group
-	var err error
 	for _, l := range catalog.List.Licenses {
 		l := l
 		wg.Go(func() error {
@@ -100,16 +99,12 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 			}
 			licPath := filepath.Join(targetDir, "assets", l.LicenseID)
 			if !util.Exists(licPath) {
-				if err = os.MkdirAll(licPath, 0o755); err != nil {
-					err = fmt.Errorf("creating license directory: %w", err)
+				if err := os.MkdirAll(licPath, 0o755); err != nil {
+					return fmt.Errorf("creating license directory: %w", err)
 				}
 			}
-			if lerr := l.WriteText(filepath.Join(licPath, "license.txt")); err != nil {
-				if err == nil {
-					err = lerr
-				} else {
-					err = fmt.Errorf("%v: %w", lerr, err)
-				}
+			if err := l.WriteText(filepath.Join(licPath, "license.txt")); err != nil {
+				return fmt.Errorf("wriiting license text: %w", err)
 			}
 			return nil
 		})
