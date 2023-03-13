@@ -45,6 +45,7 @@ import (
 	"sigs.k8s.io/bom/pkg/provenance"
 	"sigs.k8s.io/release-utils/hash"
 	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/version"
 )
 
 var docTemplate = `{{ if .Version }}SPDXVersion: {{.Version}}
@@ -171,7 +172,9 @@ func NewDocument() *Document {
 		}{
 			Person:       defaultDocumentAuthor,
 			Organization: "Kubernetes Release Engineering",
-			Tool:         []string{"sigs.k8s.io/bom/pkg/spdx"},
+			Tool: []string{
+				fmt.Sprintf("%s-%s", "bom", version.GetVersionInfo().GitVersion),
+			},
 		},
 	}
 }
