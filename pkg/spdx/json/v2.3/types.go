@@ -92,8 +92,8 @@ type Package struct {
 	Name                 string                   `json:"name"`
 	Version              string                   `json:"versionInfo"`
 	FilesAnalyzed        bool                     `json:"filesAnalyzed"`
-	LicenseDeclared      string                   `json:"licenseDeclared"`
-	LicenseConcluded     string                   `json:"licenseConcluded"`
+	LicenseDeclared      string                   `json:"licenseDeclared,omitempty"`
+	LicenseConcluded     string                   `json:"licenseConcluded,omitempty"`
 	Description          string                   `json:"description,omitempty"`
 	DownloadLocation     string                   `json:"downloadLocation"`
 	Originator           string                   `json:"originator,omitempty"`
@@ -152,7 +152,7 @@ type File struct {
 	Name              string     `json:"fileName"`
 	CopyrightText     string     `json:"copyrightText"`
 	NoticeText        string     `json:"noticeText,omitempty"`
-	LicenseConcluded  string     `json:"licenseConcluded"`
+	LicenseConcluded  string     `json:"licenseConcluded,omitempty"`
 	Description       string     `json:"description,omitempty"`
 	FileTypes         []string   `json:"fileTypes,omitempty"`
 	LicenseInfoInFile []string   `json:"licenseInfoInFiles"` // List of licenses
