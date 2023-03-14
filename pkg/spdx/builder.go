@@ -22,11 +22,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
+	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/util"
 )
 
@@ -192,6 +194,10 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	// Create the new document
 	doc = NewDocument()
 	doc.Name = genopts.Name
+	doc.LicenseListVersion = strings.TrimPrefix(license.DefaultCatalogOpts.Version, "v")
+	if genopts.LicenseListVersion != "" {
+		doc.LicenseListVersion = strings.TrimPrefix(genopts.LicenseListVersion, "v")
+	}
 
 	// If we do not have a namespace, we generate one
 	// under the public SPDX URL defined in the spec.
