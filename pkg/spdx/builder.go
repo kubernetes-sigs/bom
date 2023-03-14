@@ -114,6 +114,7 @@ type DocGenerateOptions struct {
 	Namespace           string                // Namespace for the document (a unique URI)
 	CreatorPerson       string                // Document creator information
 	License             string                // Main license of the document
+	LicenseListVersion  string                // Version of the SPDX list to use
 	Tarballs            []string              // A slice of docker archives (tar)
 	Archives            []string              // A list of archive files to add as packages
 	Files               []string              // A slice of naked files to include in the bom
@@ -180,6 +181,7 @@ func (builder *defaultDocBuilderImpl) GenerateDoc(
 	spdx.Options().AnalyzeLayers = genopts.AnalyseLayers
 	spdx.Options().ProcessGoModules = genopts.ProcessGoModules
 	spdx.Options().ScanImages = genopts.ScanImages
+	spdx.Options().LicenseListVersion = genopts.LicenseListVersion
 
 	if !util.Exists(opts.WorkDir) {
 		if err := os.MkdirAll(opts.WorkDir, os.FileMode(0o755)); err != nil {
