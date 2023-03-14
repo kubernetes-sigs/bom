@@ -271,12 +271,14 @@ func recursiveIDSearch(id string, o Object, seen *map[string]struct{}) Object {
 	if o.SPDXID() == id {
 		return o
 	}
+
+	if _, ok := (*seen)[o.SPDXID()]; ok {
+		return nil
+	}
+	(*seen)[o.SPDXID()] = struct{}{}
+
 	for _, rel := range *o.GetRelationships() {
 		if rel.Peer == nil {
-			continue
-		}
-
-		if _, ok := (*seen)[o.SPDXID()]; ok {
 			continue
 		}
 
