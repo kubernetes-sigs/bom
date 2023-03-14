@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/bom/pkg/query"
 	"sigs.k8s.io/bom/pkg/spdx"
 	spdxJSON "sigs.k8s.io/bom/pkg/spdx/json/v2.3"
+	"sigs.k8s.io/release-utils/version"
 )
 
 type Serializer interface {
@@ -49,6 +50,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 	if _, err := doc.Render(); err != nil {
 		return "", fmt.Errorf("pre-rendering the document: %w", err)
 	}
+
 	jsonDoc := spdxJSON.Document{
 		ID:      doc.ID,
 		Name:    doc.Name,
@@ -56,7 +58,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 		CreationInfo: spdxJSON.CreationInfo{
 			Created: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
 			Creators: []string{
-				"Tool: sigs.k8s.io/bom/pkg/spdx",
+				fmt.Sprintf("Tool: %s-%s", "bom", version.GetVersionInfo().GitVersion),
 			},
 			LicenseListVersion: "",
 		},
