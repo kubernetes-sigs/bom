@@ -72,6 +72,8 @@ ExternalDocumentRef:{{ extDocFormat $value }}
 {{ end -}}
 {{- end -}}
 {{ end -}}
+{{ if .LicenseListVersion }}LicenseListVersion: {{ .LicenseListVersion }}
+{{ end -}}
 {{ if .Created }}Created: {{ dateFormat .Created }}
 {{ end }}
 
