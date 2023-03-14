@@ -1007,11 +1007,16 @@ func (di *spdxDefaultImplementation) PackageFromDirectory(opts *Options, dirPath
 			err = fmt.Errorf("scanning file for license: %w", err)
 			return
 		}
+
+		// If a file does not contain a license then we assume
+		// the whole repository license applies. If it has one,
+		// the we conclude that files is released under those licenses.
 		f.LicenseInfoInFile = NONE
 		if lic == nil {
 			f.LicenseConcluded = licenseTag
 		} else {
 			f.LicenseInfoInFile = lic.LicenseID
+			f.LicenseConcluded = lic.LicenseID
 		}
 
 		if err = f.ReadSourceFile(filepath.Join(dirPath, path)); err != nil {

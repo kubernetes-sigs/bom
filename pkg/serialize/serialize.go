@@ -127,7 +127,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 }
 
 // buildJSONPackage converts a SPDX package struct to a json package
-// TODO(pueco): Validate package information to make sure its a valid package
+// TODO(puerco): Validate package information to make sure its a valid package
 func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Package, err error) {
 	// Update the Verification code
 	if err := p.ComputeVerificationCode(); err != nil {
@@ -159,19 +159,34 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 		HasFiles:             []string{},
 		Checksums:            []spdxJSON.Checksum{},
 		ExternalRefs:         externalRefs,
-		VerificationCode: spdxJSON.PackageVerificationCode{
+	}
+
+	if p.VerificationCode != "" {
+		jsonPackage.VerificationCode = &spdxJSON.PackageVerificationCode{
 			Value: p.VerificationCode,
-		},
+		}
 	}
-	if jsonPackage.LicenseConcluded == "" {
-		jsonPackage.LicenseConcluded = spdx.NOASSERTION
+
+	if spdxJSON.Version == "SPDX-2.2" {
+		if jsonPackage.LicenseConcluded == "" {
+			jsonPackage.LicenseConcluded = spdx.NOASSERTION
+		}
+		if jsonPackage.LicenseDeclared == "" {
+			jsonPackage.LicenseDeclared = spdx.NOASSERTION
+		}
+	} else {
+		if jsonPackage.LicenseConcluded == spdx.NOASSERTION {
+			jsonPackage.LicenseConcluded = ""
+		}
+		if jsonPackage.LicenseDeclared == spdx.NOASSERTION {
+			jsonPackage.LicenseDeclared = ""
+		}
 	}
-	if jsonPackage.LicenseDeclared == "" {
-		jsonPackage.LicenseDeclared = spdx.NOASSERTION
-	}
+
 	if jsonPackage.CopyrightText == "" {
 		jsonPackage.CopyrightText = spdx.NOASSERTION
 	}
+
 	if jsonPackage.DownloadLocation == "" {
 		jsonPackage.DownloadLocation = spdx.NONE
 	}
@@ -217,12 +232,21 @@ func (json *JSON) buildJSONFile(f *spdx.File) (jsonFile spdxJSON.File, err error
 		LicenseInfoInFile: []string{f.LicenseInfoInFile},
 		Checksums:         []spdxJSON.Checksum{},
 	}
-	if jsonFile.LicenseConcluded == "" {
-		jsonFile.LicenseConcluded = spdx.NOASSERTION
+
+	if spdxJSON.Version == "SPDX-2.2" {
+		if jsonFile.LicenseConcluded == "" {
+			jsonFile.LicenseConcluded = spdx.NOASSERTION
+		}
+	} else {
+		if jsonFile.LicenseConcluded == spdx.NOASSERTION {
+			jsonFile.LicenseConcluded = ""
+		}
 	}
+
 	if jsonFile.CopyrightText == "" {
 		jsonFile.CopyrightText = spdx.NOASSERTION
 	}
+
 	for algo, value := range f.Checksum {
 		jsonFile.Checksums = append(jsonFile.Checksums, spdxJSON.Checksum{
 			Algorithm: algo,
