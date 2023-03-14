@@ -155,7 +155,7 @@ type File struct {
 	LicenseConcluded  string     `json:"licenseConcluded,omitempty"`
 	Description       string     `json:"description,omitempty"`
 	FileTypes         []string   `json:"fileTypes,omitempty"`
-	LicenseInfoInFile []string   `json:"licenseInfoInFiles"` // List of licenses
+	LicenseInfoInFile []string   `json:"licenseInfoInFiles,omitempty"` // List of licenses
 	Checksums         []Checksum `json:"checksums"`
 }
 
