@@ -60,7 +60,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 			Creators: []string{
 				fmt.Sprintf("Tool: %s-%s", "bom", version.GetVersionInfo().GitVersion),
 			},
-			LicenseListVersion: "",
+			LicenseListVersion: doc.LicenseListVersion,
 		},
 		DataLicense:       doc.DataLicense,
 		Namespace:         doc.Namespace,

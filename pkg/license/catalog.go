@@ -31,16 +31,25 @@ import (
 // CatalogOptions are the spdx settings
 type CatalogOptions struct {
 	CacheDir string // Directrory to catch the license we download from SPDX.org
+	Version  string // Version of the licenses to download  (eg v3.19) or blank for latest
 }
 
 // DefaultCatalogOpts are the predetermined settings. License and cache directories
-// are in the temporary OS directory and are created if the do not exist
-var DefaultCatalogOpts = &CatalogOptions{}
+// are in the temporary OS directory and are created if the do not exist.
+//
+// The version included here is hardcoded and is intended to be the latest. The
+// plan is to embed in the bom binary the latest SPDX license list which should
+// match this entry always. See the following issue for details of this feature:
+// https://github.com/kubernetes-sigs/bom/issues/44
+var DefaultCatalogOpts = &CatalogOptions{
+	Version: "v3.20",
+}
 
 // NewCatalogWithOptions returns a SPDX object with the specified options
 func NewCatalogWithOptions(opts *CatalogOptions) (catalog *Catalog, err error) {
 	// Create the license downloader
 	doptions := DefaultDownloaderOpts
+	doptions.Version = opts.Version
 	doptions.CacheDir = opts.CacheDir
 	downloader, err := NewDownloaderWithOptions(doptions)
 	if err != nil {

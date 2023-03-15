@@ -181,6 +181,8 @@ func (d *ReaderDefaultImpl) Initialize(opts *ReaderOptions) error {
 	// Create the implementation's SPDX object
 	catalogOpts := DefaultCatalogOpts
 	catalogOpts.CacheDir = opts.CachePath()
+	catalogOpts.Version = opts.LicenseListVersion
+
 	catalog, err := NewCatalogWithOptions(catalogOpts)
 	if err != nil {
 		return fmt.Errorf("creating SPDX object: %w", err)

@@ -89,16 +89,17 @@ func (spdx *SPDX) SetImplementation(impl spdxImplementation) {
 }
 
 type Options struct {
-	AnalyzeLayers    bool
-	NoGitignore      bool     // Do not read exclusions from gitignore file
-	ProcessGoModules bool     // If true, spdx will check if dirs are go modules and analize the packages
-	OnlyDirectDeps   bool     // Only include direct dependencies from go.mod
-	ScanLicenses     bool     // Scan licenses from everypossible place unless false
-	AddTarFiles      bool     // Scan and add files inside of tarfiles
-	ScanImages       bool     // When true, scan container images for OS information
-	LicenseCacheDir  string   // Directory to cache SPDX license downloads
-	LicenseData      string   // Directory to store the SPDX licenses
-	IgnorePatterns   []string // Patterns to ignore when scanning file
+	AnalyzeLayers      bool
+	NoGitignore        bool     // Do not read exclusions from gitignore file
+	ProcessGoModules   bool     // If true, spdx will check if dirs are go modules and analize the packages
+	OnlyDirectDeps     bool     // Only include direct dependencies from go.mod
+	ScanLicenses       bool     // Scan licenses from everypossible place unless false
+	AddTarFiles        bool     // Scan and add files inside of tarfiles
+	ScanImages         bool     // When true, scan container images for OS information
+	LicenseCacheDir    string   // Directory to cache SPDX license downloads
+	LicenseData        string   // Directory to store the SPDX licenses
+	LicenseListVersion string   // Version of the SPDX license list to use
+	IgnorePatterns     []string // Patterns to ignore when scanning file
 }
 
 func (spdx *SPDX) Options() *Options {
