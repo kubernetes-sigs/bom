@@ -249,7 +249,8 @@ func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	refinfo.MediaType = string(indexManifest.MediaType)
 
 	// Add all the child images described in the index
-	for _, manifest := range indexManifest.Manifests {
+	// TODO: rangeValCopy: each iteration copies 136 bytes (consider pointers or indexing)
+	for _, manifest := range indexManifest.Manifests { //nolint: gocritic
 		archImgDigest, err := fullDigest(tag, manifest.Digest)
 		if err != nil {
 			return nil, fmt.Errorf("generating digest for image: %w", err)
