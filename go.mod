@@ -1,6 +1,6 @@
 module sigs.k8s.io/bom
 
-go 1.19
+go 1.20
 
 require (
 	github.com/carolynvs/magex v0.9.0

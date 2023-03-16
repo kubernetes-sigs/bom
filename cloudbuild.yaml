@@ -6,37 +6,37 @@ steps:
   - name: gcr.io/cloud-builders/git
     dir: "go/src/sigs.k8s.io"
     args:
-    - "clone"
-    - "https://github.com/kubernetes-sigs/bom"
+      - "clone"
+      - "https://github.com/kubernetes-sigs/bom"
 
   - name: gcr.io/cloud-builders/git
     entrypoint: "bash"
     dir: "go/src/sigs.k8s.io/bom"
     args:
-    - '-c'
-    - |
-      git fetch
-      echo "Checking out ${_PULL_BASE_REF}"
-      git checkout ${_PULL_BASE_REF}
+      - '-c'
+      - |
+        git fetch
+        echo "Checking out ${_PULL_BASE_REF}"
+        git checkout ${_PULL_BASE_REF}
 
-  - name: 'gcr.io/k8s-staging-releng/releng-ci:latest-go1.19-bullseye'
+  - name: 'gcr.io/k8s-staging-releng/releng-ci:latest-go1.20-bullseye'
     dir: "go/src/sigs.k8s.io/bom"
     entrypoint: go
     env:
-    - DOCKER_CLI_EXPERIMENTAL=enabled
-    - TAG=$_GIT_TAG
-    - PULL_BASE_REF=$_PULL_BASE_REF
-    - KO_DOCKER_REPO=gcr.io/k8s-staging-bom/bom
+      - DOCKER_CLI_EXPERIMENTAL=enabled
+      - TAG=$_GIT_TAG
+      - PULL_BASE_REF=$_PULL_BASE_REF
+      - KO_DOCKER_REPO=gcr.io/k8s-staging-bom/bom
     args:
-    - run
-    - mage.go
-    - buildStaging
+      - run
+      - mage.go
+      - buildStaging
 
 artifacts:
   objects:
     location: 'gs://k8s-staging-bom/${_PULL_BASE_REF}'
     paths:
-    - "go/src/sigs.k8s.io/bom/output/*"
+      - "go/src/sigs.k8s.io/bom/output/*"
 
 substitutions:
   # _GIT_TAG will be filled with a git-based tag for the image, of the form vYYYYMMDD-hash, and
