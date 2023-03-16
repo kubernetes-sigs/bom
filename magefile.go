@@ -90,7 +90,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running golangci-lint...")
-	if err := mage.RunGolangCILint("v1.50.1", false); err != nil {
+	if err := mage.RunGolangCILint("v1.51.2", false); err != nil {
 		return err
 	}
 
@@ -248,7 +248,7 @@ func getBuildDateTime() string {
 func EnsureKO(version string) error {
 	versionToInstall := version
 	if versionToInstall == "" {
-		versionToInstall = "0.12.0"
+		versionToInstall = "0.13.0"
 	}
 
 	fmt.Printf("Checking if `ko` version %s is installed\n", versionToInstall)
