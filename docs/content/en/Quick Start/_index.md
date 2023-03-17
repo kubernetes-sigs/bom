@@ -22,7 +22,7 @@ sudo chmod +x /usr/local/bin/bom
 ### Using go:
 
 ```console
-go install sigs.k8s.io/bom/cmd/bom
+go install sigs.k8s.io/bom/cmd/bom@latest
 ```
 
 
