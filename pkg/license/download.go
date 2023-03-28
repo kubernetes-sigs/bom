@@ -129,6 +129,7 @@ type DownloaderImplementation interface {
 	SetOptions(*DownloaderOptions)
 	GetLatestTag() (string, error)
 	Version() string
+	DownloadLicenseArchive(tag string) (zipData []byte, err error)
 }
 
 // DefaultDownloaderOpts set of options for the license downloader
@@ -221,11 +222,8 @@ func (ddi *DefaultDownloaderImpl) readLicenseDirectory(licensefs fs.FS, subpath 
 	return licenses, nil
 }
 
-// GetLicenses downloads the main json file listing all SPDX supported licenses
-func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
+func (ddi *DefaultDownloaderImpl) DownloadLicenseArchive(tag string) (zipData []byte, err error) {
 	link := BaseReleaseURL + tag + ".zip"
-
-	var zipData []byte
 	if ddi.Options.EnableCache {
 		zipData, err = ddi.getCachedData(link)
 		if err != nil {
@@ -243,6 +241,12 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 			return nil, fmt.Errorf("caching license list: %w", err)
 		}
 	}
+	return zipData, nil
+}
+
+// GetLicenses downloads the main json file listing all SPDX supported licenses
+func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
+	zipData, err := ddi.DownloadLicenseArchive(tag)
 
 	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
