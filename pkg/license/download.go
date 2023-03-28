@@ -303,3 +303,8 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 	logrus.Debugf("Reusing cached data from %s", url)
 	return cachedData, nil
 }
+
+// GetLatestTag returns the last version of the SPDX LIcense list found on GitHub
+func (d *Downloader) GetLatestTag() (string, error) {
+	return d.impl.GetLatestTag()
+}
