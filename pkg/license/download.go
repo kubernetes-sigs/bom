@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -187,19 +186,16 @@ func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
 // readLicenseDirectory Reads the license data from a filsystem. It supports a
 // subpath if the license tree is located in a different directory.
 func (ddi *DefaultDownloaderImpl) readLicenseDirectory(licensefs fs.FS, subpath string) (licenses *List, err error) {
-	licensesFile, err := licensefs.Open(
-		filepath.Join(subpath, "json/licenses.json"),
-	)
+	licenses = &List{}
+	licensesJSON, err := fs.ReadFile(licensefs, filepath.Join(subpath, "json/licenses.json"))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading license catalog: %w", err)
 	}
-	licensesJSON, err := io.ReadAll(licensesFile)
-	if err != nil {
-		return nil, fmt.Errorf("reading license file: %w", err)
-	}
+
 	if err := json.Unmarshal(licensesJSON, &licenses); err != nil {
 		return nil, fmt.Errorf("parsing SPDX licence list: %w", err)
 	}
+
 	err = fs.WalkDir(licensefs, filepath.Join(subpath, "json/details"), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -207,17 +203,13 @@ func (ddi *DefaultDownloaderImpl) readLicenseDirectory(licensefs fs.FS, subpath 
 		if d.IsDir() {
 			return nil
 		}
-		licenseFile, err := licensefs.Open(path)
+		data, err := fs.ReadFile(licensefs, path)
 		if err != nil {
-			return err
-		}
-		data, err := io.ReadAll(licenseFile)
-		if err != nil {
-			return err
+			return fmt.Errorf("reading license file%s: %w", path, err)
 		}
 		license, err := ParseLicense(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("parsing license data: %w", err)
 		}
 		licenses.Add(license)
 		return nil
