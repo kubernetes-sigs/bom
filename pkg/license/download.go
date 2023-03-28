@@ -184,6 +184,50 @@ func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
 	return resp.TagName, nil
 }
 
+// readLicenseDirectory Reads the license data from a filsystem. It supports a
+// subpath if the license tree is located in a different directory.
+func (ddi *DefaultDownloaderImpl) readLicenseDirectory(licensefs fs.FS, subpath string) (licenses *List, err error) {
+	licensesFile, err := licensefs.Open(
+		filepath.Join(subpath, "json/licenses.json"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	licensesJSON, err := io.ReadAll(licensesFile)
+	if err != nil {
+		return nil, fmt.Errorf("reading license file: %w", err)
+	}
+	if err := json.Unmarshal(licensesJSON, &licenses); err != nil {
+		return nil, fmt.Errorf("parsing SPDX licence list: %w", err)
+	}
+	err = fs.WalkDir(licensefs, filepath.Join(subpath, "json/details"), func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		licenseFile, err := licensefs.Open(path)
+		if err != nil {
+			return err
+		}
+		data, err := io.ReadAll(licenseFile)
+		if err != nil {
+			return err
+		}
+		license, err := ParseLicense(data)
+		if err != nil {
+			return err
+		}
+		licenses.Add(license)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("walking license filesystem: %w", err)
+	}
+	return licenses, nil
+}
+
 // GetLicenses downloads the main json file listing all SPDX supported licenses
 func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
 	link := BaseReleaseURL + tag + ".zip"
@@ -209,46 +253,14 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 
 	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating zip reader: %w", err)
 	}
-	licensesFile, err := reader.Open(
-		fmt.Sprintf("license-list-data-%s/json/licenses.json", tag[1:]),
-	)
+
+	licenses, err = ddi.readLicenseDirectory(reader, fmt.Sprintf("license-list-data-%s", tag[1:]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading license filesystem: %w", err)
 	}
-	licensesJSON, err := io.ReadAll(licensesFile)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(licensesJSON, &licenses); err != nil {
-		return nil, fmt.Errorf("parsing SPDX licence list: %w", err)
-	}
-	err = fs.WalkDir(reader, fmt.Sprintf("license-list-data-%s/json/details", tag[1:]), func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		licenseFile, err := reader.Open(path)
-		if err != nil {
-			return err
-		}
-		data, err := io.ReadAll(licenseFile)
-		if err != nil {
-			return err
-		}
-		license, err := ParseLicense(data)
-		if err != nil {
-			return err
-		}
-		licenses.Add(license)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
+
 	return licenses, nil
 }
 
