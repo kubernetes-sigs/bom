@@ -20,8 +20,10 @@ limitations under the License.
 package main
 
 import (
+	"archive/zip"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -344,5 +346,100 @@ func checkEmbeddedDataWithTag(tag string) (err error) {
 	if !util.Exists(filepath.Join(license.EmbeddedDataDir, tag)) {
 		return fmt.Errorf("%s (%s)", oldLicErr, tag)
 	}
+	return nil
+}
+
+// UpdateEmbeddedData updates the data in the license package to the
+// latest version if the SPDX license list
+func UpdateEmbeddedData() error {
+	catalog, err := license.NewCatalogWithOptions(license.DefaultCatalogOpts)
+	if err != nil {
+		return fmt.Errorf("generating license catalog")
+	}
+
+	tag, err := catalog.Downloader.GetLatestTag()
+	if err != nil {
+		return fmt.Errorf("fetching last license list version: %w", err)
+	}
+
+	if checkError := checkEmbeddedDataWithTag(tag); checkError == nil {
+		logrus.Info("embedded license data seems to be up to date 👍")
+	} else {
+		if !strings.HasPrefix(checkError.Error(), oldLicErr) {
+			return fmt.Errorf("checking latest spdx version: %w", checkError)
+		}
+	}
+
+	if util.Exists(license.EmbeddedDataDir) {
+		if err := os.RemoveAll(license.EmbeddedDataDir); err != nil {
+			return fmt.Errorf("removing embedded data: %w", err)
+		}
+	}
+
+	if err := os.MkdirAll(
+		filepath.Join(license.EmbeddedDataDir, tag, "/json/details/"), os.FileMode(0o755),
+	); err != nil {
+		return fmt.Errorf("creating cached license path: %w", err)
+	}
+
+	tmpPath, err := os.CreateTemp("", "license-download-")
+	if err != nil {
+		return fmt.Errorf("creating tmp file: %w", err)
+	}
+	defer os.Remove(tmpPath.Name())
+
+	if err := catalog.Downloader.DownloadLicenseListToFile(tag, tmpPath.Name()); err != nil {
+		return fmt.Errorf("downloading licenses: %w", err)
+	}
+	// Extract the license data, to just embed the bits we care about
+	if _, err := tmpPath.Seek(0, 0); err != nil {
+		return fmt.Errorf("rewqinding file: %w", err)
+	}
+
+	i, err := os.Stat(tmpPath.Name())
+	if err != nil {
+		return fmt.Errorf("getting license zip data: %w", err)
+	}
+
+	reader, err := zip.NewReader(tmpPath, i.Size())
+	if err != nil {
+		return fmt.Errorf("creating zip reader: %w", err)
+	}
+
+	dirName := fmt.Sprintf("license-list-data-%s", strings.TrimPrefix(tag, "v"))
+	if err := fs.WalkDir(reader, dirName, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("walker got error: %w", err)
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		if !strings.HasSuffix(path, "json/licenses.json") &&
+			!strings.HasPrefix(path, filepath.Join(dirName, "json/details")) {
+			return nil
+		}
+		bs, err := fs.ReadFile(reader, path)
+		if err != nil {
+			return fmt.Errorf("reading filelicendse file from zip: %w", err)
+		}
+		os.WriteFile(
+			filepath.Join(license.EmbeddedDataDir, tag, strings.ReplaceAll(path, dirName, "")),
+			bs,
+			os.FileMode(0o644),
+		)
+		/*
+			data, err := fs.ReadFile(reader, path)
+			if err != nil {
+				return fmt.Errorf("reading license file%s: %w", path, err)
+			}
+		*/
+		// Check path
+		// copy
+		return nil
+	}); err != nil {
+		return fmt.Errorf("walking license filesystem: %w", err)
+	}
+
 	return nil
 }
