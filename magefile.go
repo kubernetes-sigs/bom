@@ -25,13 +25,17 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/pkg/archive"
 	"github.com/carolynvs/magex/pkg/downloads"
 	"github.com/magefile/mage/sh"
+	"github.com/sirupsen/logrus"
 
+	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/mage"
+	"sigs.k8s.io/release-utils/util"
 )
 
 // Default target to run when none is specified
@@ -41,6 +45,7 @@ var Default = Verify
 const (
 	binDir    = "bin"
 	scriptDir = "scripts"
+	oldLicErr = "latest SPDX license data not"
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
@@ -297,4 +302,47 @@ func InstallKO(version string) error {
 	}
 
 	return archive.DownloadToGopathBin(opts)
+}
+
+// CheckEmbeddedData is a magefile-exposed function that checks that the
+// licensedata is the latest version available. If not returns oldLicErr
+func CheckEmbeddedData() error {
+	if err := checkEmbeddedDataWithTag(""); err != nil {
+		if !strings.HasPrefix(err.Error(), oldLicErr) {
+			logrus.Error("")
+			logrus.Error("Your local fork does not have the embedded data for the latest")
+			logrus.Error("version of the SPDX license list. To fix this, please run")
+			logrus.Error("the following command from a clean fork:")
+			logrus.Error("")
+			logrus.Error("  mage UpdateEmbeddedData")
+			logrus.Error("")
+			logrus.Error("and commit the results under pkg/license/data")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// checkEmbeddedDataWithTag gets a tag and ensures that the current version
+// of the SPDX license data is that version. If the tag is an empty string it
+// will check GitHub foir the latest version available
+func checkEmbeddedDataWithTag(tag string) (err error) {
+	catalog, err := license.NewCatalogWithOptions(license.DefaultCatalogOpts)
+	if err != nil {
+		return fmt.Errorf("generating license catalog")
+	}
+
+	// Get the latest SPDX license version
+	if tag == "" {
+		tag, err = catalog.Downloader.GetLatestTag()
+		if err != nil {
+			return fmt.Errorf("fetching last license list version: %w", err)
+		}
+	}
+
+	if !util.Exists(filepath.Join(license.EmbeddedDataDir, tag)) {
+		return fmt.Errorf("%s (%s)", oldLicErr, tag)
+	}
+	return nil
 }

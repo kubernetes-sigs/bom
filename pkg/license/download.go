@@ -40,6 +40,7 @@ const (
 	LicenseListFilename = "licenses.json"
 	BaseReleaseURL      = "https://github.com/spdx/license-list-data/archive/refs/tags/"
 	LatestReleaseURL    = "https://api.github.com/repos/spdx/license-list-data/releases/latest"
+	EmbeddedDataDir     = "pkg/license/data/"
 )
 
 // NewDownloader returns a downloader with the default options
