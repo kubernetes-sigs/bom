@@ -1,0 +1,48 @@
+---
+namespace: https://sigs.k8s.io/bom
+license: Apache-2.0
+name: bom
+creator:
+ person: The Kubernetes Authors
+ tool: bom
+
+artifacts:
+  - type: file
+    source: bom-amd64-windows.exe
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-amd64-darwin
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-amd64-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-arm-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-arm64-darwin
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-arm64-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-ppc64le-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: bom-s390x-linux
+    license: Apache-2.0
+    gomodules: true
