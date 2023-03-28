@@ -222,6 +222,25 @@ func (ddi *DefaultDownloaderImpl) readLicenseDirectory(licensefs fs.FS, subpath 
 	return licenses, nil
 }
 
+// DownloadLicenseListToFile downloads the license list from github and
+// stores it in a file
+func (d *Downloader) DownloadLicenseListToFile(tag, path string) (err error) {
+	if tag == "" {
+		tag, err = d.impl.GetLatestTag()
+		if err != nil {
+			return fmt.Errorf("getting latest license list")
+		}
+	}
+	data, err := d.impl.DownloadLicenseArchive(tag)
+	if err != nil {
+		return fmt.Errorf("downloading archive: %w", err)
+	}
+	if err := os.WriteFile(path, data, os.FileMode(0o644)); err != nil {
+		return fmt.Errorf("writing archive data: %w", err)
+	}
+	return nil
+}
+
 func (ddi *DefaultDownloaderImpl) DownloadLicenseArchive(tag string) (zipData []byte, err error) {
 	link := BaseReleaseURL + tag + ".zip"
 	if ddi.Options.EnableCache {
