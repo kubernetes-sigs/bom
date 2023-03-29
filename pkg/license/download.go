@@ -266,6 +266,9 @@ func (ddi *DefaultDownloaderImpl) DownloadLicenseArchive(tag string) (zipData []
 // GetLicenses downloads the main json file listing all SPDX supported licenses
 func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
 	zipData, err := ddi.DownloadLicenseArchive(tag)
+	if err != nil {
+		return nil, fmt.Errorf("downloading licenses: %w", err)
+	}
 
 	reader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {

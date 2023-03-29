@@ -38,9 +38,10 @@ type CatalogOptions struct {
 // are in the temporary OS directory and are created if the do not exist.
 //
 // The version included here is hardcoded and is intended to be the latest. The
-// plan is to embed in the bom binary the latest SPDX license list which should
-// match this entry always. See the following issue for details of this feature:
-// https://github.com/kubernetes-sigs/bom/issues/44
+// magefile in the project takes care of replacing this value when updating the
+// license zip file.
+//
+//	DO NOT RENAME OR MOVE THIS OPTION WITHOUT MODIFYING THE MAGEFILE
 var DefaultCatalogOpts = &CatalogOptions{
 	Version: "v3.20",
 }

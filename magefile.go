@@ -26,6 +26,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -377,7 +378,7 @@ func UpdateEmbeddedData() error {
 	}
 
 	if err := os.MkdirAll(
-		filepath.Join(license.EmbeddedDataDir, tag, "/json/details/"), os.FileMode(0o755),
+		filepath.Join(license.EmbeddedDataDir), os.FileMode(0o755),
 	); err != nil {
 		return fmt.Errorf("creating cached license path: %w", err)
 	}
@@ -406,6 +407,26 @@ func UpdateEmbeddedData() error {
 		return fmt.Errorf("creating zip reader: %w", err)
 	}
 
+	tmpdir, err := os.MkdirTemp("", "license-pack-")
+	if err != nil {
+		return fmt.Errorf("creating temp dir: %w", err)
+	}
+	if err := os.MkdirAll(
+		filepath.Join(tmpdir, "/json/details/"), fs.FileMode(0o755),
+	); err != nil {
+		return fmt.Errorf("creating license data dir: %w", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	zipFilePath := filepath.Join(license.EmbeddedDataDir, fmt.Sprintf("license-list-%s.zip", tag))
+	zipFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return fmt.Errorf("create zip file %q: %w", zipFilePath, err)
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+
 	dirName := fmt.Sprintf("license-list-data-%s", strings.TrimPrefix(tag, "v"))
 	if err := fs.WalkDir(reader, dirName, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -419,26 +440,39 @@ func UpdateEmbeddedData() error {
 			!strings.HasPrefix(path, filepath.Join(dirName, "json/details")) {
 			return nil
 		}
+
+		logrus.Infof("writing %s", path)
+		zipFileWriter, err := zipWriter.Create(path)
+		if err != nil {
+			return fmt.Errorf("creating file in zipfile: %w", err)
+		}
+
 		bs, err := fs.ReadFile(reader, path)
 		if err != nil {
 			return fmt.Errorf("reading filelicendse file from zip: %w", err)
 		}
-		os.WriteFile(
-			filepath.Join(license.EmbeddedDataDir, tag, strings.ReplaceAll(path, dirName, "")),
-			bs,
-			os.FileMode(0o644),
-		)
-		/*
-			data, err := fs.ReadFile(reader, path)
-			if err != nil {
-				return fmt.Errorf("reading license file%s: %w", path, err)
-			}
-		*/
-		// Check path
-		// copy
+
+		if _, err := zipFileWriter.Write(bs); err != nil {
+			return fmt.Errorf("error writing file %s: %w", path, err)
+		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("walking license filesystem: %w", err)
+	}
+	zipWriter.Close()
+
+	// patch the source to the new version
+	data, err := os.ReadFile("pkg/license/catalog.go")
+	if err != nil {
+		return fmt.Errorf("reading catalog source: %w", err)
+	}
+
+	// Here, wee patch the catalog source to hardcode the version we
+	// are embedding in the binary
+	re := regexp.MustCompile(`Version: "v\d+\.\d+"`)
+	data = re.ReplaceAll(data, []byte(fmt.Sprintf(`Version: "%s"`, tag)))
+	if err := os.WriteFile("pkg/license/catalog.go", data, os.FileMode(0o644)); err != nil {
+		return fmt.Errorf("unable to write catalog file: %w", err)
 	}
 
 	return nil
