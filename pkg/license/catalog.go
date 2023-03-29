@@ -38,15 +38,16 @@ type CatalogOptions struct {
 // are in the temporary OS directory and are created if the do not exist.
 //
 // The version included here is hardcoded and is intended to be the latest. The
-// plan is to embed in the bom binary the latest SPDX license list which should
-// match this entry always. See the following issue for details of this feature:
-// https://github.com/kubernetes-sigs/bom/issues/44
-var DefaultCatalogOpts = &CatalogOptions{
+// magefile in the project takes care of replacing this value when updating the
+// license zip file.
+//
+//	DO NOT RENAME OR MOVE THIS OPTION WITHOUT MODIFYING THE MAGEFILE
+var DefaultCatalogOpts = CatalogOptions{
 	Version: "v3.20",
 }
 
 // NewCatalogWithOptions returns a SPDX object with the specified options
-func NewCatalogWithOptions(opts *CatalogOptions) (catalog *Catalog, err error) {
+func NewCatalogWithOptions(opts CatalogOptions) (catalog *Catalog, err error) {
 	// Create the license downloader
 	doptions := DefaultDownloaderOpts
 	doptions.Version = opts.Version
@@ -64,7 +65,7 @@ func NewCatalogWithOptions(opts *CatalogOptions) (catalog *Catalog, err error) {
 }
 
 // Options returns  a pointer to the catlog options
-func (catalog *Catalog) Options() *CatalogOptions {
+func (catalog *Catalog) Options() CatalogOptions {
 	return catalog.opts
 }
 
@@ -82,9 +83,9 @@ func (catalog *Catalog) LoadLicenses() error {
 
 // Catalog is an objec to interact with licenses and manifest creation
 type Catalog struct {
-	Downloader *Downloader     // License Downloader
-	List       *List           // List of licenses
-	opts       *CatalogOptions // SPDX Options
+	Downloader *Downloader    // License Downloader
+	List       *List          // List of licenses
+	opts       CatalogOptions // SPDX Options
 }
 
 // WriteLicensesAsText writes the SPDX license collection to text files
