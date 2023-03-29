@@ -48,7 +48,7 @@ var Default = Verify
 const (
 	binDir    = "bin"
 	scriptDir = "scripts"
-	oldLicErr = "latest SPDX license data not"
+	oldLicErr = "latest SPDX license version not embedded"
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
@@ -323,7 +323,7 @@ func CheckEmbeddedData() error {
 		}
 		return err
 	}
-
+	logrus.Info("Embedded license data seems to be up to date 👍")
 	return nil
 }
 
@@ -344,7 +344,9 @@ func checkEmbeddedDataWithTag(tag string) (err error) {
 		}
 	}
 
-	if !util.Exists(filepath.Join(license.EmbeddedDataDir, tag)) {
+	if !util.Exists(
+		filepath.Join(license.EmbeddedDataDir, fmt.Sprintf("license-list-%s.zip", tag)),
+	) {
 		return fmt.Errorf("%s (%s)", oldLicErr, tag)
 	}
 	return nil
@@ -363,9 +365,7 @@ func UpdateEmbeddedData() error {
 		return fmt.Errorf("fetching last license list version: %w", err)
 	}
 
-	if checkError := checkEmbeddedDataWithTag(tag); checkError == nil {
-		logrus.Info("embedded license data seems to be up to date 👍")
-	} else {
+	if checkError := checkEmbeddedDataWithTag(tag); checkError != nil {
 		if !strings.HasPrefix(checkError.Error(), oldLicErr) {
 			return fmt.Errorf("checking latest spdx version: %w", checkError)
 		}
