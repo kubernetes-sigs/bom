@@ -20,6 +20,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/sha256"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,6 +43,9 @@ const (
 	LatestReleaseURL    = "https://api.github.com/repos/spdx/license-list-data/releases/latest"
 	EmbeddedDataDir     = "pkg/license/data/"
 )
+
+//go:embed data
+var f embed.FS
 
 // NewDownloader returns a downloader with the default options
 func NewDownloader() (*Downloader, error) {
@@ -242,6 +246,11 @@ func (d *Downloader) DownloadLicenseListToFile(tag, path string) (err error) {
 }
 
 func (ddi *DefaultDownloaderImpl) DownloadLicenseArchive(tag string) (zipData []byte, err error) {
+	if tag == DefaultCatalogOpts.Version {
+		logrus.Infof("Using embedded %s license list", DefaultCatalogOpts.Version)
+		return f.ReadFile(fmt.Sprintf("data/license-list-%s.zip", tag))
+	}
+
 	link := BaseReleaseURL + tag + ".zip"
 	if ddi.Options.EnableCache {
 		zipData, err = ddi.getCachedData(link)

@@ -110,7 +110,7 @@ func TestUSPDXWriteLicensesAsText(t *testing.T) {
 func TestUSPDXGetLicense(t *testing.T) {
 	testLicenseID := "test-license"
 	testLicenseContent := "Test license content"
-	catalog, err := license.NewCatalogWithOptions(&license.CatalogOptions{})
+	catalog, err := license.NewCatalogWithOptions(license.CatalogOptions{})
 	require.Nil(t, err)
 	catalog.List = &license.List{
 		Licenses: map[string]*license.License{

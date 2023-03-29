@@ -42,12 +42,12 @@ type CatalogOptions struct {
 // license zip file.
 //
 //	DO NOT RENAME OR MOVE THIS OPTION WITHOUT MODIFYING THE MAGEFILE
-var DefaultCatalogOpts = &CatalogOptions{
+var DefaultCatalogOpts = CatalogOptions{
 	Version: "v3.20",
 }
 
 // NewCatalogWithOptions returns a SPDX object with the specified options
-func NewCatalogWithOptions(opts *CatalogOptions) (catalog *Catalog, err error) {
+func NewCatalogWithOptions(opts CatalogOptions) (catalog *Catalog, err error) {
 	// Create the license downloader
 	doptions := DefaultDownloaderOpts
 	doptions.Version = opts.Version
@@ -65,7 +65,7 @@ func NewCatalogWithOptions(opts *CatalogOptions) (catalog *Catalog, err error) {
 }
 
 // Options returns  a pointer to the catlog options
-func (catalog *Catalog) Options() *CatalogOptions {
+func (catalog *Catalog) Options() CatalogOptions {
 	return catalog.opts
 }
 
@@ -83,9 +83,9 @@ func (catalog *Catalog) LoadLicenses() error {
 
 // Catalog is an objec to interact with licenses and manifest creation
 type Catalog struct {
-	Downloader *Downloader     // License Downloader
-	List       *List           // List of licenses
-	opts       *CatalogOptions // SPDX Options
+	Downloader *Downloader    // License Downloader
+	List       *List          // List of licenses
+	opts       CatalogOptions // SPDX Options
 }
 
 // WriteLicensesAsText writes the SPDX license collection to text files
