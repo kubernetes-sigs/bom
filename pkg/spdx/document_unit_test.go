@@ -284,8 +284,8 @@ func TestValidateFiles(t *testing.T) {
 func TestGetPackagesByPurl(t *testing.T) {
 	// Open the Nginx SBOM to test queries
 	doc, err := OpenDoc("testdata/nginx.spdx")
-	require.NotNil(t, doc)
 	require.NoError(t, err)
+	require.NotNil(t, doc)
 
 	for _, tc := range []struct {
 		len  int
