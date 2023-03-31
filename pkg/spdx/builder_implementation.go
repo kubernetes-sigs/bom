@@ -50,7 +50,7 @@ type defaultDocBuilderImpl struct {
 	format Format
 }
 
-func (builder *defaultDocBuilderImpl) CreateDocument(genopts *DocGenerateOptions, spdx *SPDX) (*Document, error) {
+func (builder *defaultDocBuilderImpl) CreateDocument(genopts *DocGenerateOptions, _ *SPDX) (*Document, error) {
 	// Create the new document
 	doc := NewDocument()
 	doc.Name = genopts.Name

@@ -618,7 +618,7 @@ func (di *spdxDefaultImplementation) LicenseReader(spdxOpts *Options) (*license.
 // GetDirectoryLicense takes a path and scans
 // the files in it to determine licensins information
 func (di *spdxDefaultImplementation) GetDirectoryLicense(
-	reader *license.Reader, path string, spdxOpts *Options,
+	reader *license.Reader, path string, _ *Options,
 ) (*license.License, error) {
 	licenseResult, err := reader.ReadTopLicense(path)
 	if err != nil {
