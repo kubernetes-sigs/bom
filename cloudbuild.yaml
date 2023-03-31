@@ -32,12 +32,6 @@ steps:
       - mage.go
       - buildStaging
 
-artifacts:
-  objects:
-    location: 'gs://k8s-staging-bom/${_PULL_BASE_REF}'
-    paths:
-      - "go/src/sigs.k8s.io/bom/output/*"
-
 substitutions:
   # _GIT_TAG will be filled with a git-based tag for the image, of the form vYYYYMMDD-hash, and
   # can be used as a substitution

@@ -532,7 +532,7 @@ type PurlSearchOption string
 
 // PurlMatches gets a spec url and returns true if its defined parts
 // match the analog parts in the package's purl
-func (p *Package) PurlMatches(spec *purl.PackageURL, opts ...PurlSearchOption) bool {
+func (p *Package) PurlMatches(spec *purl.PackageURL, _ ...PurlSearchOption) bool {
 	pkgPurl := p.Purl()
 	if pkgPurl == nil {
 		return false
