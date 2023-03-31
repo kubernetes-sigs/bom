@@ -318,7 +318,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			source = allFiles[elementID]
 		}
 		if source == nil {
-			logrus.Warnf("unable to find SPDX source element %s", elementID)
+			logrus.Warnf("Unable to find SPDX source element %s", elementID)
 			continue
 		}
 
@@ -406,8 +406,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		}
 		doc.ExternalDocRefs = append(doc.ExternalDocRefs, extRef)
 	}
-	fmt.Printf("%+v\n", doc)
-	fmt.Printf("PACKAGE:  %+v\n", doc.Packages["SPDXRef-Package-sha256-a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f"])
+
 	return doc, nil
 }
 
