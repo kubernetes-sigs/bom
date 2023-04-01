@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -112,9 +111,8 @@ set the --spdx-ids to only output the IDs of the entities.
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				cmd.Help() //nolint:errcheck
-				return errors.New("you should only specify one file")
+			if len(args) == 0 {
+				args = append(args, "")
 			}
 			doc, err := spdx.OpenDoc(args[0])
 			if err != nil {

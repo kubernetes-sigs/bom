@@ -49,7 +49,16 @@ func OpenDoc(path string) (doc *Document, err error) {
 	// support reading SBOMs from STDIN
 	var file *os.File
 	var isTemp bool
-	if path == "-" {
+	if path == "-" || path == "" {
+		if path == "" {
+			fi, err := os.Stdin.Stat()
+			if err != nil {
+				return nil, fmt.Errorf("checking stdin for data: %w", err)
+			}
+			if (fi.Mode() & os.ModeCharDevice) != 0 {
+				return nil, fmt.Errorf("document path not specified")
+			}
+		}
 		isTemp = true
 		file, err = bufferSTDIN()
 		if err != nil {
