@@ -79,6 +79,8 @@ func OpenDoc(path string) (doc *Document, err error) {
 		return nil, fmt.Errorf("detecting sbom encoding: %w", err)
 	}
 
+	logrus.Debugf("document format is %s", format)
+
 	switch format {
 	case "spdx":
 		return parseTagValue(file)
@@ -316,7 +318,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			source = allFiles[elementID]
 		}
 		if source == nil {
-			logrus.Warnf("unable to find SPDX source element %s", elementID)
+			logrus.Warnf("Unable to find SPDX source element %s", elementID)
 			continue
 		}
 
@@ -404,8 +406,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		}
 		doc.ExternalDocRefs = append(doc.ExternalDocRefs, extRef)
 	}
-	fmt.Printf("%+v\n", doc)
-	fmt.Printf("PACKAGE:  %+v\n", doc.Packages["SPDXRef-Package-sha256-a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f"])
+
 	return doc, nil
 }
 
@@ -779,22 +780,40 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 
 // detectSBOMEncoding reads a few bytes from the SBOM and returns
 func DetectSBOMEncoding(f *os.File) (format string, err error) {
-	bs := make([]byte, 512)
-	if _, err := f.Read(bs); err != nil {
-		return "", fmt.Errorf("reading SBOM to get format: %w", err)
-	}
+	fileScanner := bufio.NewScanner(f)
+	fileScanner.Split(bufio.ScanLines)
 
+	looksLikeCDX := true
+	for fileScanner.Scan() {
+		// In JSON, the spdx version field would be quoted
+		if strings.Contains(fileScanner.Text(), "\"spdxVersion\"") {
+			format = "spdx+json"
+			break
+		} else if strings.Contains(fileScanner.Text(), "SPDXVersion:") {
+			format = "spdx"
+			break
+		}
+
+		if strings.Contains(fileScanner.Text(), "bomFormat") && strings.Contains(fileScanner.Text(), "CycloneDX") {
+			looksLikeCDX = true
+		}
+	}
 	if _, err := f.Seek(0, 0); err != nil {
-		return "", fmt.Errorf("rewinding sbom pointer: %w", err)
+		return "", fmt.Errorf("rewinding file pointer: %w", err)
 	}
 
-	// In JSON, the spdx version fiel would be quoted
-	if strings.Contains(string(bs), "\"spdxVersion\"") {
-		return "spdx+json", nil
-	} else if strings.Contains(string(bs), "SPDXVersion:") {
-		return "spdx", nil
+	if format != "" {
+		return format, nil
 	}
-	logrus.Warn("Unable to detect SBOM encoding")
+
+	// Print a more accurate warning if trying to ingest a
+	// CycloneDX document to avoid confusion
+	if looksLikeCDX {
+		logrus.Warn("The scanned document looks like a CycloneDX SBOM (not supported by bom)")
+	} else {
+		logrus.Warn("Unable to detect SBOM encoding")
+	}
+
 	return "", nil
 }
 
