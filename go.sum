@@ -69,8 +69,8 @@ github.com/google/renameio v1.0.1/go.mod h1:t/HQoYBZSsWSNK35C6CO/TpPLDVWvxOHboWU
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/imdario/mergo v0.3.13/go.mod h1:4lJ1jqUDcsbIECGy0RUJAXNIhg+6ocWgb1ALK2O4oXg=
-github.com/in-toto/in-toto-golang v0.7.0 h1:sSTxj28v8vEx7d7KB7pWfS5bkR9qB+6Zuee0cwW5v94=
-github.com/in-toto/in-toto-golang v0.7.0/go.mod h1:uL5siwLtGflIjlgOPh5j+GBKulIy+UL+LVDpe5d1AeM=
+github.com/in-toto/in-toto-golang v0.7.1 h1:IzOB18y7/4KoEp4/RiWnuIXUpqi9+5yGlRy/t/QRDWE=
+github.com/in-toto/in-toto-golang v0.7.1/go.mod h1:m7HiDiYvPz+7SkqU9Tnt9hNgJfA31/nr1GSlDlxrQmE=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
