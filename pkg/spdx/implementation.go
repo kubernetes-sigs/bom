@@ -935,6 +935,11 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 						Locator:  (*osPackageData)[i].PackageURL(),
 					})
 				}
+
+				if (*osPackageData)[i].DownloadLocation() != "" {
+					ospk.DownloadLocation = (*osPackageData)[i].DownloadLocation()
+				}
+
 				ospk.BuildID(pkg.ID)
 				if err := pkg.AddPackage(ospk); err != nil {
 					return nil, fmt.Errorf("adding OS package to container layer: %w", err)
