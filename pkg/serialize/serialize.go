@@ -163,6 +163,14 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 		ExternalRefs:         externalRefs,
 	}
 
+	if p.Supplier.Organization != "" {
+		jsonPackage.Supplier = fmt.Sprintf("Organization: %s", p.Supplier.Organization)
+	}
+
+	if p.Supplier.Person != "" {
+		jsonPackage.Supplier = fmt.Sprintf("Person: %s", p.Supplier.Person)
+	}
+
 	if p.VerificationCode != "" {
 		jsonPackage.VerificationCode = &spdxJSON.PackageVerificationCode{
 			Value: p.VerificationCode,
