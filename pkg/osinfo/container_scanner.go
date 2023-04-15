@@ -185,6 +185,33 @@ func (e *PackageDBEntry) PackageURL() string {
 	).ToString()
 }
 
+// DownloadLocation synthesizes a download location for the
+// packages based on known location for the different distros
+func (e *PackageDBEntry) DownloadLocation() string {
+	if e.Package == "" || e.Version == "" || e.Architecture == "" {
+		return ""
+	}
+
+	if e.Namespace == OSDebian {
+		dirName := e.Package[0:1]
+		if strings.HasPrefix(e.Package, "lib") {
+			dirName = e.Package[0:4]
+		}
+		return fmt.Sprintf(
+			"http://ftp.debian.org/debian/pool/main/%s/%s/%s_%s_%s.deb",
+			dirName, e.Package, e.Package, e.Version, e.Architecture,
+		)
+	} else if e.Namespace == OSWolfi {
+		return fmt.Sprintf(
+			"https://packages.wolfi.dev/os/%s/%s-%s.apk",
+			e.Architecture, e.Package, e.Version,
+		)
+	}
+
+	// TODO: For other distros we need to have the distro version
+	return ""
+}
+
 // parseDpkgDB reads a dpks database and populates a slice of PackageDBEntry
 // with information from the packages found
 func (ct *ContainerScanner) parseDpkgDB(dbPath string) (*[]PackageDBEntry, error) {
