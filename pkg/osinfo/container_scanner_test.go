@@ -64,6 +64,23 @@ func TestReadDebianPackages(t *testing.T) {
 	}
 }
 
+func TestParseDpkDb(t *testing.T) {
+	ct := ContainerScanner{}
+	_, packages, err := ct.ReadOSPackages([]string{
+		"testdata/link-with-no-dots.tar.gz", // The first layer contains the OS Info
+		"testdata/dpkg-layer1.tar.gz",       // The second layer contains the dpkg database
+	})
+
+	require.NoError(t, err)
+
+	require.Equal(t, "bash", (*packages)[4].Package)
+	require.Equal(t, "amd64", (*packages)[4].Architecture)
+	require.Equal(t, "5.0-4", (*packages)[4].Version)
+	require.Equal(t, "http://tiswww.case.edu/php/chet/bash/bashtop.html", (*packages)[4].HomePage)
+	require.Equal(t, "Matthias Klose", (*packages)[4].MaintainerName)
+	require.Equal(t, "doko@debian.org", (*packages)[4].MaintainerEmail)
+}
+
 func TestReadOSPackages(t *testing.T) {
 	ct := ContainerScanner{}
 	layer, packages, err := ct.ReadOSPackages([]string{
