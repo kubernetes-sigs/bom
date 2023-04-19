@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*'
 
 jobs:
   release:
@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
-        with:
-          fetch-depth: 1
 
       - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
@@ -35,10 +33,6 @@ jobs:
         with:
           install-only: true
 
-      - name: Get TAG
-        id: get_tag
-        run: echo "TAG=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
-
       - name: Run Mage
         uses: magefile/mage-action@3b833fb24c0d19eed3aa760b9eb285b4b84f420f # v2.3.0
         with:
@@ -46,3 +40,36 @@ jobs:
           args: buildBinaries
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  attestation:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    needs:
+      - release
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - name: Set tag output
+        id: tag
+        run: echo "tag_name=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Install tejolote
+        uses: puerco/release-actions/setup-tejolote@6c88cda6495b4415966e61f20798fb96a9081397 # main
+
+      - run: |
+          tejolote attest --artifacts github://kubernetes-sigs/bom/${{ steps.tag.outputs.tag_name }} github://kubernetes-sigs/bom/"${GITHUB_RUN_ID}" --output bom.intoto.json --sign
+
+      - name: Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
+        with:
+          files: bom.intoto.json
+          tag_name: "${{ steps.tag.outputs.tag_name }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_REPOSITORY: kubernetes-sigs/bom
