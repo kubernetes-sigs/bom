@@ -8,7 +8,7 @@ require (
 	github.com/google/go-containerregistry v0.14.0
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.3.0
-	github.com/in-toto/in-toto-golang v0.7.1
+	github.com/in-toto/in-toto-golang v0.8.0
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
