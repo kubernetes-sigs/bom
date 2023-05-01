@@ -13,7 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2
-	gitlab.alpinelinux.org/alpine/go v0.6.0
+	gitlab.alpinelinux.org/alpine/go v0.7.0
 	golang.org/x/mod v0.10.0
 	golang.org/x/term v0.7.0
 	golang.org/x/tools v0.8.0
@@ -36,6 +36,7 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
