@@ -3,7 +3,6 @@ module sigs.k8s.io/bom
 go 1.20
 
 require (
-	github.com/carolynvs/magex v0.9.0
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/google/go-containerregistry v0.14.0
 	github.com/google/licenseclassifier/v2 v2.0.0
@@ -13,17 +12,18 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2
+	github.com/uwu-tools/magex v0.10.0
 	gitlab.alpinelinux.org/alpine/go v0.7.0
 	golang.org/x/mod v0.10.0
 	golang.org/x/term v0.7.0
 	golang.org/x/tools v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.7.4-0.20230327115955-2b998c68e4b6
+	sigs.k8s.io/release-utils v0.7.4-0.20230502075013-5274b69697f0
 )
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect

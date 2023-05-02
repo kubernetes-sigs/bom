@@ -29,9 +29,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/carolynvs/magex/pkg"
 	"github.com/magefile/mage/sh"
 	"github.com/sirupsen/logrus"
+	"github.com/uwu-tools/magex/pkg"
 
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/mage"
