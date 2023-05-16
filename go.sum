@@ -258,5 +258,5 @@ k8s.io/klog/v2 v2.0.0/go.mod h1:PBfzABfn139FHAV07az/IF9Wp1bkk3vpT2XSJ76fSDE=
 k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 h1:HNSDgDCrr/6Ly3WEGKZftiE7IY19Vz2GdbOCyI4qqhc=
 k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 rsc.io/pdf v0.1.1/go.mod h1:n8OzWcQ6Sp37PL01nO98y4iUCRdTGarVfzxY20ICaU4=
-sigs.k8s.io/release-utils v0.7.4-0.20230502075013-5274b69697f0 h1:ubiI15EtxQyQGwTH6N2RKEE/fJcDxyAQroL3wW4KCA4=
-sigs.k8s.io/release-utils v0.7.4-0.20230502075013-5274b69697f0/go.mod h1:kyrHmIaJ1TixAope66nqcOIRoHeT4G2dIj8jwe0AB1o=
+sigs.k8s.io/release-utils v0.7.4 h1:17LmJrydpUloTCtaoWj95uKlcrUp4h2A9Sa+ZL+lV9w=
+sigs.k8s.io/release-utils v0.7.4/go.mod h1:JEt2QPHItd5Pg2UKLAU8PEaSlF4bUjCZimpxFDgymVU=
