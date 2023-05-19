@@ -82,7 +82,6 @@ Example:
 				return fmt.Errorf("filter query returned an error: %w", fp.Error)
 			}
 
-			fmt.Println(spdx.Banner())
 			if len(fp.Objects) == 0 {
 				logrus.Warning("No objects in the SBOM match the query")
 				return nil
