@@ -30,6 +30,7 @@ import (
 type queryOptions struct {
 	purl   bool
 	format string
+	fields []string
 }
 
 func AddQuery(parent *cobra.Command) {
@@ -49,18 +50,23 @@ over time. The following filters are available:
 
   depth:N       The depth filter will match elements
                 reachable at N levels from the document root.
+                For example, to find all elements, one level
+                deep from the SBOM top level:
+
+                bom document query sbom.spdx.json "depth:1"
+
 
   name:pattern  Matches all elements in the document that
                 match the regex <pattern> in their name. For example,
-				to find all packages with 'lib' and a 'c' in their name:
+                to find all packages with 'lib' and a 'c' in their name:
 
-				bom document query sbom.spdx.json 'name:lib.*c'
+                bom document query sbom.spdx.json 'name:lib.*c'
 
   purl:pattern  Matchess all elements in the document that match
                 fragments of a purl. For example, to get all container
-				images listed in an SBOM you can issue a query like this:
+                images listed in an SBOM you can issue a query like this:
 
-				bom document query sbom.spdx.json 'purl:pkg:/oci/*'
+                bom document query sbom.spdx.json 'purl:pkg:/oci/*'
 
 Example:
 
@@ -107,10 +113,7 @@ Example:
 				return fmt.Errorf("unrecognized output format, must be text, csv or json")
 			}
 
-			if err := p.PrintObjectList(queryOpts, fp.Objects, os.Stdout); err != nil {
-				return err
-			}
-			return nil
+			return p.PrintObjectList(queryOpts, fp.Objects, os.Stdout)
 		},
 	}
 	queryCmd.PersistentFlags().BoolVar(
@@ -127,5 +130,11 @@ Example:
 		"format of output, one of: text, csv or json",
 	)
 
+	queryCmd.PersistentFlags().StringSliceVar(
+		&queryOpts.fields,
+		"fields",
+		[]string{"name"},
+		"fields to include in output, separated by commas: name,version,license,supplier,originator,url,",
+	)
 	parent.AddCommand(queryCmd)
 }

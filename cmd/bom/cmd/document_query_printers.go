@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2023 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"sigs.k8s.io/bom/pkg/spdx"
 )
@@ -35,9 +36,18 @@ type LinePrinter struct{}
 
 func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
 	for _, o := range objects {
-		if _, err := fmt.Fprintln(w, displayQueryResult(opts, o)); err != nil {
-			return fmt.Errorf("writing output: %w", err)
+		fields := []string{}
+		for _, field := range opts.fields {
+			val, err := getObjectField(opts, o, field)
+			if err != nil {
+				return fmt.Errorf("getting value for field %s: %w", field, err)
+			}
+			if val == "" {
+				val = "_"
+			}
+			fields = append(fields, val)
 		}
+		fmt.Fprintln(w, strings.Join(fields, " "))
 	}
 	return nil
 }
@@ -47,7 +57,14 @@ type CSVPrinter struct{}
 func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
 	csvw := csv.NewWriter(w)
 	for _, o := range objects {
-		fields := []string{displayQueryResult(opts, o)}
+		fields := []string{}
+		for _, field := range opts.fields {
+			value, err := getObjectField(opts, o, field)
+			if err != nil {
+				return fmt.Errorf("getting value for field %s", field)
+			}
+			fields = append(fields, value)
+		}
 		if err := csvw.Write(fields); err != nil {
 			return fmt.Errorf("writing output: %w", err)
 		}
@@ -67,10 +84,33 @@ func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx
 		Originator string `json:"originator,omitempty"`
 		URL        string `json:"url,omitempty"`
 	}
+
 	out := []resultEntry{}
 	for _, o := range objects {
-		fields := resultEntry{
-			Name: displayQueryResult(opts, o),
+		fields := resultEntry{}
+
+		for _, field := range opts.fields {
+			fieldValue, err := getObjectField(opts, o, field)
+			if err != nil {
+				return fmt.Errorf("getting value for field %s: %w", field, err)
+			}
+
+			switch field {
+			case "name":
+				fields.Name = fieldValue
+			case "version":
+				fields.Version = fieldValue
+			case "license":
+				fields.License = fieldValue
+			case "supplier":
+				fields.Supplier = fieldValue
+			case "originator":
+				fields.Supplier = fieldValue
+			case "url":
+				fields.URL = fieldValue
+			default:
+				return fmt.Errorf("unknown or not supported field: %s", field)
+			}
 		}
 		out = append(out, fields)
 	}
@@ -90,9 +130,6 @@ func displayQueryResult(opts queryOptions, o spdx.Object) string {
 		s = no.FileName
 	case *spdx.Package:
 		s = no.Name
-		if no.Version != "" {
-			s += fmt.Sprintf("@%s", no.Version)
-		}
 		if opts.purl {
 			for _, er := range o.(*spdx.Package).ExternalRefs {
 				if er.Type == "purl" {
@@ -102,4 +139,46 @@ func displayQueryResult(opts queryOptions, o spdx.Object) string {
 		}
 	}
 	return s
+}
+
+func getObjectField(opts queryOptions, o spdx.Object, field string) (string, error) {
+	switch field {
+	case "name":
+		return displayQueryResult(opts, o), nil
+	case "version":
+		if _, ok := o.(*spdx.Package); ok {
+			return o.(*spdx.Package).Version, nil
+		}
+	case "license":
+		switch c := o.(type) {
+		case *spdx.Package:
+			if c.LicenseDeclared != "" {
+				return c.LicenseDeclared, nil
+			}
+			return c.LicenseConcluded, nil
+		case *spdx.File:
+			return c.LicenseInfoInFile, nil
+		}
+	case "supplier":
+		if _, ok := o.(*spdx.Package); ok {
+			if o.(*spdx.Package).Supplier.Organization != "" {
+				return o.(*spdx.Package).Supplier.Organization, nil
+			}
+			return o.(*spdx.Package).Supplier.Person, nil
+		}
+	case "originator":
+		if _, ok := o.(*spdx.Package); ok {
+			if o.(*spdx.Package).Originator.Organization != "" {
+				return o.(*spdx.Package).Originator.Organization, nil
+			}
+			return o.(*spdx.Package).Originator.Person, nil
+		}
+	case "url":
+		if _, ok := o.(*spdx.Package); ok {
+			return o.(*spdx.Package).DownloadLocation, nil
+		}
+	default:
+		return "", fmt.Errorf("unknown or not supported field: %s", field)
+	}
+	return "", nil
 }
