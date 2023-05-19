@@ -68,26 +68,53 @@ over time. The following filters are available:
 
                 bom document query sbom.spdx.json 'purl:pkg:/oci/*'
 
+You can query files piped on STDIN by specifying the path as a dash (-) or
+ammitting it completely. These are equivalent:
+
+    cat sbom.spdx.json | bom document query - 'name:log4j'
+    cat sbom.spdx.json | bom document query 'name:log4j'
+
 Example:
 
   # Match all second level elements with log4j in their name:
   bom document query sbom.spdx "depth:2 name:log4j"
 
 `,
-		Use:           "query SPDX_FILE|URL \"query expression\" ",
+		Use:           "query sbom.spdx.json \"query expression\" ",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var path string
+			var queryString string
 			if len(args) < 2 {
-				cmd.Help() //nolint:errcheck
-				return errors.New("you should only specify one file")
+				if len(args) == 1 {
+					fi, err := os.Stdin.Stat()
+					if err != nil {
+						return fmt.Errorf("checking stdin for data: %w", err)
+					}
+					if (fi.Mode() & os.ModeCharDevice) != 0 {
+						cmd.Help() //nolint:errcheck
+						return fmt.Errorf("document path not specified")
+					}
+
+					path = "-"
+					queryString = strings.Join(args, " ")
+				}
+
+				if path == "" {
+					cmd.Help() //nolint:errcheck
+					return errors.New("no file or query specified")
+				}
+			} else {
+				path = args[0]
+				queryString = strings.Join(args[1:], " ")
 			}
 
 			q := query.New()
-			if err := q.Open(args[0]); err != nil {
+			if err := q.Open(path); err != nil {
 				return fmt.Errorf("opening document %s: %w", args[0], err)
 			}
-			fp, err := q.Query(strings.Join(args[1:], " "))
+			fp, err := q.Query(queryString)
 			if err != nil {
 				return fmt.Errorf("querying document: %w", err)
 			}
