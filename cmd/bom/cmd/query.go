@@ -59,7 +59,7 @@ over time. The following filters are available:
 
   purl:pattern  Matchess all elements in the document that match
                 fragments of a purl. For example, to get all container
-				images listed in an SBOM you can issue a query liek this:
+				images listed in an SBOM you can issue a query like this:
 
 				bom document query sbom.spdx.json 'purl:pkg:/oci/*'
 
@@ -93,11 +93,13 @@ Example:
 
 			if len(fp.Objects) == 0 {
 				logrus.Warning("No objects in the SBOM match the query")
-				return nil
 			}
-			for _, o := range fp.Objects {
-				displayQueryResult(queryOpts, o, os.Stdout)
-			}
+
+			var p Printer
+
+			p = &LinePrinter{}
+
+			p.PrintObjectList(queryOpts, fp.Objects, os.Stdout)
 			return nil
 		},
 	}
@@ -111,7 +113,19 @@ Example:
 	parent.AddCommand(queryCmd)
 }
 
-func displayQueryResult(opts queryOptions, o spdx.Object, w io.Writer) {
+type Printer interface {
+	PrintObjectList(queryOptions, map[string]spdx.Object, io.Writer)
+}
+
+type LinePrinter struct{}
+
+func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) {
+	for _, o := range objects {
+		fmt.Fprintln(w, displayQueryResult(opts, o))
+	}
+}
+
+func displayQueryResult(opts queryOptions, o spdx.Object) string {
 	s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
 	switch no := o.(type) {
 	case *spdx.File:
@@ -129,5 +143,5 @@ func displayQueryResult(opts queryOptions, o spdx.Object, w io.Writer) {
 			}
 		}
 	}
-	fmt.Fprintf(w, "%s\n", s)
+	return s
 }
