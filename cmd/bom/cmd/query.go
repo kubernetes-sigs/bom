@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -137,6 +138,32 @@ func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.
 		}
 	}
 	csvw.Flush()
+}
+
+type JSONPrinter struct{}
+
+func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) {
+	type resultEntry struct {
+		Name       string `json:"name,omitempty"`
+		Version    string `json:"version,omitempty"`
+		License    string `json:"license,omitempty"`
+		Supplier   string `json:"supplier,omitempty"`
+		Originator string `json:"originator,omitempty"`
+		URL        string `json:"url,omitempty"`
+	}
+	out := []resultEntry{}
+	for _, o := range objects {
+		fields := resultEntry{
+			Name: displayQueryResult(opts, o),
+		}
+		out = append(out, fields)
+	}
+
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "    ")
+	if err := enc.Encode(&out); err != nil {
+		logrus.Error("encoding data: %w", err)
+	}
 }
 
 func displayQueryResult(opts queryOptions, o spdx.Object) string {
