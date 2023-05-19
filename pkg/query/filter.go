@@ -18,7 +18,7 @@ package query
 
 import (
 	"fmt"
-	"strings"
+	"regexp"
 
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
@@ -91,17 +91,27 @@ func (f *AllFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Objec
 
 type NameFilter struct {
 	Pattern string
+	Regexp  *regexp.Regexp
 }
 
 func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+	// Compile the pattern once if required
+	if f.Regexp == nil {
+		re, err := regexp.Compile(f.Pattern)
+		if err != nil {
+			return nil, fmt.Errorf("compiling pattern: %w", err)
+		}
+		f.Regexp = re
+	}
+
 	// Perform filter
 	cycler := ObjectCycler{}
 	return cycler.Cycle(objects, func(o spdx.Object) bool {
 		if _, ok := o.(*spdx.File); ok {
-			return strings.Contains(o.(*spdx.File).FileName, f.Pattern)
+			return f.Regexp.MatchString(o.(*spdx.File).FileName)
 		}
 		if _, ok := o.(*spdx.Package); ok {
-			return strings.Contains(o.(*spdx.Package).Name, f.Pattern)
+			return f.Regexp.MatchString(o.(*spdx.Package).Name)
 		}
 		return false
 	}), nil
@@ -117,7 +127,6 @@ func (f *PurlFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Obje
 		return nil, fmt.Errorf("parsing purl: %w", err)
 	}
 
-	logrus.Infof("Purl: %s", patternPurl)
 	if patternPurl.Type == "" {
 		patternPurl.Type = "*"
 	}
