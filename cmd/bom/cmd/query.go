@@ -19,6 +19,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -27,7 +29,13 @@ import (
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
+type queryOptions struct {
+	purl bool
+}
+
 func AddQuery(parent *cobra.Command) {
+	queryOpts := queryOptions{}
+
 	queryCmd := &cobra.Command{
 		PersistentPreRunE: initLogging,
 		Short:             "bom document query → Search for information in an SBOM",
@@ -80,18 +88,38 @@ Example:
 				return nil
 			}
 			for _, o := range fp.Objects {
-				s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
-				switch no := o.(type) {
-				case *spdx.File:
-					s = no.FileName
-				case *spdx.Package:
-					s = no.Name
-				}
-				fmt.Printf(" %s\n", s)
+				displayQueryResult(queryOpts, o, os.Stdout)
 			}
 			return nil
 		},
 	}
+	queryCmd.PersistentFlags().BoolVar(
+		&queryOpts.purl,
+		"purl",
+		false,
+		"output package urls instead of name@version",
+	)
 
 	parent.AddCommand(queryCmd)
+}
+
+func displayQueryResult(opts queryOptions, o spdx.Object, w io.Writer) {
+	s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
+	switch no := o.(type) {
+	case *spdx.File:
+		s = no.FileName
+	case *spdx.Package:
+		s = no.Name
+		if no.Version != "" {
+			s += fmt.Sprintf("@%s", no.Version)
+		}
+		if opts.purl {
+			for _, er := range o.(*spdx.Package).ExternalRefs {
+				if er.Type == "purl" {
+					s = er.Locator
+				}
+			}
+		}
+	}
+	fmt.Fprintf(w, "%s\n", s)
 }
