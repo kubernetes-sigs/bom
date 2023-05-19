@@ -52,7 +52,16 @@ over time. The following filters are available:
                 reachable at N levels from the document root.
 
   name:pattern  Matches all elements in the document that
-                contain <pattern> in their name.
+                match the regex <pattern> in their name. For example,
+				to find all packages with 'lib' and a 'c' in their name:
+
+				bom document query sbom.spdx.json 'name:lib.*c'
+
+  purl:pattern  Matchess all elements in the document that match
+                fragments of a purl. For example, to get all container
+				images listed in an SBOM you can issue a query liek this:
+
+				bom document query sbom.spdx.json 'purl:pkg:/oci/*'
 
 Example:
 
