@@ -17,18 +17,14 @@ limitations under the License.
 package cmd
 
 import (
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/bom/pkg/query"
-	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 type queryOptions struct {
@@ -132,81 +128,4 @@ Example:
 	)
 
 	parent.AddCommand(queryCmd)
-}
-
-type Printer interface {
-	PrintObjectList(queryOptions, map[string]spdx.Object, io.Writer) error
-}
-
-type LinePrinter struct{}
-
-func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
-	for _, o := range objects {
-		if _, err := fmt.Fprintln(w, displayQueryResult(opts, o)); err != nil {
-			return fmt.Errorf("writing output: %w", err)
-		}
-	}
-	return nil
-}
-
-type CSVPrinter struct{}
-
-func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
-	csvw := csv.NewWriter(w)
-	for _, o := range objects {
-		fields := []string{displayQueryResult(opts, o)}
-		if err := csvw.Write(fields); err != nil {
-			return fmt.Errorf("writing output: %w", err)
-		}
-	}
-	csvw.Flush()
-	return nil
-}
-
-type JSONPrinter struct{}
-
-func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
-	type resultEntry struct {
-		Name       string `json:"name,omitempty"`
-		Version    string `json:"version,omitempty"`
-		License    string `json:"license,omitempty"`
-		Supplier   string `json:"supplier,omitempty"`
-		Originator string `json:"originator,omitempty"`
-		URL        string `json:"url,omitempty"`
-	}
-	out := []resultEntry{}
-	for _, o := range objects {
-		fields := resultEntry{
-			Name: displayQueryResult(opts, o),
-		}
-		out = append(out, fields)
-	}
-
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "    ")
-	if err := enc.Encode(&out); err != nil {
-		return fmt.Errorf("encoding data: %w", err)
-	}
-	return nil
-}
-
-func displayQueryResult(opts queryOptions, o spdx.Object) string {
-	s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
-	switch no := o.(type) {
-	case *spdx.File:
-		s = no.FileName
-	case *spdx.Package:
-		s = no.Name
-		if no.Version != "" {
-			s += fmt.Sprintf("@%s", no.Version)
-		}
-		if opts.purl {
-			for _, er := range o.(*spdx.Package).ExternalRefs {
-				if er.Type == "purl" {
-					s = er.Locator
-				}
-			}
-		}
-	}
-	return s
 }
