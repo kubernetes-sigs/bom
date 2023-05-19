@@ -206,27 +206,27 @@ func getImageReferences(referenceString string) (*ImageReferenceInfo, error) {
 
 	// If the reference points to an image, return it
 	if descr.MediaType.IsImage() {
-		return refInfoFromImage(descr)
+		return refInfoFromImage(ref, descr)
 	} else if descr.MediaType.IsIndex() {
-		return refInfoFromIndex(descr)
+		return refInfoFromIndex(ref, descr)
 	}
 
 	return nil, fmt.Errorf("unable to recognize reference mediatype (%s)", string(descr.MediaType))
 }
 
-func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, err error) {
+func refInfoFromIndex(ref name.Reference, descr *remote.Descriptor) (refinfo *ImageReferenceInfo, err error) {
 	refinfo = &ImageReferenceInfo{Images: []ImageReferenceInfo{}}
-	logrus.Infof("Reference %s points to an index", descr.Ref.String())
+	logrus.Infof("Reference %s points to an index", ref.String())
 
-	tag := descr.Ref.Context().Tag(descr.Ref.String())
+	tag := ref.Context().Tag(ref.String())
 	if tag.String() == "" {
-		return nil, fmt.Errorf("cannot build tag from reference %s", descr.Ref.String())
+		return nil, fmt.Errorf("cannot build tag from reference %s", ref.String())
 	}
 
 	// Get the image index
 	index, err := descr.ImageIndex()
 	if err != nil {
-		return nil, fmt.Errorf("getting image index for %s: %w", descr.Ref.String(), err)
+		return nil, fmt.Errorf("getting image index for %s: %w", ref.String(), err)
 	}
 
 	indexDigest, err := index.Digest()
@@ -243,7 +243,7 @@ func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 
 	indexManifest, err := index.IndexManifest()
 	if err != nil {
-		return nil, fmt.Errorf("getting index manifest from %s: %w", descr.Ref.String(), err)
+		return nil, fmt.Errorf("getting index manifest from %s: %w", ref.String(), err)
 	}
 	logrus.Infof("Reference image index points to %d manifests", len(indexManifest.Manifests))
 	refinfo.MediaType = string(indexManifest.MediaType)
@@ -276,13 +276,13 @@ func refInfoFromIndex(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, er
 	return refinfo, nil
 }
 
-func refInfoFromImage(descr *remote.Descriptor) (refinfo *ImageReferenceInfo, err error) {
+func refInfoFromImage(ref name.Reference, descr *remote.Descriptor) (refinfo *ImageReferenceInfo, err error) {
 	refinfo = &ImageReferenceInfo{}
-	logrus.Infof("Reference %s points to a single image", descr.Ref.String())
+	logrus.Infof("Reference %s points to a single image", ref.String())
 
-	tag := descr.Ref.Context().Tag(descr.Ref.String())
+	tag := ref.Context().Tag(ref.String())
 	if tag.String() == "" {
-		return nil, fmt.Errorf("cannot build tag from reference %s", descr.Ref.String())
+		return nil, fmt.Errorf("cannot build tag from reference %s", ref.String())
 	}
 
 	// Check if we can get an image
@@ -728,8 +728,18 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 	logrus.Infof("Generating SBOM for multiarch image %s", references.Digest)
 	pkg := &Package{}
 
-	pkg.Name = topDigest.DigestStr()
-	pkg.BuildID(pkg.Name)
+	refString := ""
+	plainRef := ""
+	refFull, err := name.ParseReference(ref)
+	if err != nil {
+		refString = topDigest.DigestStr()
+	} else {
+		refString = fmt.Sprintf("%s@%s", refFull.Context().Name(), topDigest.DigestStr())
+		plainRef = refFull.Context().Name()
+	}
+
+	pkg.Name = refString
+	pkg.BuildID(topDigest.DigestStr())
 
 	if references.Digest != "" {
 		pkg.DownloadLocation = references.Digest
@@ -737,9 +747,12 @@ func (di *spdxDefaultImplementation) ImageRefToPackage(ref string, opts *Options
 
 	// Now, cycle each image in the index and generate a package from it
 	for i := range references.Images {
+		if plainRef != "" {
+			references.Images[i].Reference = plainRef
+		}
 		subpkg, err := di.referenceInfoToPackage(opts, &references.Images[i])
 		if err != nil {
-			return nil, fmt.Errorf("generating image package")
+			return nil, fmt.Errorf("generating image package: %w", err)
 		}
 
 		// Rebuild the ID to compose it with the parent element
@@ -782,7 +795,16 @@ func (di *spdxDefaultImplementation) referenceInfoToPackage(opts *Options, img *
 	if err != nil {
 		return nil, fmt.Errorf("parsing digest %s: %w", img.Digest, err)
 	}
+
 	subpkg.Name = imageDigest.DigestStr()
+
+	imgRef, err := name.ParseReference(img.Reference)
+	if err == nil {
+		subpkg.Name = fmt.Sprintf("%s@%s", imgRef.Context().String(), imageDigest.DigestStr())
+	} else {
+		logrus.Errorf("parsing %s %s", img.Reference, err)
+	}
+
 	subpkg.Checksum = map[string]string{
 		"SHA256": strings.TrimPrefix(imageDigest.DigestStr(), "sha256:"),
 	}
