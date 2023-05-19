@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -123,6 +124,19 @@ func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx
 	for _, o := range objects {
 		fmt.Fprintln(w, displayQueryResult(opts, o))
 	}
+}
+
+type CSVPrinter struct{}
+
+func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) {
+	csvw := csv.NewWriter(w)
+	for _, o := range objects {
+		fields := []string{displayQueryResult(opts, o)}
+		if err := csvw.Write(fields); err != nil {
+			logrus.Fatal("writing output: %w", err)
+		}
+	}
+	csvw.Flush()
 }
 
 func displayQueryResult(opts queryOptions, o spdx.Object) string {
