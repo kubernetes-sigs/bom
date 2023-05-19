@@ -119,7 +119,7 @@ func (f *File) Draw(builder *strings.Builder, o *DrawingOptions, depth int, seen
 	if o.LastItem {
 		connector = connectorL
 	}
-	fmt.Fprintf(builder, treeLines(o, depth, connector)+"%s (%s)\n", f.SPDXID(), f.Name)
+	fmt.Fprintf(builder, treeLines(o, depth, connector)+"%s\n", f.Name)
 }
 
 func (f *File) ReadSourceFile(path string) error {
