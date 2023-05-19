@@ -101,7 +101,9 @@ Example:
 
 			p = &LinePrinter{}
 
-			p.PrintObjectList(queryOpts, fp.Objects, os.Stdout)
+			if err := p.PrintObjectList(queryOpts, fp.Objects, os.Stdout); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
@@ -116,33 +118,37 @@ Example:
 }
 
 type Printer interface {
-	PrintObjectList(queryOptions, map[string]spdx.Object, io.Writer)
+	PrintObjectList(queryOptions, map[string]spdx.Object, io.Writer) error
 }
 
 type LinePrinter struct{}
 
-func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) {
+func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
 	for _, o := range objects {
-		fmt.Fprintln(w, displayQueryResult(opts, o))
+		if _, err := fmt.Fprintln(w, displayQueryResult(opts, o)); err != nil {
+			return fmt.Errorf("writing output: %w", err)
+		}
 	}
+	return nil
 }
 
 type CSVPrinter struct{}
 
-func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) {
+func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
 	csvw := csv.NewWriter(w)
 	for _, o := range objects {
 		fields := []string{displayQueryResult(opts, o)}
 		if err := csvw.Write(fields); err != nil {
-			logrus.Fatal("writing output: %w", err)
+			return fmt.Errorf("writing output: %w", err)
 		}
 	}
 	csvw.Flush()
+	return nil
 }
 
 type JSONPrinter struct{}
 
-func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) {
+func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
 	type resultEntry struct {
 		Name       string `json:"name,omitempty"`
 		Version    string `json:"version,omitempty"`
@@ -162,8 +168,9 @@ func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "    ")
 	if err := enc.Encode(&out); err != nil {
-		logrus.Error("encoding data: %w", err)
+		return fmt.Errorf("encoding data: %w", err)
 	}
+	return nil
 }
 
 func displayQueryResult(opts queryOptions, o spdx.Object) string {
