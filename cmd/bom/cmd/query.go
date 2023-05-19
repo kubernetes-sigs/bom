@@ -32,7 +32,8 @@ import (
 )
 
 type queryOptions struct {
-	purl bool
+	purl   bool
+	format string
 }
 
 func AddQuery(parent *cobra.Command) {
@@ -99,7 +100,16 @@ Example:
 
 			var p Printer
 
-			p = &LinePrinter{}
+			switch queryOpts.format {
+			case "text":
+				p = &LinePrinter{}
+			case "csv":
+				p = &CSVPrinter{}
+			case "json":
+				p = &JSONPrinter{}
+			default:
+				return fmt.Errorf("unrecognized output format, must be text, csv or json")
+			}
 
 			if err := p.PrintObjectList(queryOpts, fp.Objects, os.Stdout); err != nil {
 				return err
@@ -112,6 +122,13 @@ Example:
 		"purl",
 		false,
 		"output package urls instead of name@version",
+	)
+
+	queryCmd.PersistentFlags().StringVar(
+		&queryOpts.format,
+		"format",
+		"text",
+		"format of output, one of: text, csv or json",
 	)
 
 	parent.AddCommand(queryCmd)
