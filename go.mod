@@ -11,7 +11,7 @@ require (
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/uwu-tools/magex v0.10.0
 	gitlab.alpinelinux.org/alpine/go v0.7.0
 	golang.org/x/mod v0.10.0
