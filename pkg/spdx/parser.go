@@ -326,7 +326,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 		} else if _, ok := allFiles[elementID]; ok {
 			source = allFiles[elementID]
 		}
-		if source == nil {
+		if source == nil && elementID != jsonDoc.GetID() {
 			logrus.Warnf("Unable to find SPDX source element %s", elementID)
 			continue
 		}
@@ -341,6 +341,17 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 				continue
 			}
 			relatedID = parts[1]
+		} else if typeID == string(DESCRIBES) && elementID == jsonDoc.GetID() {
+			// Handle top-level packages marked by a relationship
+			if p, ok := allPackages[relatedID]; ok {
+				doc.Packages[relatedID] = p
+			} else if f, ok := allFiles[relatedID]; ok {
+				doc.Files[relatedID] = f
+			} else {
+				logrus.Warnf("Unable to find SPDX source element %s", relatedID)
+				continue
+			}
+			seenObjects[relatedID] = relatedID
 		} else {
 			if _, ok := allPackages[relatedID]; ok {
 				peer = allPackages[relatedID]
@@ -354,14 +365,16 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			relatedID = peer.SPDXID()
 		}
 
-		rel := Relationship{
-			PeerReference:    relatedID,
-			PeerExtReference: externalID,
-			Comment:          "",
-			Type:             RelationshipType(typeID),
-			Peer:             peer,
+		if source != nil {
+			rel := Relationship{
+				PeerReference:    relatedID,
+				PeerExtReference: externalID,
+				Comment:          "",
+				Type:             RelationshipType(typeID),
+				Peer:             peer,
+			}
+			source.AddRelationship(&rel)
 		}
-		source.AddRelationship(&rel)
 
 		// Note those objects we've seen to keep track of any loose items
 		if peer != nil {
