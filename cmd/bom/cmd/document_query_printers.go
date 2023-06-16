@@ -152,8 +152,10 @@ func getObjectField(opts queryOptions, o spdx.Object, field string) (string, err
 	case "license":
 		switch c := o.(type) {
 		case *spdx.Package:
-			if c.LicenseDeclared != "" {
+			if c.LicenseDeclared != "" && c.LicenseDeclared != spdx.NOASSERTION {
 				return c.LicenseDeclared, nil
+			} else if c.LicenseConcluded == spdx.NOASSERTION {
+				return "", nil
 			}
 			return c.LicenseConcluded, nil
 		case *spdx.File:
