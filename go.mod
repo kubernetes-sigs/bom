@@ -60,7 +60,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
-	github.com/package-url/packageurl-go v0.1.1-0.20220203205134-d70459300c8a
+	github.com/package-url/packageurl-go v0.1.1
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.6.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
