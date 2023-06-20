@@ -43,7 +43,7 @@ type CatalogOptions struct {
 //
 //	DO NOT RENAME OR MOVE THIS OPTION WITHOUT MODIFYING THE MAGEFILE
 var DefaultCatalogOpts = CatalogOptions{
-	Version: "v3.20",
+	Version: "v3.21",
 }
 
 // NewCatalogWithOptions returns a SPDX object with the specified options
