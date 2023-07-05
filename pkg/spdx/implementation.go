@@ -1037,14 +1037,18 @@ func (di *spdxDefaultImplementation) PackageFromDirectory(opts *Options, dirPath
 	t := throttler.New(5, len(fileList))
 
 	processDirectoryFile := func(path string, pkg *Package) {
-		defer t.Done(err)
+		var (
+			err error
+			lic *license.License
+		)
+
 		f := NewFile()
 		f.Options().WorkDir = dirPath
 		f.Options().Prefix = pkg.Name
 
 		lic, err = reader.LicenseFromFile(filepath.Join(dirPath, path))
 		if err != nil {
-			err = fmt.Errorf("scanning file for license: %w", err)
+			t.Done(fmt.Errorf("scanning file for license: %w", err))
 			return
 		}
 
@@ -1060,13 +1064,14 @@ func (di *spdxDefaultImplementation) PackageFromDirectory(opts *Options, dirPath
 		}
 
 		if err = f.ReadSourceFile(filepath.Join(dirPath, path)); err != nil {
-			err = fmt.Errorf("checksumming file: %w", err)
+			t.Done(fmt.Errorf("checksumming file: %w", err))
 			return
 		}
 		if err = pkg.AddFile(f); err != nil {
-			err = fmt.Errorf("adding %s as file to the spdx package: %w", path, err)
+			t.Done(fmt.Errorf("adding %s as file to the spdx package: %w", path, err))
 			return
 		}
+		t.Done(nil)
 	}
 
 	// Read the files in parallel
