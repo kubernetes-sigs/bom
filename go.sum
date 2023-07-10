@@ -184,5 +184,5 @@ gotest.tools/v3 v3.0.3 h1:4AuOwCGf4lLR9u3YOe2awrHygurzhO/HeQ6laiA6Sx0=
 k8s.io/klog/v2 v2.0.0/go.mod h1:PBfzABfn139FHAV07az/IF9Wp1bkk3vpT2XSJ76fSDE=
 k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 h1:HNSDgDCrr/6Ly3WEGKZftiE7IY19Vz2GdbOCyI4qqhc=
 k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
-sigs.k8s.io/release-utils v0.7.4 h1:17LmJrydpUloTCtaoWj95uKlcrUp4h2A9Sa+ZL+lV9w=
-sigs.k8s.io/release-utils v0.7.4/go.mod h1:JEt2QPHItd5Pg2UKLAU8PEaSlF4bUjCZimpxFDgymVU=
+sigs.k8s.io/release-utils v0.7.5-0.20230707140704-1bf6b4c5d954 h1:6UHf2P+yurMG0iMLk1XA7pFHI+7Fg02UxMGs8VmUKuM=
+sigs.k8s.io/release-utils v0.7.5-0.20230707140704-1bf6b4c5d954/go.mod h1:T5b2rUC28a7miTkatQ3jogupUQqb+CGn1HBfoW83p40=
