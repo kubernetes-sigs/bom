@@ -3,7 +3,7 @@ module sigs.k8s.io/bom
 go 1.20
 
 require (
-	github.com/go-git/go-git/v5 v5.7.0
+	github.com/go-git/go-git/v5 v5.8.0
 	github.com/google/go-containerregistry v0.15.2
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.3.0
