@@ -15,7 +15,7 @@ require (
 	github.com/uwu-tools/magex v0.10.0
 	gitlab.alpinelinux.org/alpine/go v0.7.0
 	golang.org/x/mod v0.12.0
-	golang.org/x/term v0.10.0
+	golang.org/x/term v0.11.0
 	golang.org/x/tools v0.10.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.7.5-0.20230707140704-1bf6b4c5d954
@@ -70,7 +70,7 @@ require (
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
