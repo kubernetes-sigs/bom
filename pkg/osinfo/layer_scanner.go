@@ -28,21 +28,35 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type OSType string
+
 const (
-	OSDebian     = "debian"
-	OSUbuntu     = "ubuntu"
-	OSFedora     = "fedora"
-	OSCentos     = "centos"
-	OSRHEL       = "rhel"
-	OSAlpine     = "alpine"
-	OSWolfi      = "wolfi"
-	OSDistroless = "distroless"
+	OSAlpine      OSType = "alpine"
+	OSAmazonLinux OSType = "amazonlinux"
+	OSCentos      OSType = "centos"
+	OSDebian      OSType = "debian"
+	OSDistroless  OSType = "distroless"
+	OSFedora      OSType = "fedora"
+	OSRHEL        OSType = "rhel"
+	OSUbuntu      OSType = "ubuntu"
+	OSWolfi       OSType = "wolfi"
 )
 
-// TODO: Move functions to its own implementation
-type LayerScanner struct{}
+// layerScanner is an interface to scan OCI image layers.
+type layerScanner interface {
+	OSType(layerPath string) (ostype OSType, err error)
+	OSReleaseData(layerPath string) (osrelease string, err error)
+	ExtractFileFromTar(tarPath, filePath, destPath string) error
+}
 
-func (loss *LayerScanner) OSType(layerPath string) (ostype string, err error) {
+// newLayerScanner returns a LayerScanner.
+func newLayerScanner() layerScanner {
+	return &layerOSScanner{}
+}
+
+type layerOSScanner struct{}
+
+func (loss *layerOSScanner) OSType(layerPath string) (ostype OSType, err error) {
 	osrelease, err := loss.OSReleaseData(layerPath)
 	if err != nil {
 		if _, ok := err.(ErrFileNotFoundInTar); ok {
@@ -90,12 +104,17 @@ func (loss *LayerScanner) OSType(layerPath string) (ostype string, err error) {
 	if strings.Contains(osrelease, "PRETTY_NAME=\"Distroless") {
 		return OSDistroless, nil
 	}
+
+	if strings.Contains(osrelease, `NAME="Amazon Linux"`) {
+		return OSAmazonLinux, nil
+	}
+
 	return "", nil
 }
 
 // CanHandle looks at an image tarball and checks if it
 // looks like a debian filesystem
-func (loss *LayerScanner) OSReleaseData(layerPath string) (osrelease string, err error) {
+func (loss *layerOSScanner) OSReleaseData(layerPath string) (osrelease string, err error) {
 	f, err := os.CreateTemp("", "os-release-")
 	if err != nil {
 		return osrelease, fmt.Errorf("creating temp file: %w", err)
@@ -104,7 +123,7 @@ func (loss *LayerScanner) OSReleaseData(layerPath string) (osrelease string, err
 	defer os.Remove(f.Name())
 
 	destPath := f.Name()
-	if err := loss.extractFileFromTar(layerPath, "etc/os-release", destPath); err != nil {
+	if err := loss.ExtractFileFromTar(layerPath, "etc/os-release", destPath); err != nil {
 		return "", fmt.Errorf("extracting os-release from tar: %w", err)
 	}
 	if err != nil {
@@ -124,7 +143,7 @@ func (e ErrFileNotFoundInTar) Error() string {
 }
 
 // extractFileFromTar extracts filePath from tarPath and stores it in destPath
-func (loss *LayerScanner) extractFileFromTar(tarPath, filePath, destPath string) error {
+func (loss *layerOSScanner) ExtractFileFromTar(tarPath, filePath, destPath string) error {
 	// Open the tar file
 	f, err := os.Open(tarPath)
 	if err != nil {
@@ -189,7 +208,7 @@ func (loss *LayerScanner) extractFileFromTar(tarPath, filePath, destPath string)
 					target = filepath.Clean(newTarget)
 				}
 				logrus.Infof("%s is a symlink, following to %s", filePath, target)
-				return loss.extractFileFromTar(tarPath, target, destPath)
+				return loss.ExtractFileFromTar(tarPath, target, destPath)
 			}
 
 			// Open the destination file

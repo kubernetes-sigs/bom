@@ -879,7 +879,6 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 	logrus.Infof("Image manifest lists %d layers", len(manifest.LayerFiles))
 
 	// Scan the container layers for OS information:
-	ct := osinfo.ContainerScanner{}
 	var osPackageData *[]osinfo.PackageDBEntry
 	var layerNum int
 	layerPaths := []string{}
@@ -889,7 +888,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 
 	// Scan for package data if option is set
 	if spdxOpts.ScanImages {
-		layerNum, osPackageData, err = ct.ReadOSPackages(layerPaths)
+		layerNum, osPackageData, err = osinfo.ReadOSPackages(layerPaths)
 		if err != nil {
 			return nil, fmt.Errorf("getting os data from container: %w", err)
 		}

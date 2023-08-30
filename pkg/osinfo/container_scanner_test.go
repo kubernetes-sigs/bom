@@ -27,7 +27,7 @@ import (
 )
 
 func TestReadDebianPackages(t *testing.T) {
-	ct := ContainerScanner{}
+	ct := newDebianScanner()
 	for _, tc := range []struct {
 		layers      []string
 		targetLayer int
@@ -46,7 +46,7 @@ func TestReadDebianPackages(t *testing.T) {
 		// One layer, no packages, unsupported OS
 		{[]string{"testdata/link-with-no-dots.tar.gz"}, 0, 0, false, true},
 	} {
-		layerNum, packages, err := ct.ReadDebianPackages(tc.layers)
+		layerNum, packages, err := ct.ReadOSPackages(tc.layers)
 		require.Equal(t, tc.targetLayer, layerNum)
 		if !tc.shouldErr {
 			require.NoError(t, err)
@@ -65,8 +65,7 @@ func TestReadDebianPackages(t *testing.T) {
 }
 
 func TestParseDpkDb(t *testing.T) {
-	ct := ContainerScanner{}
-	_, packages, err := ct.ReadOSPackages([]string{
+	_, packages, err := ReadOSPackages([]string{
 		"testdata/link-with-no-dots.tar.gz", // The first layer contains the OS Info
 		"testdata/dpkg-layer1.tar.gz",       // The second layer contains the dpkg database
 	})
@@ -82,8 +81,7 @@ func TestParseDpkDb(t *testing.T) {
 }
 
 func TestReadOSPackages(t *testing.T) {
-	ct := ContainerScanner{}
-	layer, packages, err := ct.ReadOSPackages([]string{
+	layer, packages, err := ReadOSPackages([]string{
 		"testdata/link-with-no-dots.tar.gz", // The first layer contains the OS Info
 		"testdata/dpkg-layer1.tar.gz",       // The second layer contains the dpkg database
 	})
@@ -92,11 +90,11 @@ func TestReadOSPackages(t *testing.T) {
 	require.Len(t, *packages, 83)
 
 	// No layers should yield no error
-	_, _, err = ct.ReadOSPackages([]string{})
+	_, _, err = ReadOSPackages([]string{})
 	require.NoError(t, err)
 
 	// While an invalid file shour err
-	_, _, err = ct.ReadOSPackages([]string{"testdata/nonexistent"})
+	_, _, err = ReadOSPackages([]string{"testdata/nonexistent"})
 	require.Error(t, err)
 }
 
@@ -162,10 +160,10 @@ func TestPackageURL(t *testing.T) {
 }
 
 func TestParseApkDB(t *testing.T) {
-	ct := &ContainerScanner{}
+	ct := newAlpineScanner()
 
 	// Test we have the expected packages
-	pk, err := ct.parseApkDB("testdata/apkdb")
+	pk, err := ct.ParseDB("testdata/apkdb")
 	require.NoError(t, err)
 	require.NotNil(t, pk)
 	require.Len(t, *pk, 39)
