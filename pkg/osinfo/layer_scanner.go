@@ -47,6 +47,7 @@ type layerScanner interface {
 	OSType(layerPath string) (ostype OSType, err error)
 	OSReleaseData(layerPath string) (osrelease string, err error)
 	ExtractFileFromTar(tarPath, filePath, destPath string) error
+	FileExistsInTar(tarPath, filePath string) (bool, error)
 }
 
 // newLayerScanner returns a LayerScanner.
@@ -140,6 +141,79 @@ type ErrFileNotFoundInTar struct{}
 
 func (e ErrFileNotFoundInTar) Error() string {
 	return "file not found in tarball"
+}
+
+// FileExistsInTar finds a file in a tarball.
+func (loss *layerOSScanner) FileExistsInTar(tarPath, filePath string) (bool, error) {
+	// Open the tar file
+	f, err := os.Open(tarPath)
+	if err != nil {
+		return false, fmt.Errorf("opening tarball: %w", err)
+	}
+	defer f.Close()
+
+	// Read the first bytes to determine if the file is compressed
+	var sample [3]byte
+	var gzipped bool
+	if _, err := io.ReadFull(f, sample[:]); err != nil {
+		return false, fmt.Errorf("sampling bytes from file header: %w", err)
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return false, fmt.Errorf("rewinding read pointer: %w", err)
+	}
+
+	// From: https://github.com/golang/go/blob/1fadc392ccaefd76ef7be5b685fb3889dbee27c6/src/compress/gzip/gunzip.go#L185
+	if sample[0] == 0x1f && sample[1] == 0x8b && sample[2] == 0x08 {
+		gzipped = true
+	}
+
+	const dotSl = "./"
+	filePath = strings.TrimPrefix(filePath, dotSl)
+
+	var tr *tar.Reader
+	tr = tar.NewReader(f)
+	if gzipped {
+		gzf, err := gzip.NewReader(f)
+		if err != nil {
+			return false, fmt.Errorf("creating gzip reader: %w", err)
+		}
+		tr = tar.NewReader(gzf)
+	}
+
+	// Search for the os-file in the tar contents
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			return false, ErrFileNotFoundInTar{}
+		}
+		if err != nil {
+			return false, fmt.Errorf("reading tarfile: %w", err)
+		}
+
+		if hdr.FileInfo().IsDir() {
+			continue
+		}
+
+		// Scan for the os-release file in the tarball
+		if strings.TrimPrefix(hdr.Name, dotSl) == filePath {
+			// If this is a symlink, follow:
+			if hdr.FileInfo().Mode()&os.ModeSymlink == os.ModeSymlink {
+				target := hdr.Linkname
+				// Check if its relative:
+				if !strings.HasPrefix(target, string(filepath.Separator)) {
+					newTarget := filepath.Dir(filePath)
+
+					//nolint:gosec // This is not zipslip, path it not used for writing just
+					// to search a file in the tarfile, the extract path is fexed.
+					newTarget = filepath.Join(newTarget, hdr.Linkname)
+					target = filepath.Clean(newTarget)
+				}
+				logrus.Infof("%s is a symlink, following to %s", filePath, target)
+				return loss.FileExistsInTar(tarPath, target)
+			}
+			return true, nil
+		}
+	}
 }
 
 // extractFileFromTar extracts filePath from tarPath and stores it in destPath
