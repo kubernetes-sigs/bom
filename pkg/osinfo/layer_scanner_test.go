@@ -25,13 +25,13 @@ import (
 )
 
 func TestExtractFileFromTar(t *testing.T) {
-	loss := &LayerScanner{}
+	loss := &layerOSScanner{}
 
 	file, err := os.CreateTemp("", "extract-")
 	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	require.NoError(t, loss.extractFileFromTar(
+	require.NoError(t, loss.ExtractFileFromTar(
 		"testdata/link-with-dots.tar.gz",
 		"./etc/os-release",
 		file.Name(),
@@ -45,7 +45,7 @@ func TestExtractFileFromTar(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(file2.Name())
 
-	require.NoError(t, loss.extractFileFromTar(
+	require.NoError(t, loss.ExtractFileFromTar(
 		"testdata/link-with-no-dots.tar.gz",
 		"etc/os-release",
 		file2.Name(),
@@ -57,7 +57,7 @@ func TestExtractFileFromTar(t *testing.T) {
 }
 
 func TestOSReleaseData(t *testing.T) {
-	loss := &LayerScanner{}
+	loss := &layerOSScanner{}
 	data, err := loss.OSReleaseData("testdata/link-with-dots.tar.gz")
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
