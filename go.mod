@@ -16,7 +16,7 @@ require (
 	gitlab.alpinelinux.org/alpine/go v0.8.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/term v0.11.0
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.7.5-0.20230707140704-1bf6b4c5d954
 )
@@ -39,6 +39,7 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	golang.org/x/tools v0.12.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
@@ -67,8 +68,8 @@ require (
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.11.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
