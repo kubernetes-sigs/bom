@@ -13,7 +13,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
 	github.com/uwu-tools/magex v0.10.0
-	gitlab.alpinelinux.org/alpine/go v0.7.0
+	gitlab.alpinelinux.org/alpine/go v0.8.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/term v0.11.0
 	golang.org/x/tools v0.10.0
@@ -22,7 +22,7 @@ require (
 )
 
 require (
-	github.com/MakeNowJust/heredoc v1.0.0 // indirect
+	github.com/MakeNowJust/heredoc/v2 v2.0.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
