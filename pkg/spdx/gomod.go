@@ -30,7 +30,7 @@ import (
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/vcs"
+	"golang.org/x/tools/go/vcs" //nolint: staticcheck
 
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/command"
