@@ -39,9 +39,8 @@ type FakeDownloaderImplementation struct {
 	}
 	GetLatestTagStub        func() (string, error)
 	getLatestTagMutex       sync.RWMutex
-	getLatestTagArgsForCall []struct {
-	}
-	getLatestTagReturns struct {
+	getLatestTagArgsForCall []struct{}
+	getLatestTagReturns     struct {
 		result1 string
 		result2 error
 	}
@@ -69,9 +68,8 @@ type FakeDownloaderImplementation struct {
 	}
 	VersionStub        func() string
 	versionMutex       sync.RWMutex
-	versionArgsForCall []struct {
-	}
-	versionReturns struct {
+	versionArgsForCall []struct{}
+	versionReturns     struct {
 		result1 string
 	}
 	versionReturnsOnCall map[int]struct {
@@ -148,8 +146,7 @@ func (fake *FakeDownloaderImplementation) DownloadLicenseArchiveReturnsOnCall(i 
 func (fake *FakeDownloaderImplementation) GetLatestTag() (string, error) {
 	fake.getLatestTagMutex.Lock()
 	ret, specificReturn := fake.getLatestTagReturnsOnCall[len(fake.getLatestTagArgsForCall)]
-	fake.getLatestTagArgsForCall = append(fake.getLatestTagArgsForCall, struct {
-	}{})
+	fake.getLatestTagArgsForCall = append(fake.getLatestTagArgsForCall, struct{}{})
 	stub := fake.GetLatestTagStub
 	fakeReturns := fake.getLatestTagReturns
 	fake.recordInvocation("GetLatestTag", []interface{}{})
@@ -300,8 +297,7 @@ func (fake *FakeDownloaderImplementation) SetOptionsArgsForCall(i int) *license.
 func (fake *FakeDownloaderImplementation) Version() string {
 	fake.versionMutex.Lock()
 	ret, specificReturn := fake.versionReturnsOnCall[len(fake.versionArgsForCall)]
-	fake.versionArgsForCall = append(fake.versionArgsForCall, struct {
-	}{})
+	fake.versionArgsForCall = append(fake.versionArgsForCall, struct{}{})
 	stub := fake.VersionStub
 	fakeReturns := fake.versionReturns
 	fake.recordInvocation("Version", []interface{}{})

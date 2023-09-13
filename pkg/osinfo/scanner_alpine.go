@@ -35,6 +35,10 @@ func newAlpineScanner() containerOSScanner {
 	return &alpineScanner{ls: newLayerScanner()}
 }
 
+func (ct *alpineScanner) PURLType() string {
+	return "apk"
+}
+
 func (ct *alpineScanner) OSType() OSType {
 	return OSAlpine
 }

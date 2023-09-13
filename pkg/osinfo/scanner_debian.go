@@ -34,6 +34,10 @@ func newDebianScanner() containerOSScanner {
 	return &debianScanner{ls: newLayerScanner()}
 }
 
+func (ct *debianScanner) PURLType() string {
+	return "deb"
+}
+
 func (ct *debianScanner) OSType() OSType {
 	return OSDebian
 }
