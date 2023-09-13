@@ -27,6 +27,7 @@ type containerOSScanner interface {
 	ReadOSPackages(layers []string) (layer int, pk *[]PackageDBEntry, err error)
 	ParseDB(path string) (pk *[]PackageDBEntry, err error)
 	OSType() OSType
+	PURLType() string
 }
 
 // ReadOSPackages reads a bunch of layers and extracts the os package
@@ -59,8 +60,7 @@ func ReadOSPackages(layers []string) (
 		return 0, nil, nil
 	}
 	layerNum, packages, err = cs.ReadOSPackages(layers)
-	purlType := string(cs.OSType())
-	setPurlData(purlType, string(osKind), packages)
+	setPurlData(cs.PURLType(), string(osKind), packages)
 	return layerNum, packages, err
 }
 
