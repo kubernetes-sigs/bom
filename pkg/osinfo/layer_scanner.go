@@ -73,6 +73,13 @@ func (loss *layerOSScanner) OSType(layerPath string) (ostype OSType, err error) 
 		return "", nil
 	}
 
+	// The distroless identifier is in the PRETTY_NAME field and the
+	// distro on which it is based is in NAME, hence we need to catch
+	// the distroless moniker before reading the name.
+	if strings.Contains(osrelease, "PRETTY_NAME=\"Distroless") {
+		return OSDistroless, nil
+	}
+
 	if strings.Contains(osrelease, "NAME=\"Debian GNU") {
 		logrus.Infof("Scan of container layers found %s base image", OSDebian)
 		return OSDebian, nil
@@ -100,10 +107,6 @@ func (loss *layerOSScanner) OSType(layerPath string) (ostype OSType, err error) 
 
 	if strings.Contains(osrelease, "NAME=\"Wolfi\"") {
 		return OSWolfi, nil
-	}
-
-	if strings.Contains(osrelease, "PRETTY_NAME=\"Distroless") {
-		return OSDistroless, nil
 	}
 
 	if strings.Contains(osrelease, `NAME="Amazon Linux"`) {
