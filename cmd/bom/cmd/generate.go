@@ -288,7 +288,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.scanImages,
 		"scan-images",
 		true,
-		"scan container images to look for OS information (currently debian only)",
+		"scan container images to look for OS information (currently debian, alpine, and rpm only)",
 	)
 
 	generateCmd.PersistentFlags().StringVar(

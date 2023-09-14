@@ -56,6 +56,8 @@ func ReadOSPackages(layers []string) (
 		cs = newDebianScanner()
 	case OSAlpine, OSWolfi:
 		cs = newAlpineScanner()
+	case OSAmazonLinux, OSFedora, OSRHEL:
+		cs = newRPMScanner()
 	default:
 		return 0, nil, nil
 	}

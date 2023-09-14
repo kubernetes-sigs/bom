@@ -25,7 +25,7 @@ import (
 )
 
 func TestExtractFileFromTar(t *testing.T) {
-	loss := &layerOSScanner{}
+	loss := newLayerScanner()
 
 	file, err := os.CreateTemp("", "extract-")
 	require.NoError(t, err)
@@ -57,7 +57,7 @@ func TestExtractFileFromTar(t *testing.T) {
 }
 
 func TestOSReleaseData(t *testing.T) {
-	loss := &layerOSScanner{}
+	loss := newLayerScanner()
 	data, err := loss.OSReleaseData("testdata/link-with-dots.tar.gz")
 	require.NoError(t, err)
 	require.NotEmpty(t, data)

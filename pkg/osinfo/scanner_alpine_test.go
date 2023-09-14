@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2023 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,20 +22,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestReadOSPackages(t *testing.T) {
-	layer, packages, err := ReadOSPackages([]string{
-		"testdata/link-with-no-dots.tar.gz", // The first layer contains the OS Info
-		"testdata/dpkg-layer1.tar.gz",       // The second layer contains the dpkg database
-	})
-	require.NoError(t, err)
-	require.Equal(t, layer, 1)
-	require.Len(t, *packages, 83)
+func TestParseApkDB(t *testing.T) {
+	ct := newAlpineScanner()
 
-	// No layers should yield no error
-	_, _, err = ReadOSPackages([]string{})
+	// Test we have the expected packages
+	pk, err := ct.ParseDB("testdata/apkdb")
 	require.NoError(t, err)
+	require.NotNil(t, pk)
+	require.Len(t, *pk, 39)
 
-	// While an invalid file shour err
-	_, _, err = ReadOSPackages([]string{"testdata/nonexistent"})
-	require.Error(t, err)
+	// Test package data
+	require.Equal(t, "ca-certificates-bundle", (*pk)[0].Package)
+	require.Equal(t, "20220614-r2", (*pk)[0].Version)
+	require.Equal(t, "x86_64", (*pk)[0].Architecture)
+	require.Equal(t, "MPL-2.0 AND MIT", (*pk)[0].License)
+	require.Equal(t, "e07d34854d632d6491a45dd854cdabd177e990cc", (*pk)[0].Checksums["SHA1"])
 }
