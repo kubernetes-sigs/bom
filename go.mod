@@ -3,7 +3,7 @@ module sigs.k8s.io/bom
 go 1.20
 
 require (
-	github.com/glebarez/go-sqlite v1.20.3
+	github.com/glebarez/go-sqlite v1.21.2
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/google/go-containerregistry v0.16.1
 	github.com/google/licenseclassifier/v2 v2.0.0
@@ -40,16 +40,16 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	modernc.org/libc v1.22.2 // indirect
+	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
-	modernc.org/sqlite v1.20.3 // indirect
+	modernc.org/sqlite v1.23.1 // indirect
 )
 
 require (
