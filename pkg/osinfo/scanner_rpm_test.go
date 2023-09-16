@@ -48,11 +48,11 @@ func TestReadRpmPackages(t *testing.T) {
 			nilPackages: false,
 		},
 		{
-			name:        "not an rpm db",
+			name:        "rpm db not found",
 			layers:      []string{"testdata/dpkg-layer1.tar.gz"},
 			targetLayer: 0,
 			numPackages: 0,
-			shouldErr:   true,
+			shouldErr:   false,
 			nilPackages: true,
 		},
 	} {
