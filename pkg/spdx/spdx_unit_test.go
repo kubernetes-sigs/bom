@@ -479,7 +479,7 @@ func TestPurlFromImage(t *testing.T) {
 				Arch:      "",
 				OS:        "",
 			},
-			"pkg:oci/image@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?repository_url=index.docker.io%2Flibrary",
+			"pkg:oci/image@sha256%3Ac183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?repository_url=index.docker.io%2Flibrary",
 		},
 		{
 			ImageReferenceInfo{
@@ -489,7 +489,7 @@ func TestPurlFromImage(t *testing.T) {
 				Arch:      "amd64",
 				OS:        "darwin",
 			},
-			"pkg:oci/nginx@sha256:c183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?arch=amd64&os=darwin&repository_url=index.docker.io%2Flibrary",
+			"pkg:oci/nginx@sha256%3Ac183d71d4173c3148b73d17aba0f37c83ca8291d1f303d74a3fac4f5e1d01f57?arch=amd64&os=darwin&repository_url=index.docker.io%2Flibrary",
 		},
 	} {
 		impl := spdxDefaultImplementation{}

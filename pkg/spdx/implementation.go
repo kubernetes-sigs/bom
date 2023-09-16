@@ -686,7 +686,8 @@ func (*spdxDefaultImplementation) purlFromImage(img *ImageReferenceInfo) string 
 		purl.TypeOCI, "", imageName, digest,
 		purl.QualifiersFromMap(mm), "",
 	)
-	return packageurl.String()
+
+	return strings.Replace(packageurl.String(), "@sha256:", "@sha256%3A", 1)
 }
 
 // ImageRefToPackage Returns a spdx package from an OCI image reference
