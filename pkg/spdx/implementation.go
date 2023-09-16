@@ -155,7 +155,7 @@ func (di *spdxDefaultImplementation) ExtractTarballTmp(tarPath string) (tmpDir s
 		numFiles++
 	}
 
-	logrus.Infof("Successfully extracted %d files from image tarball %s", numFiles, tarPath)
+	logrus.Debugf("Successfully extracted %d files from image tarball %s", numFiles, tarPath)
 	return tmpDir, err
 }
 
@@ -441,7 +441,7 @@ func createReferenceArchive(digest, path string) (tarPath string, err error) {
 func (di *spdxDefaultImplementation) PackageFromTarball(
 	opts *Options, tarOpts *TarballOptions, tarFile string,
 ) (pkg *Package, err error) {
-	logrus.Infof("Generating SPDX package from tarball %s", tarFile)
+	logrus.Debugf("Generating SPDX package from tarball %s", tarFile)
 
 	if tarOpts.AddFiles {
 		// Estract the tarball
@@ -798,11 +798,13 @@ func (di *spdxDefaultImplementation) referenceInfoToPackage(opts *Options, img *
 
 	subpkg.Name = imageDigest.DigestStr()
 
-	imgRef, err := name.ParseReference(img.Reference)
-	if err == nil {
-		subpkg.Name = fmt.Sprintf("%s@%s", imgRef.Context().String(), imageDigest.DigestStr())
-	} else {
-		logrus.Errorf("parsing %s %s", img.Reference, err)
+	if img.Reference != "" {
+		imgRef, err := name.ParseReference(img.Reference)
+		if err == nil {
+			subpkg.Name = fmt.Sprintf("%s@%s", imgRef.Context().String(), imageDigest.DigestStr())
+		} else {
+			logrus.Errorf("parsing %s: %s", img.Reference, err)
+		}
 	}
 
 	subpkg.Checksum = map[string]string{
@@ -827,7 +829,7 @@ func (di *spdxDefaultImplementation) referenceInfoToPackage(opts *Options, img *
 func (di *spdxDefaultImplementation) PackageFromImageTarball(
 	spdxOpts *Options, tarPath string,
 ) (imagePackage *Package, err error) {
-	logrus.Infof("Generating SPDX package from image tarball %s", tarPath)
+	logrus.Debugf("Generating SPDX package from image tarball %s", tarPath)
 	if tarPath == "" {
 		return nil, errors.New("tar path empty")
 	}
@@ -922,7 +924,7 @@ func (di *spdxDefaultImplementation) PackageFromImageTarball(
 				return nil, fmt.Errorf("scanning layer "+pkg.ID+" :%w", err)
 			}
 		} else {
-			logrus.Info("Not performing deep image analysis (opts.AnalyzeLayers = false)")
+			logrus.Debug("Not performing deep image analysis (opts.AnalyzeLayers = false)")
 		}
 
 		// If we got the OS data from the scanner, add the packages:
