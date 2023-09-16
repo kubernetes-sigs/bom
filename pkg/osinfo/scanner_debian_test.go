@@ -36,13 +36,13 @@ func TestReadDebianPackages(t *testing.T) {
 		nilPackages bool // Packages are nil when a layer has an unexptected OS
 	}{
 		// Two versions of DB in each layer
-		{[]string{"testdata/dpkg-layer1.tar.gz", "testdata/dpkg-layer2.tar.gz"}, 1, 87, false, false},
+		{[]string{"testdata/dpkg-layer1.tar.gz", "testdata/dpkg-layer2.tar.gz"}, 1, 88, false, false},
 		// Only one layer, one DB with 83 packages
-		{[]string{"testdata/dpkg-layer1.tar.gz"}, 0, 83, false, false},
+		{[]string{"testdata/dpkg-layer1.tar.gz"}, 0, 84, false, false},
 		// First layer no data, second with 87 packages
-		{[]string{"testdata/link-with-no-dots.tar.gz", "testdata/dpkg-layer2.tar.gz"}, 1, 87, false, false},
+		{[]string{"testdata/link-with-no-dots.tar.gz", "testdata/dpkg-layer2.tar.gz"}, 1, 88, false, false},
 		// The inverse
-		{[]string{"testdata/dpkg-layer2.tar.gz", "testdata/link-with-no-dots.tar.gz"}, 0, 87, false, false},
+		{[]string{"testdata/dpkg-layer2.tar.gz", "testdata/link-with-no-dots.tar.gz"}, 0, 88, false, false},
 		// One layer, no packages, unsupported OS
 		{[]string{"testdata/link-with-no-dots.tar.gz"}, 0, 0, false, true},
 	} {

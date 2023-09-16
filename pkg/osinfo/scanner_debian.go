@@ -84,7 +84,7 @@ func (ct *debianScanner) ParseDB(dbPath string) (*[]PackageDBEntry, error) {
 		return nil, fmt.Errorf("opening for reading: %w", err)
 	}
 	defer file.Close()
-	logrus.Infof("Scanning data from dpkg database in %s", dbPath)
+	logrus.Debugf("Scanning data from dpkg database in %s", dbPath)
 	db := []PackageDBEntry{}
 	scanner := bufio.NewScanner(file)
 	var curPkg *PackageDBEntry
@@ -126,7 +126,10 @@ func (ct *debianScanner) ParseDB(dbPath string) (*[]PackageDBEntry, error) {
 		}
 	}
 
-	logrus.Infof("Found %d packages", len(db))
+	// Add the last package
+	if curPkg != nil {
+		db = append(db, *curPkg)
+	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("scanning database file: %w", err)

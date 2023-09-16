@@ -36,6 +36,10 @@ type containerOSScanner interface {
 func ReadOSPackages(layers []string) (
 	layerNum int, packages *[]PackageDBEntry, err error,
 ) {
+	if len(layers) == 0 {
+		return 0, nil, nil
+	}
+
 	ls := newLayerScanner()
 
 	// First, let's try to determine which OS the container is based on
