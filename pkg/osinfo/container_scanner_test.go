@@ -29,7 +29,7 @@ func TestReadOSPackages(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, layer, 1)
-	require.Len(t, *packages, 83)
+	require.Len(t, *packages, 84)
 
 	// No layers should yield no error
 	_, _, err = ReadOSPackages([]string{})

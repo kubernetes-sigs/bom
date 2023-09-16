@@ -21,6 +21,12 @@ import (
 	"strings"
 
 	purl "github.com/package-url/packageurl-go"
+	"github.com/sirupsen/logrus"
+)
+
+const (
+	OsReleasePath    = "etc/os-release"
+	AltOSReleasePath = "usr/lib/os-release"
 )
 
 type containerOSScanner interface {
@@ -36,18 +42,29 @@ type containerOSScanner interface {
 func ReadOSPackages(layers []string) (
 	layerNum int, packages *[]PackageDBEntry, err error,
 ) {
+	if len(layers) == 0 {
+		return 0, nil, nil
+	}
+
 	ls := newLayerScanner()
 
 	// First, let's try to determine which OS the container is based on
 	osKind := OSType("")
-	for _, lp := range layers {
-		osKind, err = ls.OSType(lp)
+	osInfoLayerNum := 0
+	for i, lp := range layers {
+		exists, err := ls.FileExistsInTar(lp, OsReleasePath, AltOSReleasePath)
 		if err != nil {
-			return 0, nil, fmt.Errorf("reading os type from layer: %w", err)
+			return 0, nil, fmt.Errorf("checking if file exists in layer: %w", err)
 		}
-		if osKind != "" {
-			break
+		if exists {
+			logrus.Debugf(" > found os-release in layer %d", i)
+			osInfoLayerNum = i
 		}
+	}
+
+	osKind, err = ls.OSType(layers[osInfoLayerNum])
+	if err != nil {
+		return 0, nil, fmt.Errorf("reading os type from layer: %w", err)
 	}
 
 	var cs containerOSScanner
@@ -58,6 +75,8 @@ func ReadOSPackages(layers []string) (
 		cs = newAlpineScanner()
 	case OSAmazonLinux, OSFedora, OSRHEL:
 		cs = newRPMScanner()
+	case OSDistroless:
+		cs = newDistrolessScanner()
 	default:
 		return 0, nil, nil
 	}
