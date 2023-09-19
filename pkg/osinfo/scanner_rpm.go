@@ -119,7 +119,7 @@ func (ct *rpmScanner) ParseDB(dbPath string) (*[]PackageDBEntry, error) {
 
 		packages = append(packages, PackageDBEntry{
 			Package:      p.Name,
-			Version:      p.Version,
+			Version:      fmt.Sprintf("%s-%s", p.Version, p.Release),
 			Architecture: p.Arch,
 			Type:         "rpm",
 			// Namespace is set later
