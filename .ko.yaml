@@ -1,4 +1,4 @@
-defaultBaseImage: docker.io/golang:1.20
+defaultBaseImage: cgr.dev/chainguard/go:latest
 
 builds:
   - id: bom
