@@ -1,6 +1,6 @@
 module sigs.k8s.io/bom
 
-go 1.20
+go 1.21
 
 require (
 	github.com/glebarez/go-sqlite v1.21.2
@@ -20,7 +20,7 @@ require (
 	golang.org/x/term v0.12.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.7.5-0.20230707140704-1bf6b4c5d954
+	sigs.k8s.io/release-utils v0.7.5-0.20230901085630-ff2d69b7382d
 )
 
 require (

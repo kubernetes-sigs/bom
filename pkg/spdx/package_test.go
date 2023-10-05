@@ -144,8 +144,8 @@ func TestPurlMatches(t *testing.T) {
 			Type:     "purl",
 			Locator:  tc.purl,
 		})
-		wildcardizePurl(&tc.spec)
-		require.Equal(t, tc.mustMatch, sut.PurlMatches(&tc.spec), tc.spec)
+		wildcardizePurl(&tc.spec)                                          //nolint: gosec
+		require.Equal(t, tc.mustMatch, sut.PurlMatches(&tc.spec), tc.spec) //nolint: gosec
 	}
 }
 
