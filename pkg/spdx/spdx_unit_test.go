@@ -299,7 +299,7 @@ func TestGetImageReferences(t *testing.T) {
 	}
 
 	// Test a sha reference. This is the linux/ppc64le image
-	singleRef := "registry.k8s.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519"
+	singleRef := "registry.k8s.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519" //nolint: gosec
 	references, err = getImageReferences(singleRef)
 	require.NoError(t, err)
 	require.Len(t, references.Images, 0)
@@ -493,7 +493,7 @@ func TestPurlFromImage(t *testing.T) {
 		},
 	} {
 		impl := spdxDefaultImplementation{}
-		p := impl.purlFromImage(&tc.info)
+		p := impl.purlFromImage(&tc.info) //nolint: gosec
 		require.Equal(t, tc.expected, p)
 	}
 }

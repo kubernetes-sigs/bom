@@ -30,10 +30,10 @@ func testPackages() map[string]*spdx.Package {
 		p := spdx.NewPackage()
 		p.ID = s
 		p.Name = fmt.Sprintf("gcr.io/puerco-chainguard/images/%s:v9.0.2-buster", s)
-		dg := "sha256:4ed64c2e0857ad21c38b98345ebb5edb01791a0a10b0e9e3d9ddde185cdbd31a"
+		dg := "sha256:4ed64c2e0857ad21c38b98345ebb5edb01791a0a10b0e9e3d9ddde185cdbd31a" //nolint: gosec
 		repo := "index.docker.io%2Flibrary"
 		if i == 1 {
-			dg = "sha256:c0d8e30ad4f13b5f26794264fe057c488c72a5112978b1c24f3940dfaf69368a"
+			dg = "sha256:c0d8e30ad4f13b5f26794264fe057c488c72a5112978b1c24f3940dfaf69368a" //nolint: gosec
 			repo = "gcr.io%2Fproject"
 		}
 		p.ExternalRefs = []spdx.ExternalRef{
