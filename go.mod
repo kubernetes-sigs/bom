@@ -20,7 +20,7 @@ require (
 	golang.org/x/term v0.13.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.7.5-0.20230901085630-ff2d69b7382d
+	sigs.k8s.io/release-utils v0.7.5
 )
 
 require (
