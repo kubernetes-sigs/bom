@@ -1,4 +1,4 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>– intro</title><link>https://kubernetes-sigs.github.io/bom/tags/intro/</link><description>Recent content in intro on</description><generator>Hugo -- gohugo.io</generator><atom:link href="https://kubernetes-sigs.github.io/bom/tags/intro/index.xml" rel="self" type="application/rss+xml"/><item><title>Quick Start: Quick Start</title><link>https://kubernetes-sigs.github.io/bom/quick-start/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://kubernetes-sigs.github.io/bom/quick-start/</guid><description>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>– intro</title><link>https://kubernetes-sigs.github.io/bom/tags/intro/</link><description>Recent content in intro on</description><generator>Hugo -- gohugo.io</generator><language>en</language><atom:link href="https://kubernetes-sigs.github.io/bom/tags/intro/index.xml" rel="self" type="application/rss+xml"/><item><title>Quick Start: Quick Start</title><link>https://kubernetes-sigs.github.io/bom/quick-start/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://kubernetes-sigs.github.io/bom/quick-start/</guid><description>
 &lt;h2 id="installation">Installation&lt;/h2>
 &lt;h3 id="using-binary">Using binary:&lt;/h3>
 &lt;p>You can see releases of &lt;code>bom&lt;/code> on &lt;a href="https://github.com/kubernetes-sigs/bom/releases/">Github Releases&lt;/a>.&lt;/p>
@@ -7,7 +7,7 @@
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">sudo mv ./bom /usr/local/bin/bom
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">sudo chmod +x /usr/local/bin/bom
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="using-go">Using go:&lt;/h3>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">go install sigs.k8s.io/bom/cmd/bom
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-style:italic">go install sigs.k8s.io/bom/cmd/bom@latest
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="examples">Examples&lt;/h2>
 &lt;p>The following examples show how bom can process different sources to generate
 an SPDX Bill of Materials. Multiple sources can be combined to get a document
