@@ -90,7 +90,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running go module linter...")
-	if err := mage.VerifyGoMod(scriptDir); err != nil {
+	if err := mage.VerifyGoMod(); err != nil {
 		return err
 	}
 
