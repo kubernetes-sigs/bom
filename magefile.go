@@ -136,7 +136,7 @@ func BuildBinariesSnapshot() error {
 	os.Setenv("BOM_LDFLAGS", ldFlag)
 
 	return sh.RunV("goreleaser", "release", "--clean",
-		"--snapshot", "--skip-sign")
+		"--snapshot", "--skip=sign")
 }
 
 func BuildBinaries() error {
