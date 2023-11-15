@@ -85,7 +85,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running external dependency checks...")
-	if err := mage.VerifyDeps("v0.3.0", "", "", true); err != nil {
+	if err := mage.VerifyDeps("", "", "", true); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running golangci-lint...")
-	if err := mage.RunGolangCILint("", false); err != nil {
+	if err := mage.RunGolangCILint("", true); err != nil {
 		return err
 	}
 
