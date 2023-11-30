@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/glebarez/go-sqlite v1.21.2
 	github.com/go-git/go-git/v5 v5.10.1
-	github.com/google/go-containerregistry v0.16.1
+	github.com/google/go-containerregistry v0.17.0
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.4.0
 	github.com/in-toto/in-toto-golang v0.9.0
