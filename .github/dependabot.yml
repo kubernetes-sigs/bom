@@ -2,22 +2,32 @@ version: 2
 
 updates:
 
-- package-ecosystem: gomod
-  directory: "/"
-  schedule:
-    interval: "daily"
-  labels:
-    - "area/dependency"
-    - "release-note-none"
-    - "ok-to-test"
-  open-pull-requests-limit: 10
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "area/dependency"
+      - "release-note-none"
+      - "ok-to-test"
+    open-pull-requests-limit: 10
+    groups:
+      all:
+        update-types:
+          - "minor"
+          - "patch"
 
-- package-ecosystem: "github-actions"
-  directory: "/"
-  schedule:
-    interval: "daily"
-  labels:
-    - "area/dependency"
-    - "release-note-none"
-    - "ok-to-test"
-  open-pull-requests-limit: 10
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "area/dependency"
+      - "release-note-none"
+      - "ok-to-test"
+    open-pull-requests-limit: 10
+    groups:
+      all:
+        update-types:
+          - "minor"
+          - "patch"
