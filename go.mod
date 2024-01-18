@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/go-git/go-git/v5 v5.11.0
-	github.com/google/go-containerregistry v0.17.0
+	github.com/google/go-containerregistry v0.18.0
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.5.0
 	github.com/in-toto/in-toto-golang v0.9.0
@@ -15,7 +15,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	github.com/uwu-tools/magex v0.10.0
-	gitlab.alpinelinux.org/alpine/go v0.8.0
+	gitlab.alpinelinux.org/alpine/go v0.9.0
 	golang.org/x/mod v0.14.0
 	golang.org/x/term v0.16.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
