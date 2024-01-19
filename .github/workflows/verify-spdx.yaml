@@ -35,7 +35,7 @@ jobs:
           spdx-tools-version: 1.1.0
           sbom-path: example-image-pause.spdx.json
 
-      - uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595  # v3.1.0
+      - uses: actions/upload-artifact@694cdabd8bdb0f10b2cea11669e1bf5453eed0a6  # v3.1.0
         if: ${{ always() }}
         with:
           name: Example SBOMs
