@@ -49,7 +49,7 @@ bom generate [flags]
       --image-archive strings   list of docker archive tarballs to include in the manifest
   -l, --license string          SPDX license identifier to declare in the SBOM
       --name string             name for the document, in contrast to URLs, intended for humans
-  -n, --namespace string        an URI that servers as namespace for the SPDX doc
+  -n, --namespace string        an URI that serves as namespace for the SPDX doc
       --no-gitignore            don't use exclusions from .gitignore files
       --no-gomod                don't perform go.mod analysis, sbom will not include data about go packages
       --no-transient            don't include transient go dependencies, only direct deps from go.mod
