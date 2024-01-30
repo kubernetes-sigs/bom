@@ -242,7 +242,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		"namespace",
 		"n",
 		"",
-		"an URI that servers as namespace for the SPDX doc",
+		"an URI that serves as namespace for the SPDX doc",
 	)
 
 	generateCmd.PersistentFlags().StringVar(
