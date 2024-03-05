@@ -15,9 +15,9 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/uwu-tools/magex v0.10.0
-	gitlab.alpinelinux.org/alpine/go v0.9.0
-	golang.org/x/mod v0.15.0
-	golang.org/x/term v0.17.0
+	gitlab.alpinelinux.org/alpine/go v0.10.0
+	golang.org/x/mod v0.16.0
+	golang.org/x/term v0.18.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.7.7
@@ -80,7 +80,7 @@ require (
 	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
