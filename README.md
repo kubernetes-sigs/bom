@@ -15,10 +15,8 @@ Materials (SBOMs). `bom` was created as part of the project to create an SBOM
 for the Kubernetes project. It enables software authors to generate an
 SBOM for their projects in a simple, yet powerful way.
 
-bom is a project incubating in the Linux Foundation's 
+bom is a project incubating in the Linux Foundation's
 [Automating Compliance Toling TAC](https://github.com/act-project/TAC)
-
-[![terminal demo](https://asciinema.org/a/418528.svg)](https://asciinema.org/a/418528?autoplay=1)
 
 `bom` is a general-purpose tool that can generate SPDX packages from
 directories, container images, single files, and other sources. The utility
@@ -135,17 +133,17 @@ bom generate --output=debian.spdx --image \
 
 bom document outline debian.spdx
 
-               _      
+               _
  ___ _ __   __| |_  __
 / __| '_ \ / _` \ \/ /
-\__ \ |_) | (_| |>  < 
+\__ \ |_) | (_| |>  <
 |___/ .__/ \__,_/_/\_\
-    |_|               
+    |_|
 
  📂 SPDX Document SBOM-SPDX-71f1009c-dc17-4f4d-b4ec-72210c1a8d7f
-  │ 
+  │
   │ 📦 DESCRIBES 1 Packages
-  │ 
+  │
   ├ sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491
   │  │ 🔗 1 Relationships
   │  └ CONTAINS PACKAGE sha256:b37cbf60a964400132f658413bf66b67e5e67da35b9c080be137ff3c37cc7f65
