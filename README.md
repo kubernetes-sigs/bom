@@ -16,7 +16,7 @@ for the Kubernetes project. It enables software authors to generate an
 SBOM for their projects in a simple, yet powerful way.
 
 bom is a project incubating in the Linux Foundation's 
-[Automating Compliance Toling TAC](https://github.com/act-project/TAC)
+[Automating Compliance Tooling TAC](https://github.com/act-project/TAC)
 
 [![terminal demo](https://asciinema.org/a/418528.svg)](https://asciinema.org/a/418528?autoplay=1)
 
