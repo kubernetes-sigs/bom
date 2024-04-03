@@ -52,7 +52,7 @@ for checking files.
 		SilenceErrors:     true,
 		PersistentPreRunE: initLogging,
 
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			for i, arg := range args {
 				if util.Exists(arg) {
 					file, err := os.Open(arg)
