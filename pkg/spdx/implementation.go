@@ -519,7 +519,7 @@ func (di *spdxDefaultImplementation) IgnorePatterns(
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			s := scanner.Text()
-			if !strings.HasPrefix(s, "#") && len(strings.TrimSpace(s)) > 0 {
+			if !strings.HasPrefix(s, "#") && strings.TrimSpace(s) != "" {
 				logrus.Debugf("Loaded .gitignore pattern: >>%s<<", s)
 				patterns = append(patterns, gitignore.ParsePattern(s, nil))
 			}

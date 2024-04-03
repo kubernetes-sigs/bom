@@ -49,7 +49,9 @@ func OpenDoc(path string) (doc *Document, err error) {
 	// support reading SBOMs from STDIN
 	var file *os.File
 	var isTemp bool
-	if path == "-" || path == "" {
+
+	switch {
+	case path == "-", path == "":
 		if path == "" {
 			fi, err := os.Stdin.Stat()
 			if err != nil {
@@ -64,13 +66,13 @@ func OpenDoc(path string) (doc *Document, err error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading STDIN: %w", err)
 		}
-	} else if isURL(path) {
+	case isURL(path):
 		file, err = tempFileFromURL(path)
 		if err != nil {
 			return nil, fmt.Errorf("get temp file from url: %w", err)
 		}
 		isTemp = true
-	} else {
+	default:
 		file, err = os.Open(path)
 		if err != nil {
 			return nil, fmt.Errorf("opening document from %s: %w", path, err)
@@ -331,9 +333,10 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			continue
 		}
 
+		switch {
 		// Look for the peer element, exception: peer may be
 		// an external reference
-		if strings.HasPrefix(relatedID, "DocumentRef-") {
+		case strings.HasPrefix(relatedID, "DocumentRef-"):
 			externalID = relatedID
 			parts := strings.SplitN(relatedID, ":", 2)
 			if len(parts) != 2 {
@@ -341,7 +344,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 				continue
 			}
 			relatedID = parts[1]
-		} else if typeID == string(DESCRIBES) && elementID == jsonDoc.GetID() {
+		case (typeID == string(DESCRIBES) && elementID == jsonDoc.GetID()):
 			// Handle top-level packages marked by a relationship
 			if p, ok := allPackages[relatedID]; ok {
 				doc.Packages[relatedID] = p
@@ -352,7 +355,7 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 				continue
 			}
 			seenObjects[relatedID] = relatedID
-		} else {
+		default:
 			if _, ok := allPackages[relatedID]; ok {
 				peer = allPackages[relatedID]
 			} else if _, ok := allFiles[relatedID]; ok {
