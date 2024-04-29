@@ -58,7 +58,7 @@ func OpenDoc(path string) (doc *Document, err error) {
 				return nil, fmt.Errorf("checking stdin for data: %w", err)
 			}
 			if (fi.Mode() & os.ModeCharDevice) != 0 {
-				return nil, fmt.Errorf("document path not specified")
+				return nil, errors.New("document path not specified")
 			}
 		}
 		isTemp = true

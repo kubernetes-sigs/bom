@@ -17,6 +17,7 @@ limitations under the License.
 package osinfo
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
@@ -92,9 +93,9 @@ func (ct *alpineScanner) ParseDB(dbPath string) (*[]PackageDBEntry, error) {
 	for _, p := range apks {
 		cs := map[string]string{}
 		if strings.HasPrefix(p.ChecksumString(), "Q1") {
-			cs["SHA1"] = fmt.Sprintf("%x", p.Checksum)
+			cs["SHA1"] = hex.EncodeToString(p.Checksum)
 		} else if p.ChecksumString() != "" {
-			cs["MD5"] = fmt.Sprintf("%x", p.Checksum)
+			cs["MD5"] = hex.EncodeToString(p.Checksum)
 		}
 
 		packages = append(packages, PackageDBEntry{

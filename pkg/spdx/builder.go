@@ -97,7 +97,7 @@ func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 
 	spdx, err := db.impl.CreateSPDXClient(genopts, db.options)
 	if err != nil {
-		return nil, fmt.Errorf("generating spdx client")
+		return nil, errors.New("generating spdx client")
 	}
 
 	doc, err := db.impl.CreateDocument(genopts, spdx)

@@ -45,6 +45,7 @@ linters:
     - misspell
     - nakedret
     - nolintlint
+    - perfsprint
     - prealloc
     - predeclared
     - promlinter

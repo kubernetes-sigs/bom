@@ -94,7 +94,7 @@ Example:
 					}
 					if (fi.Mode() & os.ModeCharDevice) != 0 {
 						cmd.Help() //nolint:errcheck
-						return fmt.Errorf("document path not specified")
+						return errors.New("document path not specified")
 					}
 
 					path = "-"
@@ -137,7 +137,7 @@ Example:
 			case "json":
 				p = &JSONPrinter{}
 			default:
-				return fmt.Errorf("unrecognized output format, must be text, csv or json")
+				return errors.New("unrecognized output format, must be text, csv or json")
 			}
 
 			return p.PrintObjectList(queryOpts, fp.Objects, os.Stdout)

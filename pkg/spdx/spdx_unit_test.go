@@ -293,7 +293,7 @@ func TestGetImageReferences(t *testing.T) {
 	require.Equal(t, "", references.OS)
 	for _, refData := range references.Images {
 		_, ok := images[refData.Digest]
-		require.True(t, ok, fmt.Sprintf("Image not found %s", refData.Digest))
+		require.True(t, ok, "Image not found "+refData.Digest)
 		require.Equal(t, images[refData.Digest].os, refData.OS)
 		require.Equal(t, images[refData.Digest].arch, refData.Arch)
 	}
@@ -438,7 +438,7 @@ func TestRecursiveSearch(t *testing.T) {
 	checkSubPackages := func(p *Package, radix string) {
 		for i := 0; i < 3; i++ {
 			require.NotNil(t, p.GetElementByID(fmt.Sprintf("%s-%d", radix, i)),
-				fmt.Sprintf("searching for %s", radix),
+				"searching for "+radix,
 			)
 		}
 	}

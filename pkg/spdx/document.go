@@ -26,6 +26,7 @@ package spdx
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -291,7 +292,7 @@ func (d *Document) AddFile(file *File) error {
 		if _, err := h.Write([]byte(d.Name + ":" + file.Name)); err != nil {
 			return fmt.Errorf("getting sha1 of filename: %w", err)
 		}
-		file.ID = "SPDXRef-File-" + fmt.Sprintf("%x", h.Sum(nil))
+		file.ID = "SPDXRef-File-" + hex.EncodeToString(h.Sum(nil))
 	}
 	d.ensureUniqueElementID(file)
 	d.Files[file.ID] = file
