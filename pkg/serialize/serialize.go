@@ -17,6 +17,7 @@ limitations under the License.
 package serialize
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -164,11 +165,11 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 	}
 
 	if p.Supplier.Organization != "" {
-		jsonPackage.Supplier = fmt.Sprintf("Organization: %s", p.Supplier.Organization)
+		jsonPackage.Supplier = "Organization: " + p.Supplier.Organization
 	}
 
 	if p.Supplier.Person != "" {
-		jsonPackage.Supplier = fmt.Sprintf("Person: %s", p.Supplier.Person)
+		jsonPackage.Supplier = "Person: " + p.Supplier.Person
 	}
 
 	if p.VerificationCode != "" {
@@ -213,9 +214,7 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 	if len(files) > 0 {
 		for _, f := range files {
 			if f.SPDXID() == "" {
-				return jsonPackage, fmt.Errorf(
-					"unable to compute has files array, file missing SPDX ID",
-				)
+				return jsonPackage, errors.New("unable to compute has files array, file missing SPDX ID")
 			}
 			jsonPackage.HasFiles = append(jsonPackage.HasFiles, f.SPDXID())
 		}
@@ -229,7 +228,7 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 // "required" : [ "SPDXID", "copyrightText", "fileName", "licenseConcluded" ],
 func (json *JSON) buildJSONFile(f *spdx.File) (jsonFile spdxJSON.File, err error) {
 	if f.SPDXID() == "" {
-		return jsonFile, fmt.Errorf("unamble to serialzie file, it has no SPDX ID defined")
+		return jsonFile, errors.New("unamble to serialzie file, it has no SPDX ID defined")
 	}
 	jsonFile = spdxJSON.File{
 		ID:            f.SPDXID(),

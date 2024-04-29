@@ -232,7 +232,7 @@ func (d *Downloader) DownloadLicenseListToFile(tag, path string) (err error) {
 	if tag == "" {
 		tag, err = d.impl.GetLatestTag()
 		if err != nil {
-			return fmt.Errorf("getting latest license list")
+			return errors.New("getting latest license list")
 		}
 	}
 	data, err := d.impl.DownloadLicenseArchive(tag)
@@ -284,7 +284,7 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 		return nil, fmt.Errorf("creating zip reader: %w", err)
 	}
 
-	licenses, err = ddi.readLicenseDirectory(reader, fmt.Sprintf("license-list-data-%s", tag[1:]))
+	licenses, err = ddi.readLicenseDirectory(reader, "license-list-data-"+tag[1:])
 	if err != nil {
 		return nil, fmt.Errorf("reading license filesystem: %w", err)
 	}

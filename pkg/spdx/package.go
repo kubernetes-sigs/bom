@@ -26,6 +26,7 @@ package spdx
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -153,7 +154,7 @@ func (p *Package) AddFile(file *File) error {
 		if _, err := h.Write([]byte(p.Name + ":" + file.Name)); err != nil {
 			return fmt.Errorf("getting sha1 of filename: %w", err)
 		}
-		file.BuildID(fmt.Sprintf("%x", h.Sum(nil)))
+		file.BuildID(hex.EncodeToString(h.Sum(nil)))
 	}
 
 	// Add the file to the package's relationships
@@ -217,12 +218,10 @@ func (p *Package) ComputeVerificationCode() error {
 	shaList := []string{}
 	for _, f := range files {
 		if f.Checksum == nil {
-			return fmt.Errorf("unable to render package, file has no checksums")
+			return errors.New("unable to render package, file has no checksums")
 		}
 		if _, ok := f.Checksum["SHA1"]; !ok {
-			return fmt.Errorf(
-				"unable to render package, files were analyzed but some do not have sha1 checksums",
-			)
+			return errors.New("unable to render package, files were analyzed but some do not have sha1 checksums")
 		}
 		shaList = append(shaList, f.Checksum["SHA1"])
 	}
@@ -233,7 +232,7 @@ func (p *Package) ComputeVerificationCode() error {
 	if _, err := h.Write([]byte(strings.Join(shaList, ""))); err != nil {
 		return fmt.Errorf("getting SHA1 verification of files: %w", err)
 	}
-	p.VerificationCode = fmt.Sprintf("%x", h.Sum(nil))
+	p.VerificationCode = hex.EncodeToString(h.Sum(nil))
 	return nil
 }
 
@@ -247,7 +246,7 @@ func (p *Package) ComputeLicenseList() error {
 
 	files := p.Files()
 	if len(files) == 0 {
-		return fmt.Errorf("unable to compute license list, package has no files")
+		return errors.New("unable to compute license list, package has no files")
 	}
 
 	filesTagList := []string{}
