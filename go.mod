@@ -9,13 +9,13 @@ require (
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.6.0
 	github.com/in-toto/in-toto-golang v0.9.0
-	github.com/knqyf263/go-rpmdb v0.1.0
+	github.com/knqyf263/go-rpmdb v0.1.1
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/uwu-tools/magex v0.10.0
-	gitlab.alpinelinux.org/alpine/go v0.10.0
+	gitlab.alpinelinux.org/alpine/go v0.10.1
 	golang.org/x/mod v0.17.0
 	golang.org/x/term v0.20.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
