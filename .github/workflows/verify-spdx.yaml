@@ -21,18 +21,18 @@ jobs:
 
       - uses: chainguard-dev/actions/setup-spdx@d886686603afb809f7ef9b734b333e20b7ce5cda
         with:
-          spdx-tools-version: 1.1.0
+          spdx-tools-version: 1.1.8
 
       - uses: chainguard-dev/actions/setup-spdx@d886686603afb809f7ef9b734b333e20b7ce5cda
         with:
           download: false
-          spdx-tools-version: 1.1.0
+          spdx-tools-version: 1.1.8
           sbom-path: example-image-pause.spdx
 
       - uses: chainguard-dev/actions/setup-spdx@d886686603afb809f7ef9b734b333e20b7ce5cda
         with:
           download: false
-          spdx-tools-version: 1.1.0
+          spdx-tools-version: 1.1.8
           sbom-path: example-image-pause.spdx.json
 
       - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b  # v4.3.4
