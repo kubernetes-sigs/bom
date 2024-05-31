@@ -17,20 +17,25 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/bom/pkg/github"
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/bom/pkg/serialize"
 	"sigs.k8s.io/bom/pkg/spdx"
 	"sigs.k8s.io/release-utils/util"
 	"sigs.k8s.io/release-utils/version"
 )
+
+var githubReleaseRe = regexp.MustCompile(`^([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)@([a-zA-Z0-9_.-]+)$`)
 
 type generateOptions struct {
 	analyze        bool
@@ -46,6 +51,7 @@ type generateOptions struct {
 	license        string
 	licenseListVer string
 	provenancePath string // Path to export the SBOM as provenance statement
+	ghRelease      string // Output the SBOM as a GitHub release asset
 	images         []string
 	imageArchives  []string
 	archives       []string
@@ -88,6 +94,14 @@ func (opts *generateOptions) Validate() error {
 			}
 		}
 	}
+
+	if opts.ghRelease != "" {
+		// Validate and split the input
+		if matches := githubReleaseRe.FindString(opts.ghRelease); matches == "" {
+			return fmt.Errorf("wrong github org/repo@tag input for %s", opts.ghRelease)
+		}
+	}
+
 	return nil
 }
 
@@ -145,7 +159,7 @@ completed by a later stage in your CI/CD pipeline. See the
 				return fmt.Errorf("validating command line options: %w", err)
 			}
 
-			return generateBOM(genOpts)
+			return generateBOM(cmd.Context(), genOpts)
 		},
 	}
 
@@ -305,6 +319,13 @@ completed by a later stage in your CI/CD pipeline. See the
 		"version of the SPDX list to use, use 'latest' to download the latest",
 	)
 
+	generateCmd.PersistentFlags().StringVar(
+		&genOpts.ghRelease,
+		"github-release",
+		"",
+		"output the SBOM as a GitHub release asset (format: org/repo@tag)",
+	)
+
 	if err := generateCmd.MarkPersistentFlagDirname("dirs"); err != nil {
 		logrus.Error("error marking flag as directory")
 	}
@@ -317,7 +338,7 @@ completed by a later stage in your CI/CD pipeline. See the
 	parent.AddCommand(generateCmd)
 }
 
-func generateBOM(opts *generateOptions) error {
+func generateBOM(ctx context.Context, opts *generateOptions) error {
 	logrus.Infof(
 		"bom %s: Generating SPDX Bill of Materials",
 		version.GetVersionInfo().GitVersion,
@@ -364,13 +385,34 @@ func generateBOM(opts *generateOptions) error {
 	if err != nil {
 		return fmt.Errorf("serializing document: %w", err)
 	}
-	if opts.outputFile == "" {
+
+	switch opts.outputFile {
+	case "":
 		fmt.Println(markup)
-	} else {
+	case "github":
+		matches := githubReleaseRe.FindStringSubmatch(opts.ghRelease)
+		if matches == nil {
+			return fmt.Errorf("wrong github org/repo@tag input for %s", opts.ghRelease)
+		}
+		org := matches[1]
+		repo := matches[2]
+		tag := matches[3]
+		tempFileName := repo + ".sbom"
+		if err := os.WriteFile(tempFileName, []byte(markup), 0o664); err != nil { //nolint:gosec // G306: Expect WriteFile
+			return fmt.Errorf("writing SBOM: %w", err)
+		}
+		defer os.Remove(tempFileName)
+
+		err = github.UploadSBOMAsset(ctx, org, repo, tag, tempFileName)
+		if err != nil {
+			return err
+		}
+	default:
 		if err := os.WriteFile(opts.outputFile, []byte(markup), 0o664); err != nil { //nolint:gosec // G306: Expect WriteFile
 			return fmt.Errorf("writing SBOM: %w", err)
 		}
 	}
+
 	// Export the SBOM as in-toto provenance
 	if opts.provenancePath != "" {
 		if err := doc.WriteProvenanceStatement(
