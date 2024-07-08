@@ -44,7 +44,7 @@ func (ct *alpineScanner) OSType() OSType {
 	return OSAlpine
 }
 
-// ReadApkPackages reads the last known changed copy of the apk database
+// ReadApkPackages reads the last known changed copy of the apk database.
 func (ct *alpineScanner) ReadOSPackages(layers []string) (layer int, pk *[]PackageDBEntry, err error) {
 	apkDatabase := ""
 

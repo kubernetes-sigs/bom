@@ -41,7 +41,7 @@ const (
 	spdxLicenseDlCache      = spdxTempDir + "/downloadCache"
 	gitIgnoreFile           = ".gitignore"
 
-	// Consts of some SPDX expressions
+	// Consts of some SPDX expressions.
 	NONE            = "NONE"
 	NOASSERTION     = "NOASSERTION"
 	entPerson       = "Person"
@@ -66,7 +66,7 @@ type SPDX struct {
 	options *Options
 }
 
-// ImageReferenceInfo is a type to move information about a container image reference
+// ImageReferenceInfo is a type to move information about a container image reference.
 type ImageReferenceInfo struct {
 	Digest    string
 	Reference string
@@ -122,7 +122,7 @@ type ArchiveManifest struct {
 	LayerFiles     []string `json:"Layers"`
 }
 
-// ImageOptions set of options for processing tar files
+// ImageOptions set of options for processing tar files.
 type TarballOptions struct {
 	ExtractDir string // Directory where the docker tar archive will be extracted
 	AddFiles   bool
@@ -130,7 +130,7 @@ type TarballOptions struct {
 
 // buildIDString takes a list of seed strings and builds a
 // valid SPDX ID string from them. If none is supplied, an
-// ID using an UUID will be returned
+// ID using an UUID will be returned.
 func buildIDString(seeds ...string) string {
 	validSeeds := []string{}
 	numValidSeeds := 0
@@ -142,7 +142,7 @@ func buildIDString(seeds ...string) string {
 		// Replace invalid chars with unicode numbers to avoid collisions
 		s = validIDCharsRe.ReplaceAllStringFunc(s, func(s string) string {
 			r := ""
-			for i := 0; i < len(s); i++ {
+			for i := range s {
 				uc, _ := utf8.DecodeRuneInString(string(s[i]))
 				r = fmt.Sprintf("%sC%d", r, uc)
 			}
@@ -172,7 +172,7 @@ func buildIDString(seeds ...string) string {
 }
 
 // PackageFromDirectory indexes all files in a directory and builds a
-// SPDX package describing its contents
+// SPDX package describing its contents.
 func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error) {
 	pkg, err = spdx.impl.PackageFromDirectory(spdx.options, dirPath)
 	if err != nil {
@@ -198,12 +198,12 @@ func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error)
 	return pkg, nil
 }
 
-// PackageFromImageTarball returns a SPDX package from a tarball
+// PackageFromImageTarball returns a SPDX package from a tarball.
 func (spdx *SPDX) PackageFromImageTarball(tarPath string) (imagePackage *Package, err error) {
 	return spdx.impl.PackageFromImageTarball(spdx.Options(), tarPath)
 }
 
-// PackageFromArchive returns a SPDX package from a tarball
+// PackageFromArchive returns a SPDX package from a tarball.
 func (spdx *SPDX) PackageFromArchive(archivePath string) (imagePackage *Package, err error) {
 	if strings.HasSuffix(archivePath, "tar") || strings.HasSuffix(archivePath, "tar.gz") {
 		return spdx.impl.PackageFromTarball(
@@ -215,7 +215,7 @@ func (spdx *SPDX) PackageFromArchive(archivePath string) (imagePackage *Package,
 	return nil, fmt.Errorf("unable to create spdx package from archive, only tar archives are supported: %w", err)
 }
 
-// FileFromPath creates a File object from a path
+// FileFromPath creates a File object from a path.
 func (spdx *SPDX) FileFromPath(filePath string) (*File, error) {
 	if !util.Exists(filePath) {
 		return nil, errors.New("file does not exist")
@@ -235,12 +235,12 @@ func (spdx *SPDX) AnalyzeImageLayer(layerPath string, pkg *Package) error {
 	return spdx.impl.AnalyzeImageLayer(layerPath, pkg)
 }
 
-// ExtractTarballTmp extracts a tarball to a temp file
+// ExtractTarballTmp extracts a tarball to a temp file.
 func (spdx *SPDX) ExtractTarballTmp(tarPath string) (tmpDir string, err error) {
 	return spdx.impl.ExtractTarballTmp(tarPath)
 }
 
-// PullImagesToArchive downloads all the images found from a reference to disk
+// PullImagesToArchive downloads all the images found from a reference to disk.
 func (spdx *SPDX) PullImagesToArchive(reference, path string) (*ImageReferenceInfo, error) {
 	return spdx.impl.PullImagesToArchive(reference, path)
 }

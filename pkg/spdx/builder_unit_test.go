@@ -47,16 +47,16 @@ func TestYAMLParse(t *testing.T) {
 	opts := &DocGenerateOptions{}
 	impl := defaultDocBuilderImpl{}
 	f, err := os.CreateTemp("", "*.yaml")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	require.Nil(t, os.WriteFile(f.Name(), []byte(testConfig), os.FileMode(0o644)))
+	require.NoError(t, os.WriteFile(f.Name(), []byte(testConfig), os.FileMode(0o644)))
 
-	require.Nil(t, impl.ReadYamlConfiguration(f.Name(), opts))
+	require.NoError(t, impl.ReadYamlConfiguration(f.Name(), opts))
 
-	require.Equal(t, 1, len(opts.Images))
-	require.Equal(t, 1, len(opts.Files))
-	require.Equal(t, 1, len(opts.Tarballs))
-	require.Equal(t, 1, len(opts.Directories))
+	require.Len(t, opts.Images, 1)
+	require.Len(t, opts.Files, 1)
+	require.Len(t, opts.Tarballs, 1)
+	require.Len(t, opts.Directories, 1)
 
 	require.Equal(t, "./SECURITY.md", opts.Files[0])
 	require.Equal(t, "registry.k8s.io/kube-apiserver:v1.22.0-alpha.2", opts.Images[0])

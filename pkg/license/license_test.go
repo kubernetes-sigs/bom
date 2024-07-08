@@ -50,7 +50,7 @@ func TestISCatalogLoadLicenses(t *testing.T) {
 	downloader := &license.Downloader{}
 	// Create a SPDX to test
 	spdx, err := license.NewCatalogWithOptions(license.DefaultCatalogOpts)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	spdx.Downloader = downloader
 
 	for _, tc := range []struct {
@@ -66,9 +66,9 @@ func TestISCatalogLoadLicenses(t *testing.T) {
 		downloader.SetImplementation(&impl)
 
 		if tc.mustFail {
-			require.NotNil(t, spdx.LoadLicenses())
+			require.Error(t, spdx.LoadLicenses())
 		} else {
-			require.Nil(t, spdx.LoadLicenses())
+			require.NoError(t, spdx.LoadLicenses())
 		}
 	}
 }
@@ -88,30 +88,30 @@ func TestUSPDXWriteLicensesAsText(t *testing.T) {
 
 	// Create a SPDX to test
 	spdx, err := license.NewCatalogWithOptions(license.DefaultCatalogOpts)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	spdx.Downloader = downloader
 
 	// Get the licenses from the fke downloader
-	require.Nil(t, spdx.LoadLicenses())
+	require.NoError(t, spdx.LoadLicenses())
 
 	// Create a test directory
 	tempdir, err := os.MkdirTemp("", "spdx-test-")
-	require.Nil(t, err)
-	defer func() { require.Nil(t, os.RemoveAll(tempdir)) }()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, os.RemoveAll(tempdir)) }()
 
 	// Check the call works:
-	require.Nil(t, spdx.WriteLicensesAsText(tempdir))
+	require.NoError(t, spdx.WriteLicensesAsText(tempdir))
 
 	// Check the files where written in the expected paths
-	require.Nil(t, CheckFileExists(t, filepath.Join(tempdir, "assets", testLicenseID, "license.txt")))
-	require.Nil(t, CheckFileExists(t, filepath.Join(tempdir, "assets", testLicenseID2, "license.txt")))
+	require.NoError(t, CheckFileExists(t, filepath.Join(tempdir, "assets", testLicenseID, "license.txt")))
+	require.NoError(t, CheckFileExists(t, filepath.Join(tempdir, "assets", testLicenseID2, "license.txt")))
 }
 
 func TestUSPDXGetLicense(t *testing.T) {
 	testLicenseID := "test-license"
 	testLicenseContent := "Test license content"
 	catalog, err := license.NewCatalogWithOptions(license.CatalogOptions{})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	catalog.List = &license.List{
 		Licenses: map[string]*license.License{
 			testLicenseID: {LicenseID: testLicenseID, LicenseText: testLicenseContent},
@@ -149,19 +149,19 @@ func TestISetImplementation(t *testing.T) {
 
 	// Initialization fails
 	impl.InitializeReturns(nil)
-	require.Nil(t, reader.SetImplementation(&impl))
+	require.NoError(t, reader.SetImplementation(&impl))
 
 	// Initialization works
 	impl.InitializeReturns(errors.New("Mock init error"))
-	require.NotNil(t, reader.SetImplementation(&impl))
+	require.Error(t, reader.SetImplementation(&impl))
 }
 
-// CheckFileExists checks if a file exists and is not empty
+// CheckFileExists checks if a file exists and is not empty.
 func CheckFileExists(t *testing.T, path string) error {
 	finfo, err := os.Stat(path)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, finfo.IsDir())
-	require.Greater(t, finfo.Size(), int64(0))
+	require.Positive(t, finfo.Size())
 	return nil
 }
 
@@ -174,18 +174,18 @@ func TestULicenseWriteText(t *testing.T) {
 	path := filepath.Join(os.TempDir(), testLicense.LicenseID+"txt")
 
 	// Write the license text to a file
-	require.Nil(t, testLicense.WriteText(path))
+	require.NoError(t, testLicense.WriteText(path))
 	defer func() { os.Remove(path) }()
 
-	require.Nil(t, CheckFileExists(t, path))
+	require.NoError(t, CheckFileExists(t, path))
 }
 
 func TestParseSPDXLicense(t *testing.T) {
 	testsLicense, err := license.ParseLicense([]byte(testFullLicense))
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, testsLicense)
 
 	// Check one or two bits of the example json
-	require.Equal(t, testsLicense.Name, "Apache License 2.0")
-	require.Equal(t, testsLicense.LicenseID, "Apache-2.0")
+	require.Equal(t, "Apache License 2.0", testsLicense.Name)
+	require.Equal(t, "Apache-2.0", testsLicense.LicenseID)
 }

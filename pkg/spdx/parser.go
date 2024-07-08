@@ -30,13 +30,15 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"sigs.k8s.io/release-utils/http"
+
 	"sigs.k8s.io/bom/pkg/spdx/json/document"
 	spdx22JSON "sigs.k8s.io/bom/pkg/spdx/json/v2.2"
 	spdx23JSON "sigs.k8s.io/bom/pkg/spdx/json/v2.3"
-	"sigs.k8s.io/release-utils/http"
 )
 
-// Regexp to match the tag-value spdx expressions
+// Regexp to match the tag-value spdx expressions.
 var (
 	tagRegExp          = regexp.MustCompile(`^([a-z0-9A-Z]+):\s+(.+)`)
 	relationshioRegExp = regexp.MustCompile(`^*(\S+)\s+([_A-Z]+)\s+(\S+)`)
@@ -803,7 +805,7 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 	return doc, nil
 }
 
-// detectSBOMEncoding reads a few bytes from the SBOM and returns
+// detectSBOMEncoding reads a few bytes from the SBOM and returns.
 func DetectSBOMEncoding(f *os.File) (format string, err error) {
 	fileScanner := bufio.NewScanner(f)
 	fileScanner.Split(bufio.ScanLines)
@@ -842,7 +844,7 @@ func DetectSBOMEncoding(f *os.File) (format string, err error) {
 	return "", nil
 }
 
-// buyfferSTDIN buffers all of STDIN to a temp file
+// buyfferSTDIN buffers all of STDIN to a temp file.
 func bufferSTDIN() (*os.File, error) {
 	file, err := os.CreateTemp("", "temp-sbom")
 	if err != nil {

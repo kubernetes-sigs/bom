@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/release-utils/util"
 )
 
-// ListURL is the json list of all spdx licenses
+// ListURL is the json list of all spdx licenses.
 const (
 	LicenseDataURL      = "https://spdx.org/licenses/"
 	LicenseListFilename = "licenses.json"
@@ -47,12 +47,12 @@ const (
 //go:embed data
 var f embed.FS
 
-// NewDownloader returns a downloader with the default options
+// NewDownloader returns a downloader with the default options.
 func NewDownloader() (*Downloader, error) {
 	return NewDownloaderWithOptions(DefaultDownloaderOpts)
 }
 
-// NewDownloaderWithOptions returns a downloader with specific options
+// NewDownloaderWithOptions returns a downloader with specific options.
 func NewDownloaderWithOptions(opts *DownloaderOptions) (*Downloader, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("validating downloader options: %w", err)
@@ -66,7 +66,7 @@ func NewDownloaderWithOptions(opts *DownloaderOptions) (*Downloader, error) {
 	return d, nil
 }
 
-// DownloaderOptions is a set of options for the license downloader
+// DownloaderOptions is a set of options for the license downloader.
 type DownloaderOptions struct {
 	EnableCache       bool   // Should we use the cache or not
 	CacheDir          string // Directory where data will be cached, defaults to temporary dir
@@ -74,7 +74,7 @@ type DownloaderOptions struct {
 	Version           string // Version of the licenses to download  (eg v3.19) or blank for latest
 }
 
-// Validate Checks the downloader options
+// Validate Checks the downloader options.
 func (do *DownloaderOptions) Validate() error {
 	// If we are using a cache
 	if do.EnableCache {
@@ -100,18 +100,18 @@ func (do *DownloaderOptions) Validate() error {
 	return nil
 }
 
-// Downloader handles downloading f license data
+// Downloader handles downloading f license data.
 type Downloader struct {
 	impl DownloaderImplementation
 }
 
-// SetImplementation sets the implementation that will drive the downloader
+// SetImplementation sets the implementation that will drive the downloader.
 func (d *Downloader) SetImplementation(di DownloaderImplementation) {
 	d.impl = di
 }
 
 // GetLicenses is the mina function of the downloader. Returns a license list
-// or an error if could get them
+// or an error if could get them.
 func (d *Downloader) GetLicenses() (*List, error) {
 	tag := d.impl.Version()
 	var err error
@@ -127,7 +127,7 @@ func (d *Downloader) GetLicenses() (*List, error) {
 
 //counterfeiter:generate . DownloaderImplementation
 
-// DownloaderImplementation has only one method
+// DownloaderImplementation has only one method.
 type DownloaderImplementation interface {
 	GetLicenses(versionTag string) (*List, error)
 	SetOptions(*DownloaderOptions)
@@ -136,29 +136,29 @@ type DownloaderImplementation interface {
 	DownloadLicenseArchive(tag string) (zipData []byte, err error)
 }
 
-// DefaultDownloaderOpts set of options for the license downloader
+// DefaultDownloaderOpts set of options for the license downloader.
 var DefaultDownloaderOpts = &DownloaderOptions{
 	EnableCache:       true,
 	CacheDir:          "",
 	parallelDownloads: 5,
 }
 
-// DefaultDownloaderImpl is the default implementation that gets licenses
+// DefaultDownloaderImpl is the default implementation that gets licenses.
 type DefaultDownloaderImpl struct {
 	Options *DownloaderOptions
 }
 
-// Version returns the version from the options
+// Version returns the version from the options.
 func (ddi *DefaultDownloaderImpl) Version() string {
 	return ddi.Options.Version
 }
 
-// SetOptions sets the implementation options
+// SetOptions sets the implementation options.
 func (ddi *DefaultDownloaderImpl) SetOptions(opts *DownloaderOptions) {
 	ddi.Options = opts
 }
 
-// GetLatestTag gets the latest version of the license list from github
+// GetLatestTag gets the latest version of the license list from github.
 func (ddi *DefaultDownloaderImpl) GetLatestTag() (string, error) {
 	var data []byte
 	var err error
@@ -227,7 +227,7 @@ func (ddi *DefaultDownloaderImpl) readLicenseDirectory(licensefs fs.FS, subpath 
 }
 
 // DownloadLicenseListToFile downloads the license list from github and
-// stores it in a file
+// stores it in a file.
 func (d *Downloader) DownloadLicenseListToFile(tag, path string) (err error) {
 	if tag == "" {
 		tag, err = d.impl.GetLatestTag()
@@ -272,7 +272,7 @@ func (ddi *DefaultDownloaderImpl) DownloadLicenseArchive(tag string) (zipData []
 	return zipData, nil
 }
 
-// GetLicenses downloads the main json file listing all SPDX supported licenses
+// GetLicenses downloads the main json file listing all SPDX supported licenses.
 func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err error) {
 	zipData, err := ddi.DownloadLicenseArchive(tag)
 	if err != nil {
@@ -292,14 +292,14 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 	return licenses, nil
 }
 
-// cacheFileName return the cache filename for an URL
+// cacheFileName return the cache filename for an URL.
 func (ddi *DefaultDownloaderImpl) cacheFileName(url string) string {
 	return filepath.Join(
 		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha256.New().Sum([]byte(url))),
 	)
 }
 
-// cacheData writes data to a cache file
+// cacheData writes data to a cache file.
 func (ddi *DefaultDownloaderImpl) cacheData(url string, data []byte) error {
 	cacheFileName := ddi.cacheFileName(url)
 	_, err := os.Stat(filepath.Dir(cacheFileName))
@@ -315,7 +315,7 @@ func (ddi *DefaultDownloaderImpl) cacheData(url string, data []byte) error {
 	return nil
 }
 
-// getCachedData returns cached data for an URL if we have it
+// getCachedData returns cached data for an URL if we have it.
 func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 	cacheFileName := ddi.cacheFileName(url)
 	finfo, err := os.Stat(cacheFileName)
@@ -340,7 +340,7 @@ func (ddi *DefaultDownloaderImpl) getCachedData(url string) ([]byte, error) {
 	return cachedData, nil
 }
 
-// GetLatestTag returns the last version of the SPDX LIcense list found on GitHub
+// GetLatestTag returns the last version of the SPDX LIcense list found on GitHub.
 func (d *Downloader) GetLatestTag() (string, error) {
 	return d.impl.GetLatestTag()
 }

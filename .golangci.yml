@@ -19,15 +19,30 @@ issues:
 linters:
   disable-all: true
   enable:
+    - asasalint
     - asciicheck
+    - bidichk
     - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - decorder
     - dogsled
     - dupl
+    - dupword
     - durationcheck
     - errcheck
+    - errchkjson
+    - fatcontext
+    - gci
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecksumtype
     - goconst
     - gocritic
     - gocyclo
+    - godot
     - godox
     - gofmt
     - gofumpt
@@ -38,58 +53,87 @@ linters:
     - goprintffuncname
     - gosec
     - gosimple
+    - gosmopolitan
     - govet
+    - grouper
     - importas
     - ineffassign
+    - intrange
+    - loggercheck
     - makezero
+    - mirror
     - misspell
     - nakedret
+    - noctx
     - nolintlint
+    - nosprintfhostport
     - perfsprint
     - prealloc
     - predeclared
     - promlinter
+    - protogetter
+    - reassign
     - revive
-    #  - rowserrcheck is disabled because of generics. You can track the evolution of the generics support by following the https://github.com/golangci/golangci-lint/issues/2649
-    # - sqlclosecheck is disabled because of generics. You can track the evolution of the generics support by following the https://github.com/golangci/golangci-lint/issues/2649
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
     - staticcheck
     - stylecheck
+    - tagalign
+    - tenv
+    - testableexamples
+    - testifylint
+    - tparallel
     - typecheck
     - unconvert
     - unparam
     - unused
+    - usestdlibvars
     - whitespace
+    - zerologlint
     # - cyclop
+    # - depguard
+    # - err113
+    # - errname
     # - errorlint
     # - exhaustive
-    # - exhaustivestruct
+    # - exhaustruct
     # - exportloopref
     # - forbidigo
     # - forcetypeassert
     # - funlen
-    # - gci
     # - gochecknoglobals
     # - gochecknoinits
     # - gocognit
-    # - godot
-    # - goerr113
-    # - gomnd
-    # - ifshort
+    # - inamedparam
+    # - interfacebloat
+    # - ireturn
     # - lll
+    # - maintidx
+    # - mnd
+    # - musttag
     # - nestif
     # - nilerr
+    # - nilnil
     # - nlreturn
-    # - noctx
+    # - nonamedreturns
     # - paralleltest
-    # - scopelint
     # - tagliatelle
     # - testpackage
     # - thelper
-    # - tparallel
+    # - varnamelen
     # - wastedassign
     # - wrapcheck
     # - wsl
 linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(k8s.io)
+      - prefix(sigs.k8s.io)
+      - localmodule
   godox:
     keywords:
       - BUG
@@ -100,45 +144,77 @@ linters-settings:
     check-blank: true
   gocritic:
     enabled-checks:
-      # Diagnostic
-      - commentedOutCode
-      - nilValReturn
-      - sloppyReassign
-      - weakCond
-      - octalLiteral
-
-      # Performance
       - appendCombine
-      - equalFold
-      - hugeParam
-      - indexAlloc
-      - rangeExprCopy
-      - rangeValCopy
-
-      # Style
+      - badLock
+      - badRegexp
+      - badSorting
+      - badSyncOnceFunc
       - boolExprSimplify
+      - builtinShadow
+      - builtinShadowDecl
+      - commentedOutCode
       - commentedOutImport
+      - deferUnlambda
       - docStub
+      - dupImport
+      - dynamicFmtString
+      - emptyDecl
       - emptyFallthrough
       - emptyStringTest
+      - equalFold
+      - evalOrder
+      - externalErrorReassign
       - hexLiteral
-      - methodExprCall
-      - stringXbytes
-      - typeAssertChain
-      - unlabelStmt
-      - yodaStyleExpr
-      # - ifElseChain
-
-      # Opinionated
-      - builtinShadow
+      - httpNoBody
+      - hugeParam
       - importShadow
+      - indexAlloc
       - initClause
+      - methodExprCall
       - nestingReduce
+      - nilValReturn
+      - octalLiteral
       - paramTypeCombine
+      - preferDecodeRune
+      - preferFilepathJoin
+      - preferFprint
+      - preferStringWriter
+      - preferWriteByte
       - ptrToRefParam
+      - rangeExprCopy
+      - rangeValCopy
+      - redundantSprint
+      - regexpPattern
+      - regexpSimplify
+      - returnAfterHttpError
+      - ruleguard
+      - sliceClear
+      - sloppyReassign
+      - sortSlice
+      - sprintfQuotedString
+      - sqlQuery
+      - stringConcatSimplify
+      - stringXbytes
+      - stringsCompare
+      - syncMapLoadAndDelete
+      - timeExprSimplify
+      - todoCommentWithoutDetail
+      - tooManyResultsChecker
+      - truncateCmp
+      - typeAssertChain
       - typeUnparen
+      - unlabelStmt
       - unnamedResult
       - unnecessaryBlock
+      - unnecessaryDefer
+      - weakCond
+      - yodaStyleExpr
+      # - deferInLoop
+      # - exposedSyncMutex
+      # - filepathJoin
+      # - typeDefFirst
+      # - uncheckedInlineErr
+      # - whyNoLint
   nolintlint:
     # Enable to ensure that nolint directives are all used. Default is true.
     allow-unused: false

@@ -24,6 +24,7 @@ import (
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"github.com/stretchr/testify/require"
+
 	"sigs.k8s.io/release-utils/util"
 )
 
@@ -43,22 +44,22 @@ func TestReadSubjectsFromDir(t *testing.T) {
 
 	// Create a directory with some files
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
 	for _, testfile := range testdata {
 		path := filepath.Join(dir, testfile.filename)
 		if !util.Exists(filepath.Dir(path)) {
-			require.Nil(t, os.Mkdir(filepath.Dir(path), os.FileMode(0o755)))
+			require.NoError(t, os.Mkdir(filepath.Dir(path), os.FileMode(0o755)))
 		}
-		require.Nil(t, os.WriteFile(
+		require.NoError(t, os.WriteFile(
 			path, []byte(testfile.content), os.FileMode(0o644)),
 			"writing test file",
 		)
 	}
 
 	// Read the files as subjects of the predicate
-	require.Nil(t, s.ReadSubjectsFromDir(dir), "Reading subjects")
+	require.NoError(t, s.ReadSubjectsFromDir(dir), "Reading subjects")
 	require.Equal(t, len(testdata), len(s.Subject))
 
 	// Cycle all subjects and check the hashes match
@@ -78,7 +79,7 @@ func TestAddSubject(t *testing.T) {
 	s := NewSLSAStatement()
 	sha1 := "cd7f2fdcbd859060732c8a9677d9e838babfa6b9"
 	s.AddSubject("https://www.example.com/", common.DigestSet{"sha1": sha1})
-	require.Equal(t, 1, len(s.Subject))
+	require.Len(t, s.Subject, 1)
 	require.Equal(t, sha1, s.Subject[0].Digest["sha1"])
 }
 
@@ -86,12 +87,12 @@ func TestLoadPredicate(t *testing.T) {
 	prData := `{"builder":{"id":"Test@1.0"},"metadata":{"buildInvocationId":"CICD1234","completeness":{"arguments":false,"environment":false,"materials":false},"reproducible":false,"BuildStartedOn":null,"buildFinishedOn":null},"recipe":{"type":"","definedInMaterial":0,"entryPoint":"","arguments":null,"environment":null},"materials":[]}`
 
 	file, err := os.CreateTemp("", "predicate")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(file.Name())
-	require.Nil(t, os.WriteFile(file.Name(), []byte(prData), os.FileMode(0o644)))
+	require.NoError(t, os.WriteFile(file.Name(), []byte(prData), os.FileMode(0o644)))
 
 	s := NewSLSAStatement()
-	require.Nil(t, s.LoadPredicate(file.Name()), "loading predicate from file")
+	require.NoError(t, s.LoadPredicate(file.Name()), "loading predicate from file")
 
 	require.Equal(t, "Test@1.0", s.Predicate.Builder.ID)
 }
@@ -99,14 +100,14 @@ func TestLoadPredicate(t *testing.T) {
 func TestSubjectFromFile(t *testing.T) {
 	// Create a test file
 	f, err := os.CreateTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	require.Nil(t, os.WriteFile(f.Name(), []byte("Hello world"), os.FileMode(0o644)))
+	require.NoError(t, os.WriteFile(f.Name(), []byte("Hello world"), os.FileMode(0o644)))
 
 	// Create a subject from the temporary file
 	si := defaultStatementImplementation{}
 	subject, err := si.SubjectFromFile(f.Name())
-	require.Nil(t, err, "creating subject from file")
+	require.NoError(t, err, "creating subject from file")
 
 	// Check the filename
 	require.Equal(t, f.Name(), subject.Name)
@@ -123,35 +124,35 @@ func TestSubjectFromFile(t *testing.T) {
 
 	// Attempting a subject from a directory must fail
 	_, err = si.SubjectFromFile(filepath.Dir(f.Name()))
-	require.NotNil(t, err, "should err trying to create a subject from a dir")
+	require.Error(t, err, "should err trying to create a subject from a dir")
 }
 
 func TestWriteStatement(t *testing.T) {
 	s := NewSLSAStatement()
 	s.Predicate.Builder.ID = "asd"
 	tmp, err := os.CreateTemp("", "statement-test")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(tmp.Name())
 
 	res := s.Write(tmp.Name())
-	require.Nil(t, res)
+	require.NoError(t, res)
 	require.FileExists(t, tmp.Name())
 	st, err := os.Stat(tmp.Name())
-	require.Nil(t, err)
-	require.Greater(t, st.Size(), int64(0))
+	require.NoError(t, err)
+	require.Positive(t, st.Size())
 }
 
 func TestClonePredicate(t *testing.T) {
 	s1 := NewSLSAStatement()
-	require.Nil(t, s1.ClonePredicate(testProvenanceFile1), "cloning predicate")
-	require.Equal(t, s1.Predicate.Builder.ID, "pkg:github/puerco/release@provenance")
+	require.NoError(t, s1.ClonePredicate(testProvenanceFile1), "cloning predicate")
+	require.Equal(t, "pkg:github/puerco/release@provenance", s1.Predicate.Builder.ID)
 }
 
 func TestVerifySubjects(t *testing.T) {
 	s := NewSLSAStatement()
 
 	dir, err := os.MkdirTemp("", "provenance-subjects-")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
 	strs := []struct {
@@ -167,8 +168,8 @@ func TestVerifySubjects(t *testing.T) {
 	path := ""
 	for _, data := range strs {
 		path = filepath.Join(path, data.Letter)
-		require.Nil(t, os.Mkdir(filepath.Join(dir, path), os.FileMode(0o755)))
-		require.Nil(
+		require.NoError(t, os.Mkdir(filepath.Join(dir, path), os.FileMode(0o755)))
+		require.NoError(
 			t, os.WriteFile(
 				filepath.Join(dir, path, data.Letter+".txt"), []byte(data.Data), os.FileMode(0o644),
 			),
@@ -178,5 +179,5 @@ func TestVerifySubjects(t *testing.T) {
 			Digest: map[string]string{"sha256": data.Sha},
 		})
 	}
-	require.Nil(t, s.VerifySubjects(dir))
+	require.NoError(t, s.VerifySubjects(dir))
 }

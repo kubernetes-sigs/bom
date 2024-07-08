@@ -122,7 +122,7 @@ func (loss *layerOSScanner) OSType(layerPath string) (ostype OSType, err error) 
 	return "", nil
 }
 
-// OSReleaseData extracts the OS release file and returns it as a string
+// OSReleaseData extracts the OS release file and returns it as a string.
 func (loss *layerOSScanner) OSReleaseData(layerPath string) (osrelease string, err error) {
 	f, err := os.CreateTemp("", "os-release-")
 	if err != nil {
@@ -220,7 +220,7 @@ func (loss *layerOSScanner) FileExistsInTar(tarPath, firstFile string, moreFiles
 	}
 }
 
-// getTarReader builds a tar reader to process a tar stream from the reader r
+// getTarReader builds a tar reader to process a tar stream from the reader r.
 func getTarReader(r io.ReadSeeker) (*tar.Reader, error) {
 	// Read the first bytes to determine if the file is compressed
 	gzipped, err := isStreamCompressed(r)
@@ -241,7 +241,7 @@ func getTarReader(r io.ReadSeeker) (*tar.Reader, error) {
 	return tr, nil
 }
 
-// extractFileFromTar extracts filePath from tarPath and stores it in destPath
+// extractFileFromTar extracts filePath from tarPath and stores it in destPath.
 func (loss *layerOSScanner) ExtractFileFromTar(tarPath, filePath, destPath string) error {
 	// Open the tar file
 	f, err := os.Open(tarPath)
@@ -307,7 +307,7 @@ func (loss *layerOSScanner) ExtractFileFromTar(tarPath, filePath, destPath strin
 	}
 }
 
-// isFileCompressed returns true if the reader
+// isFileCompressed returns true if the reader.
 func isStreamCompressed(r io.ReadSeeker) (bool, error) {
 	var sample [3]byte
 	if _, err := io.ReadFull(r, sample[:]); err != nil {
@@ -325,7 +325,7 @@ func isStreamCompressed(r io.ReadSeeker) (bool, error) {
 }
 
 // ExtractDirectoryFromTar extracts all files from a tarball that match the
-// dirName into destPath
+// dirName into destPath.
 func (loss *layerOSScanner) ExtractDirectoryFromTar(tarPath, dirName, destPath string) error {
 	f, err := os.Open(tarPath)
 	if err != nil {

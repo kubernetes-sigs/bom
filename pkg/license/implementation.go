@@ -27,13 +27,13 @@ import (
 )
 
 // ReaderDefaultImpl the default license reader imlementation, uses
-// Google's cicense classifier
+// Google's cicense classifier.
 type ReaderDefaultImpl struct {
 	lc      *licenseclassifier.Classifier
 	catalog *Catalog
 }
 
-// ClassifyFile takes a file path and returns the most probable license tag
+// ClassifyFile takes a file path and returns the most probable license tag.
 func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTags []string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -73,7 +73,7 @@ func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTa
 	return licenseTag, moreTags, nil
 }
 
-// ClassifyLicenseFiles takes a list of paths and tries to find return all licenses found in it
+// ClassifyLicenseFiles takes a list of paths and tries to find return all licenses found in it.
 func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
 	licenseList []*ClassifyResult, unrecognizedPaths []string, err error,
 ) {
@@ -111,12 +111,12 @@ func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
 	return licenseList, unrecognizedPaths, nil
 }
 
-// LicenseFromLabel return a spdx license from its label
+// LicenseFromLabel return a spdx license from its label.
 func (d *ReaderDefaultImpl) LicenseFromLabel(label string) (license *License) {
 	return d.catalog.GetLicense(label)
 }
 
-// LicenseFromFile a file path and returns its license
+// LicenseFromFile a file path and returns its license.
 func (d *ReaderDefaultImpl) LicenseFromFile(path string) (license *License, err error) {
 	// Run the files through the clasifier
 	label, _, err := d.ClassifyFile(path)
@@ -139,7 +139,7 @@ func (d *ReaderDefaultImpl) LicenseFromFile(path string) (license *License, err 
 	return license, nil
 }
 
-// FindLicenseFiles will scan a directory and return files that may be licenses
+// FindLicenseFiles will scan a directory and return files that may be licenses.
 func (d *ReaderDefaultImpl) FindLicenseFiles(path string) ([]string, error) {
 	logrus.Debugf("Scanning %s for license files", path)
 	licenseList := []string{}
@@ -171,7 +171,7 @@ func (d *ReaderDefaultImpl) FindLicenseFiles(path string) ([]string, error) {
 	return licenseList, nil
 }
 
-// Initialize checks the options and creates the needed objects
+// Initialize checks the options and creates the needed objects.
 func (d *ReaderDefaultImpl) Initialize(opts *ReaderOptions) error {
 	// Validate our options before startin
 	if err := opts.Validate(); err != nil {
@@ -208,12 +208,12 @@ func (d *ReaderDefaultImpl) Initialize(opts *ReaderOptions) error {
 	return nil
 }
 
-// Classifier returns the license classifier
+// Classifier returns the license classifier.
 func (d *ReaderDefaultImpl) Classifier() *licenseclassifier.Classifier {
 	return d.lc
 }
 
-// SPDX returns the reader's SPDX object
+// SPDX returns the reader's SPDX object.
 func (d *ReaderDefaultImpl) Catalog() *Catalog {
 	return d.catalog
 }

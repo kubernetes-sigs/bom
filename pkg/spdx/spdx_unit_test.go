@@ -67,7 +67,7 @@ func TestUnitExtractTarballTmp(t *testing.T) {
 		defer os.Remove(tarFile.Name())
 
 		dir, err := sut.ExtractTarballTmp(tarFile.Name())
-		require.Nil(t, err, "extracting file")
+		require.NoError(t, err, "extracting file")
 		defer os.RemoveAll(dir)
 
 		require.True(t, util.Exists(filepath.Join(dir, "/text.txt")), "checking directory")
@@ -78,24 +78,24 @@ func TestUnitExtractTarballTmp(t *testing.T) {
 
 func TestReadArchiveManifest(t *testing.T) {
 	f, err := os.CreateTemp(os.TempDir(), "sample-manifest-*.json")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(f.Name())
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		f.Name(), []byte(sampleManifest), os.FileMode(0o644),
 	), "writing test manifest file")
 
 	sut := spdxDefaultImplementation{}
 	_, err = sut.ReadArchiveManifest("laksdjlakjsdlkjsd")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	manifest, err := sut.ReadArchiveManifest(f.Name())
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(
 		t, "386bcf5c63de46c7066c42d4ae1c38af0689836e88fed37d1dca2d484b343cf5.json",
 		manifest.ConfigFilename,
 	)
-	require.Equal(t, 1, len(manifest.RepoTags))
+	require.Len(t, manifest.RepoTags, 1)
 	require.Equal(t, "registry.k8s.io/kube-apiserver-amd64:v1.22.0-alpha.1", manifest.RepoTags[0])
-	require.Equal(t, 3, len(manifest.LayerFiles))
+	require.Len(t, manifest.LayerFiles, 3)
 	for i, fname := range []string{
 		"23e140cb8e03a12cba4ac571d9a7143cf5e2e9b72de3b33ce3243b4f7ad6a188/layer.tar",
 		"48dd73ececdf0f52a174ad33a469145824713bd2b73c6257ce1ba8502003ad4e/layer.tar",
@@ -112,9 +112,9 @@ func TestPackageFromTarball(t *testing.T) {
 
 	sut := spdxDefaultImplementation{}
 	_, err := sut.PackageFromTarball(&Options{}, &TarballOptions{}, "lsdkjflksdjflk")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	pkg, err := sut.PackageFromTarball(&Options{}, &TarballOptions{}, tarFile.Name())
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, pkg)
 
 	require.NotNil(t, pkg.Checksum)
@@ -150,15 +150,15 @@ func TestExternalDocRef(t *testing.T) {
 func TestExtDocReadSourceFile(t *testing.T) {
 	// Create a known testfile
 	f, err := os.CreateTemp("", "")
-	require.Nil(t, err)
-	require.Nil(t, os.WriteFile(f.Name(), []byte("Hellow World"), os.FileMode(0o644)))
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(f.Name(), []byte("Hellow World"), os.FileMode(0o644)))
 	defer os.Remove(f.Name())
 
 	ed := ExternalDocumentRef{}
-	require.NotNil(t, ed.ReadSourceFile("/kjfhg/skjdfkjh"))
-	require.Nil(t, ed.ReadSourceFile(f.Name()))
+	require.Error(t, ed.ReadSourceFile("/kjfhg/skjdfkjh"))
+	require.NoError(t, ed.ReadSourceFile(f.Name()))
 	require.NotNil(t, ed.Checksums)
-	require.Equal(t, len(ed.Checksums), 1)
+	require.Len(t, ed.Checksums, 1)
 	require.Equal(t, "5f341d31f6b6a8b15bc4e6704830bf37f99511d1", ed.Checksums["SHA1"])
 }
 
@@ -169,10 +169,10 @@ func writeTestTarball(t *testing.T, zipped bool) *os.File {
 		fileprefix += ".gz"
 	}
 	tarFile, err := os.CreateTemp(os.TempDir(), fileprefix)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	tardata, err := base64.StdEncoding.DecodeString(testTar)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	if zipped {
 		require.NoError(t, os.WriteFile(tarFile.Name(), tardata, os.FileMode(0o644)))
@@ -181,12 +181,12 @@ func writeTestTarball(t *testing.T, zipped bool) *os.File {
 
 	reader := bytes.NewReader(tardata)
 	zipreader, err := gzip.NewReader(reader)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	bindata, err := io.ReadAll(zipreader)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		tarFile.Name(), bindata, os.FileMode(0o644)), "writing test tar file",
 	)
 	return tarFile
@@ -230,7 +230,7 @@ func TestRelationshipRender(t *testing.T) {
 			Relationship{FullRender: false, Peer: &File{}, Type: DEPENDS_ON}, true, "",
 		},
 		{
-			// Relationships with only a a peer reference that should render
+			// Relationships with only a peer reference that should render
 			// in full should err
 			Relationship{FullRender: true, PeerReference: dummyref, Type: DEPENDS_ON}, true, "",
 		},
@@ -243,24 +243,24 @@ func TestRelationshipRender(t *testing.T) {
 	for _, tc := range cases {
 		res, err := tc.Rel.Render(host)
 		if tc.MustErr {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, tc.Rendered, res)
 		}
 	}
 
 	// Full rednering should not be the same as non full render
 	nonFullRender, err := cases[0].Rel.Render(host)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	cases[0].Rel.FullRender = true
 	fullRender, err := cases[0].Rel.Render(host)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotEqual(t, nonFullRender, fullRender)
 
 	// Finally, rendering with a host objectwithout an ID should err
 	_, err = cases[0].Rel.Render(&File{})
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 var testTar = `H4sICPIFo2AAA2hlbGxvLnRhcgDt1EsKwjAUBdCMXUXcQPuS5rMFwaEraDGgUFpIE3D5puAPRYuD
@@ -287,7 +287,7 @@ func TestGetImageReferences(t *testing.T) {
 	require.NoError(t, err)
 	// This image should have 5 architectures
 	require.Len(t, references.Images, 5)
-	require.Equal(t, references.MediaType, "application/vnd.docker.distribution.manifest.list.v2+json")
+	require.Equal(t, "application/vnd.docker.distribution.manifest.list.v2+json", references.MediaType)
 	// INdices should have no platform
 	require.Equal(t, "", references.Arch)
 	require.Equal(t, "", references.OS)
@@ -302,7 +302,7 @@ func TestGetImageReferences(t *testing.T) {
 	singleRef := "registry.k8s.io/kube-apiserver@sha256:1a61b61491042e2b1e659c4d57d426d01d9467fb381404bff029be4d00ead519"
 	references, err = getImageReferences(singleRef)
 	require.NoError(t, err)
-	require.Len(t, references.Images, 0)
+	require.Empty(t, references.Images)
 	require.Equal(t, singleRef, references.Digest)
 	require.Equal(t, "application/vnd.docker.distribution.manifest.v2+json", references.MediaType)
 	require.Equal(t, "ppc64le", references.Arch)
@@ -311,7 +311,7 @@ func TestGetImageReferences(t *testing.T) {
 	// Tag with a single image. Image 1.0 is a single image
 	references, err = getImageReferences("registry.k8s.io/pause:1.0")
 	require.NoError(t, err)
-	require.Len(t, references.Images, 0)
+	require.Empty(t, references.Images)
 	require.Equal(t, "registry.k8s.io/pause@sha256:a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f", references.Digest)
 	require.Equal(t, "application/vnd.docker.distribution.manifest.v2+json", references.MediaType)
 	require.Equal(t, "amd64", references.Arch)
@@ -337,7 +337,7 @@ func TestPullImagesToArchive(t *testing.T) {
 	require.Equal(t, "amd64", images.Arch)
 	require.Equal(t, "linux", images.OS)
 	require.Equal(t, "application/vnd.docker.distribution.manifest.v2+json", images.MediaType)
-	require.Len(t, images.Images, 0) // This is an image, so no child images
+	require.Empty(t, images.Images) // This is an image, so no child images
 	require.FileExists(t, filepath.Join(dir, "a78c2d6208eff9b672de43f880093100050983047b7b0afe0217d3656e1b0d5f.tar"))
 
 	foundFiles := []string{}
@@ -398,7 +398,7 @@ func TestIgnorePatterns(t *testing.T) {
 	// First, a dir without a gitignore should return no patterns, but not err
 	p, err := impl.IgnorePatterns(dir, []string{}, false)
 	require.NoError(t, err)
-	require.Len(t, p, 0)
+	require.Empty(t, p)
 
 	// If we pass an extra pattern, we should get it back
 	p, err = impl.IgnorePatterns(dir, []string{".vscode"}, false)
@@ -422,7 +422,7 @@ func TestRecursiveSearch(t *testing.T) {
 
 	// Lets nest 3 packages
 	packages := []*Package{}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		subp := NewPackage()
 		subp.SetSPDXID(fmt.Sprintf("subpackage-%d", i))
 		packages = append(packages, subp)
@@ -436,7 +436,7 @@ func TestRecursiveSearch(t *testing.T) {
 
 	// This functions searches 3 packages with the same prefix:
 	checkSubPackages := func(p *Package, radix string) {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			require.NotNil(t, p.GetElementByID(fmt.Sprintf("%s-%d", radix, i)),
 				"searching for "+radix,
 			)
@@ -451,7 +451,7 @@ func TestRecursiveSearch(t *testing.T) {
 	// not alter those conditions.
 
 	// Lets add 3 dependencies to one of the nested packages
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		subp := NewPackage()
 		subp.SetSPDXID(fmt.Sprintf("dep-%d", i))
 		require.NoError(t, p.GetElementByID("subpackage-1").(*Package).AddPackage(subp))
@@ -493,7 +493,7 @@ func TestPurlFromImage(t *testing.T) {
 		},
 	} {
 		impl := spdxDefaultImplementation{}
-		p := impl.purlFromImage(&tc.info) //nolint: gosec
+		p := impl.purlFromImage(&tc.info)
 		require.Equal(t, tc.expected, p)
 	}
 }

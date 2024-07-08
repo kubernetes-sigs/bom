@@ -77,7 +77,7 @@ func (ct *debianScanner) ReadOSPackages(layers []string) (layer int, pk *[]Packa
 }
 
 // parseDpkgDB reads a dpks database and populates a slice of PackageDBEntry
-// with information from the packages found
+// with information from the packages found.
 func (ct *debianScanner) ParseDB(dbPath string) (*[]PackageDBEntry, error) {
 	file, err := os.Open(dbPath)
 	if err != nil {

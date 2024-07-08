@@ -30,9 +30,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/http"
 	"sigs.k8s.io/release-utils/util"
+
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 const (
@@ -41,7 +42,7 @@ const (
 	distrolessLicensePath      = "./usr/share/doc/"
 	distrolessLicenseName      = "/copyright"
 	distrolessCommonLicenseDir = "/usr/share/common-licenses/"
-	commonLicensesRe           = `(?i)/usr/share/common-licenses/[-A-Z0-9\.]+`
+	commonLicensesRe           = `(?i)/usr/share/common-licenses/[-A-Z0-9.]+`
 	gzExt                      = ".gz"
 )
 
@@ -50,7 +51,7 @@ type distrolessHandler struct {
 	Options *ContainerLayerAnalyzerOptions
 }
 
-// ReadPackageData reads the distroless
+// ReadPackageData reads the distroless.
 func (h *distrolessHandler) ReadPackageData(layerPath string, pkg *Package) error {
 	// Create a new license reader to scan license files
 	licenseReader, err := h.licenseReader(h.Options)
@@ -102,7 +103,7 @@ func (h *distrolessHandler) ReadPackageData(layerPath string, pkg *Package) erro
 			return fmt.Errorf("reading the image tarfile: %w", err)
 		}
 
-		// Scan the license directories to to determine the installed packages
+		// Scan the license directories to determine the installed packages
 		if strings.HasPrefix(hdr.Name, distrolessLicensePath) && strings.HasSuffix(hdr.Name, distrolessLicenseName) {
 			// We infer the name of the package from the license directory
 			packageName := strings.TrimSuffix(strings.TrimPrefix(hdr.Name, distrolessLicensePath), distrolessLicenseName)
@@ -204,7 +205,7 @@ func (h *distrolessHandler) fetchDistrolessPackages() (pkgInfo map[string]string
 	return pkgInfo, nil
 }
 
-// licenseReader returns a reusable license reader
+// licenseReader returns a reusable license reader.
 func (h *distrolessHandler) licenseReader(o *ContainerLayerAnalyzerOptions) (*license.Reader, error) {
 	if h.reader == nil {
 		logrus.Info("Initializing licence reader with default options")
@@ -234,7 +235,7 @@ func (h *distrolessHandler) licenseReader(o *ContainerLayerAnalyzerOptions) (*li
 }
 
 // CanHandle returns a bools indicating if this handle can supply more
-// data about the specified tarball
+// data about the specified tarball.
 func (h *distrolessHandler) CanHandle(layerPath string) (can bool, err error) {
 	// Open the tar file
 	f, err := os.Open(layerPath)

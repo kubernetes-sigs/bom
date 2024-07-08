@@ -74,17 +74,17 @@ func (e *Entity) Options() *ObjectOptions {
 	return e.Opts
 }
 
-// SPDXID returns the SPDX reference string for the object
+// SPDXID returns the SPDX reference string for the object.
 func (e *Entity) SPDXID() string {
 	return e.ID
 }
 
-// SPDXID returns the SPDX reference string for the object
+// SPDXID returns the SPDX reference string for the object.
 func (e *Entity) SetSPDXID(id string) {
 	e.ID = id
 }
 
-// BuildID sets the file ID, optionally from a series of strings
+// BuildID sets the file ID, optionally from a series of strings.
 func (e *Entity) BuildID(seeds ...string) {
 	if len(seeds) <= 1 {
 		seeds = append(seeds, e.Name)
@@ -93,12 +93,12 @@ func (e *Entity) BuildID(seeds ...string) {
 }
 
 // AddRelated this adds a related object to the file to be rendered
-// on the document. The exact output depends on the related obj options
+// on the document. The exact output depends on the related obj options.
 func (e *Entity) AddRelationship(rel *Relationship) {
 	e.Relationships = append(e.Relationships, rel)
 }
 
-// ReadChecksums receives a path to a file and calculates its checksums
+// ReadChecksums receives a path to a file and calculates its checksums.
 func (e *Entity) ReadChecksums(filePath string) error {
 	if e.Checksum == nil {
 		e.Checksum = map[string]string{}
@@ -146,7 +146,7 @@ func (e *Entity) ReadSourceFile(path string) error {
 	return nil
 }
 
-// Render is overridden by Package and File with their own variants
+// Render is overridden by Package and File with their own variants.
 func (e *Entity) Render() (string, error) {
 	return "", nil
 }
@@ -156,7 +156,7 @@ func (e *Entity) GetRelationships() *[]*Relationship {
 }
 
 // ToProvenanceSubject converts the element to an intoto subject, suitable
-// to use inprovenance attestaions
+// to use inprovenance attestaions.
 func (e *Entity) ToProvenanceSubject() *intoto.Subject {
 	location := ""
 	if e.DownloadLocation != "" {
@@ -267,11 +267,11 @@ mloop:
 	return ret
 }
 
-// GetElementByID nil function to be overridden by package and file
+// GetElementByID nil function to be overridden by package and file.
 func (e *Entity) GetElementByID(string) Object { return nil }
 
 // GetPackagesByPurl queries the package and returns all the nodes it is
-// connected to that match the specified purl bits
+// connected to that match the specified purl bits.
 func (p *Package) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
 	seen := map[string]struct{}{}
 	return recursivePurlSearch(purlSpec, p, &seen, opts...)

@@ -104,21 +104,21 @@ func TestParseJsonInternal(t *testing.T) {
 	rootPkg, ok := doc.Packages["SPDXRef-Package-sha256C58f44417ca5eae5c4832baf4f977a12d8492bca835cdf07d44c9db210409b1ba38"]
 	require.True(t, ok)
 	require.Len(t, rootPkg.Relationships, 1)
-	require.Equal(t, rootPkg.Relationships[0].PeerReference, "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e")
-	require.Len(t, doc.ExternalDocRefs, 0)
+	require.Equal(t, "SPDXRef-Package-172.19.0.1C585000C47apko-testC64sha256C5838692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e", rootPkg.Relationships[0].PeerReference)
+	require.Empty(t, doc.ExternalDocRefs)
 	layerPackage, ok := rootPkg.Relationships[0].Peer.(*Package)
 	require.True(t, ok)
 	require.NotNil(t, layerPackage)
 	rels := layerPackage.GetRelationships()
 	require.Len(t, *rels, 21)
-	require.Equal(t, doc.LicenseListVersion, "3.16")
-	require.Equal(t, doc.Creator.Organization, "Chainguard, Inc")
-	require.Equal(t, doc.Creator.Tool[0], "apko (devel)")
+	require.Equal(t, "3.16", doc.LicenseListVersion)
+	require.Equal(t, "Chainguard, Inc", doc.Creator.Organization)
+	require.Equal(t, "apko (devel)", doc.Creator.Tool[0])
 
 	require.Len(t, layerPackage.ExternalRefs, 1)
-	require.Equal(t, layerPackage.ExternalRefs[0].Category, "PACKAGE_MANAGER")
-	require.Equal(t, layerPackage.ExternalRefs[0].Locator, "pkg:oci/172.19.0.1:5000%2Fapko-test@sha256:38692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e?arch=amd64\u0026tag=latest")
-	require.Equal(t, layerPackage.ExternalRefs[0].Type, "purl")
+	require.Equal(t, "PACKAGE_MANAGER", layerPackage.ExternalRefs[0].Category)
+	require.Equal(t, "pkg:oci/172.19.0.1:5000%2Fapko-test@sha256:38692af7edf0ffdb93792734e74b16d7711b4d6a91c0ecae1b390ea0b5a80c6e?arch=amd64\u0026tag=latest", layerPackage.ExternalRefs[0].Locator)
+	require.Equal(t, "purl", layerPackage.ExternalRefs[0].Type)
 }
 
 func TestParseJsonExternal(t *testing.T) {
@@ -136,21 +136,21 @@ func TestParseJsonExternal(t *testing.T) {
 
 	for _, rel := range doc.Packages[rootPackage].Relationships {
 		if rel.PeerReference == "SPDXRef-Package-sha256-d0370905ad41c4eb2b1a56f3139fd6a9acfcef203c27e2a9e1655eab28351fd6" {
-			require.Equal(t, rel.PeerExtReference, "DocumentRef-386-image-sbom:SPDXRef-Package-sha256-d0370905ad41c4eb2b1a56f3139fd6a9acfcef203c27e2a9e1655eab28351fd6")
+			require.Equal(t, "DocumentRef-386-image-sbom:SPDXRef-Package-sha256-d0370905ad41c4eb2b1a56f3139fd6a9acfcef203c27e2a9e1655eab28351fd6", rel.PeerExtReference)
 		} else {
-			require.Equal(t, rel.PeerExtReference, "DocumentRef-amd64-image-sbom:SPDXRef-Package-sha256-b09ddd04b47e07919402c15ea21bf839a95f6bf38ec0df1594c296425010cf1a")
-			require.Equal(t, rel.PeerReference, "SPDXRef-Package-sha256-b09ddd04b47e07919402c15ea21bf839a95f6bf38ec0df1594c296425010cf1a")
+			require.Equal(t, "DocumentRef-amd64-image-sbom:SPDXRef-Package-sha256-b09ddd04b47e07919402c15ea21bf839a95f6bf38ec0df1594c296425010cf1a", rel.PeerExtReference)
+			require.Equal(t, "SPDXRef-Package-sha256-b09ddd04b47e07919402c15ea21bf839a95f6bf38ec0df1594c296425010cf1a", rel.PeerReference)
 		}
 	}
 
 	for _, eref := range doc.ExternalDocRefs {
 		if eref.ID == "DocumentRef-amd64-image-sbom" {
-			require.Equal(t, eref.URI, "https://172.19.0.1:5000/v2/test-nosbom2/blobs/sha256:430892ae21dd7f8174183be12a500cfc32fc48a824f1e5a88fced42b4193fd1a")
-			require.Equal(t, eref.Checksums["SHA256"], "430892ae21dd7f8174183be12a500cfc32fc48a824f1e5a88fced42b4193fd1a")
+			require.Equal(t, "https://172.19.0.1:5000/v2/test-nosbom2/blobs/sha256:430892ae21dd7f8174183be12a500cfc32fc48a824f1e5a88fced42b4193fd1a", eref.URI)
+			require.Equal(t, "430892ae21dd7f8174183be12a500cfc32fc48a824f1e5a88fced42b4193fd1a", eref.Checksums["SHA256"])
 		} else {
-			require.Equal(t, eref.ID, "DocumentRef-386-image-sbom")
-			require.Equal(t, eref.URI, "https://172.19.0.1:5000/v2/test-nosbom2/blobs/sha256:799503c8e7f1fe6a665e089780863d0f3c8d7cca64ded68c71a47544337ff983")
-			require.Equal(t, eref.Checksums["SHA256"], "799503c8e7f1fe6a665e089780863d0f3c8d7cca64ded68c71a47544337ff983")
+			require.Equal(t, "DocumentRef-386-image-sbom", eref.ID)
+			require.Equal(t, "https://172.19.0.1:5000/v2/test-nosbom2/blobs/sha256:799503c8e7f1fe6a665e089780863d0f3c8d7cca64ded68c71a47544337ff983", eref.URI)
+			require.Equal(t, "799503c8e7f1fe6a665e089780863d0f3c8d7cca64ded68c71a47544337ff983", eref.Checksums["SHA256"])
 		}
 	}
 }

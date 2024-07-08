@@ -48,8 +48,8 @@ const (
 
 func TestCacheData(t *testing.T) {
 	tempdir, err := os.MkdirTemp("", testDirPrefix)
-	require.Nil(t, err)
-	defer func() { require.Nil(t, os.RemoveAll(tempdir)) }()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, os.RemoveAll(tempdir)) }()
 
 	opts := DefaultDownloaderOpts
 	opts.CacheDir = tempdir
@@ -61,11 +61,11 @@ func TestCacheData(t *testing.T) {
 	testURL := "http://example.com/"
 
 	// Test storing the data
-	require.Nil(t, impl.cacheData(testURL, testData))
+	require.NoError(t, impl.cacheData(testURL, testData))
 
 	// Now test getting the data back
 	cachedData, err := impl.getCachedData(testURL)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, testData, cachedData)
 }
 
@@ -76,14 +76,14 @@ func TestFindLicenseFiles(t *testing.T) {
 	}
 
 	tempdir, err := os.MkdirTemp("", testDirPrefix)
-	require.Nil(t, err)
-	defer func() { require.Nil(t, os.RemoveAll(tempdir)) }()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, os.RemoveAll(tempdir)) }()
 
-	require.Nil(t, os.MkdirAll(filepath.Join(tempdir, "/some/sub/dir"), os.FileMode(0o755)))
+	require.NoError(t, os.MkdirAll(filepath.Join(tempdir, "/some/sub/dir"), os.FileMode(0o755)))
 	fileData := []byte("some license")
 	for _, sub := range []string{"", "/some/sub/dir"} {
 		for _, filename := range files {
-			require.Nil(t, os.WriteFile(
+			require.NoError(t, os.WriteFile(
 				filepath.Join(tempdir, sub, filename), fileData, os.FileMode(0o644),
 			))
 		}
@@ -91,8 +91,8 @@ func TestFindLicenseFiles(t *testing.T) {
 
 	impl := ReaderDefaultImpl{}
 	res, err := impl.FindLicenseFiles(tempdir)
-	require.Nil(t, err)
-	require.Equal(t, 8, len(res), fmt.Sprintf("%+v", res))
+	require.NoError(t, err)
+	require.Len(t, res, 8, fmt.Sprintf("%+v", res))
 	require.NotContains(t, res, filepath.Join(tempdir, "license.go"))
 	require.NotContains(t, res, filepath.Join(tempdir, "README.md"))
 }

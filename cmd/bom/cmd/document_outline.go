@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 

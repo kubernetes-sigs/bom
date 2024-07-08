@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/bom/pkg/provenance/provenancefakes"
 )
 
-// getPredicateSUT returns a predicate loaded with the test implementation
+// getPredicateSUT returns a predicate loaded with the test implementation.
 func getPredicateSUT() *provenance.Predicate {
 	p := provenance.NewSLSAPredicate()
 	p.SetImplementation(&provenancefakes.FakePredicateImplementation{})
@@ -59,9 +59,9 @@ func TestWrite(t *testing.T) {
 		p.SetImplementation(mock)
 		res := p.Write("/tmp/mock")
 		if tc.shouldError {
-			require.NotNil(t, res)
+			require.Error(t, res)
 		} else {
-			require.Nil(t, res)
+			require.NoError(t, res)
 		}
 	}
 }
