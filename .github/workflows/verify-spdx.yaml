@@ -14,7 +14,7 @@ jobs:
           go-version: '1.22'
           check-latest: true
 
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - run: |
           go run ./cmd/bom/main.go generate -i registry.k8s.io/pause > example-image-pause.spdx
           go run ./cmd/bom/main.go generate --format=json -i registry.k8s.io/pause > example-image-pause.spdx.json
@@ -35,7 +35,7 @@ jobs:
           spdx-tools-version: 1.1.0
           sbom-path: example-image-pause.spdx.json
 
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808  # v4.3.3
+      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b  # v4.3.4
         if: ${{ always() }}
         with:
           name: Example SBOMs
