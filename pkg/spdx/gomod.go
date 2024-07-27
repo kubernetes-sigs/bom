@@ -30,11 +30,12 @@ import (
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/vcs" //nolint: staticcheck
+	"golang.org/x/tools/go/vcs" //nolint:staticcheck
 
-	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/util"
+
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 const (
@@ -46,7 +47,7 @@ const (
 
 var goModRevRe *regexp.Regexp
 
-// NewGoModule returns a new go module from the specified path
+// NewGoModule returns a new go module from the specified path.
 func NewGoModuleFromPath(path string) (*GoModule, error) {
 	mod := NewGoModule()
 	mod.opts.Path = path
@@ -60,7 +61,7 @@ func NewGoModule() *GoModule {
 	}
 }
 
-// GoModule abstracts the go module data of a project
+// GoModule abstracts the go module data of a project.
 type GoModule struct {
 	impl     GoModImplementation
 	GoMod    *modfile.File
@@ -74,12 +75,12 @@ type GoModuleOptions struct {
 	ScanLicenses   bool   // Scan licenses from everypossible place unless false
 }
 
-// Options returns a pointer to the module options set
+// Options returns a pointer to the module options set.
 func (mod *GoModule) Options() *GoModuleOptions {
 	return mod.opts
 }
 
-// GoPackage basic pkg data we need
+// GoPackage basic pkg data we need.
 type GoPackage struct {
 	TmpDir        bool
 	ImportPath    string
@@ -90,7 +91,7 @@ type GoPackage struct {
 	CopyrightText string
 }
 
-// SPDXPackage builds a spdx package from the go package data
+// SPDXPackage builds a spdx package from the go package data.
 func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 	repo, err := vcs.RepoRootForImportPath(pkg.ImportPath, true)
 	if err != nil {
@@ -133,7 +134,7 @@ func nsAndNameFromImportPath(importPath string) (namespace, packageName string) 
 }
 
 // PackageURL returns a purl if the go package has enough data to generate
-// one. If data is missing, it will return an empty string
+// one. If data is missing, it will return an empty string.
 func (pkg *GoPackage) PackageURL() string {
 	namespace, pname := nsAndNameFromImportPath(pkg.ImportPath)
 	// We require type, package, namespace and version at the very
@@ -157,7 +158,7 @@ type GoModImplementation interface {
 	ScanPackageLicense(*GoPackage, *license.Reader, *GoModuleOptions) error
 }
 
-// Initializes a go module from the specified path
+// Initializes a go module from the specified path.
 func (mod *GoModule) Open() error {
 	gomod, err := mod.impl.OpenModule(mod.opts)
 	if err != nil {
@@ -179,12 +180,12 @@ func (mod *GoModule) Open() error {
 	return nil
 }
 
-// RemoveDownloads cleans all downloads
+// RemoveDownloads cleans all downloads.
 func (mod *GoModule) RemoveDownloads() error {
 	return mod.impl.RemoveDownloads(mod.Packages)
 }
 
-// DownloadPackages downloads all the module's packages to the local disk
+// DownloadPackages downloads all the module's packages to the local disk.
 func (mod *GoModule) DownloadPackages() error {
 	logrus.Infof("Downloading source code for %d packages", len(mod.Packages))
 	if mod.Packages == nil {
@@ -199,7 +200,7 @@ func (mod *GoModule) DownloadPackages() error {
 	return nil
 }
 
-// ScanLicenses scans the licenses and populats the fields
+// ScanLicenses scans the licenses and populats the fields.
 func (mod *GoModule) ScanLicenses() error {
 	if mod.Packages == nil {
 		return errors.New("unable to scan lincese files, package list is nil")
@@ -257,7 +258,7 @@ func (mod *GoModule) ScanLicenses() error {
 
 // BuildFullPackageList return the complete of packages imported into
 // the module, instead of reading go.mod, this functions calls
-// go list and works from there
+// go list and works from there.
 func (mod *GoModule) BuildFullPackageList(_ *modfile.File) (packageList []*GoPackage, err error) {
 	packageList = []*GoPackage{}
 
@@ -369,7 +370,7 @@ type GoModDefaultImpl struct {
 	licenseReader *license.Reader
 }
 
-// OpenModule opens the go,mod file for the module and parses it
+// OpenModule opens the go,mod file for the module and parses it.
 func (di *GoModDefaultImpl) OpenModule(opts *GoModuleOptions) (*modfile.File, error) {
 	modData, err := os.ReadFile(filepath.Join(opts.Path, GoModFileName))
 	if err != nil {
@@ -386,7 +387,7 @@ func (di *GoModDefaultImpl) OpenModule(opts *GoModuleOptions) (*modfile.File, er
 	return gomod, nil
 }
 
-// BuildPackageList builds a slice of packages to assign to the module
+// BuildPackageList builds a slice of packages to assign to the module.
 func (di *GoModDefaultImpl) BuildPackageList(gomod *modfile.File) ([]*GoPackage, error) {
 	pkgs := []*GoPackage{}
 	for _, req := range gomod.Require {
@@ -458,7 +459,7 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 	return nil
 }
 
-// RemoveDownloads takes a list of packages and remove its downloads
+// RemoveDownloads takes a list of packages and remove its downloads.
 func (di *GoModDefaultImpl) RemoveDownloads(packageList []*GoPackage) error {
 	for _, pkg := range packageList {
 		if pkg.ImportPath != "" && util.Exists(pkg.LocalDir) && pkg.TmpDir {
@@ -470,7 +471,7 @@ func (di *GoModDefaultImpl) RemoveDownloads(packageList []*GoPackage) error {
 	return nil
 }
 
-// LicenseReader returns a license reader
+// LicenseReader returns a license reader.
 func (di *GoModDefaultImpl) LicenseReader() (*license.Reader, error) {
 	if di.licenseReader == nil {
 		opts := license.DefaultReaderOptions
@@ -491,7 +492,7 @@ func (di *GoModDefaultImpl) LicenseReader() (*license.Reader, error) {
 	return di.licenseReader, nil
 }
 
-// ScanPackageLicense scans a package for licensing info
+// ScanPackageLicense scans a package for licensing info.
 func (di *GoModDefaultImpl) ScanPackageLicense(
 	pkg *GoPackage, reader *license.Reader, _ *GoModuleOptions,
 ) error {

@@ -54,7 +54,7 @@ FileCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
 
 `
 
-// File abstracts a file contained in a package
+// File abstracts a file contained in a package.
 type File struct {
 	Entity
 	FileType          []string
@@ -67,7 +67,7 @@ func NewFile() (f *File) {
 	return f
 }
 
-// Render renders the document fragment of a file
+// Render renders the document fragment of a file.
 func (f *File) Render() (docFragment string, err error) {
 	// If we have not yet checksummed the file, do it now:
 	if f.Checksum == nil || len(f.Checksum) == 0 {
@@ -96,7 +96,7 @@ func (f *File) Render() (docFragment string, err error) {
 	return docFragment, nil
 }
 
-// BuildID sets the file ID, optionally from a series of strings
+// BuildID sets the file ID, optionally from a series of strings.
 func (f *File) BuildID(seeds ...string) {
 	prefix := ""
 	if f.Options() != nil {
@@ -196,7 +196,7 @@ func getFileContentType(path string) (string, error) {
 
 // GetElementByID search the file and its peers looking for the
 // specified SPDX id. If found, the function returns a copy of
-// the object identified by the SPDX-ID provided
+// the object identified by the SPDX-ID provided.
 func (f *File) GetElementByID(id string) Object {
 	if f.SPDXID() == id {
 		return f

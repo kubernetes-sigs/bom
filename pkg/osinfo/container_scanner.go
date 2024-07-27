@@ -85,7 +85,7 @@ func ReadOSPackages(layers []string) (
 	return layerNum, packages, err
 }
 
-// setPurlData stamps al found packages with the purl type and NS
+// setPurlData stamps al found packages with the purl type and NS.
 func setPurlData(ptype, pnamespace string, packages *[]PackageDBEntry) {
 	if packages == nil {
 		return
@@ -111,7 +111,7 @@ type PackageDBEntry struct {
 
 // PackageURL returns a purl representing the db entry. If the entry
 // does not have enough data to generate the purl, it will return an
-// empty string
+// empty string.
 func (e *PackageDBEntry) PackageURL() string {
 	// We require type, package, namespace and version at the very
 	// least to generate a purl
@@ -133,7 +133,7 @@ func (e *PackageDBEntry) PackageURL() string {
 }
 
 // DownloadLocation synthesizes a download location for the
-// packages based on known location for the different distros
+// packages based on known location for the different distros.
 func (e *PackageDBEntry) DownloadLocation() string {
 	if e.Package == "" || e.Version == "" || e.Architecture == "" {
 		return ""

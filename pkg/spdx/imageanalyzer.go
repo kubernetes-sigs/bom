@@ -76,7 +76,7 @@ func (ia *ImageAnalyzer) AnalyzeLayer(layerPath string, pkg *Package) error {
 }
 
 // ContainerLayerAnalyzer is an interface that knows how to read a
-// known container layer and populate a SPDX package
+// known container layer and populate a SPDX package.
 type ContainerLayerAnalyzer interface {
 	ReadPackageData(layerPath string, pkg *Package) error
 	CanHandle(layerPath string) (bool, error)

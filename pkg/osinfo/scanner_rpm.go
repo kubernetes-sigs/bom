@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	// Import sqlite driver for rpm database
+	// Import sqlite driver for rpm database.
 	_ "github.com/glebarez/go-sqlite"
 	rpmdbpkg "github.com/knqyf263/go-rpmdb/pkg"
 	"github.com/sirupsen/logrus"
@@ -45,7 +45,7 @@ func (ct *rpmScanner) OSType() OSType {
 	return OSRHEL
 }
 
-// ReadOSPackages reads the rpm database
+// ReadOSPackages reads the rpm database.
 func (ct *rpmScanner) ReadOSPackages(layers []string) (layer int, pk *[]PackageDBEntry, err error) {
 	rpmDatabase := ""
 

@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/release-utils/util"
 )
 
-// CatalogOptions are the spdx settings
+// CatalogOptions are the spdx settings.
 type CatalogOptions struct {
 	CacheDir string // Directrory to catch the license we download from SPDX.org
 	Version  string // Version of the licenses to download  (eg v3.19) or blank for latest
@@ -46,7 +46,7 @@ var DefaultCatalogOpts = CatalogOptions{
 	Version: "v3.24.0",
 }
 
-// NewCatalogWithOptions returns a SPDX object with the specified options
+// NewCatalogWithOptions returns a SPDX object with the specified options.
 func NewCatalogWithOptions(opts CatalogOptions) (catalog *Catalog, err error) {
 	// Create the license downloader
 	doptions := DefaultDownloaderOpts
@@ -64,12 +64,12 @@ func NewCatalogWithOptions(opts CatalogOptions) (catalog *Catalog, err error) {
 	return catalog, nil
 }
 
-// Options returns  a pointer to the catlog options
+// Options returns  a pointer to the catlog options.
 func (catalog *Catalog) Options() CatalogOptions {
 	return catalog.opts
 }
 
-// LoadLicenses reads the license data from the downloader
+// LoadLicenses reads the license data from the downloader.
 func (catalog *Catalog) LoadLicenses() error {
 	logrus.Info("Loading license data from downloader")
 	licenses, err := catalog.Downloader.GetLicenses()
@@ -81,14 +81,14 @@ func (catalog *Catalog) LoadLicenses() error {
 	return nil
 }
 
-// Catalog is an objec to interact with licenses and manifest creation
+// Catalog is an objec to interact with licenses and manifest creation.
 type Catalog struct {
 	Downloader *Downloader    // License Downloader
 	List       *List          // List of licenses
 	opts       CatalogOptions // SPDX Options
 }
 
-// WriteLicensesAsText writes the SPDX license collection to text files
+// WriteLicensesAsText writes the SPDX license collection to text files.
 func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 	logrus.Infof("Writing %d SPDX licenses to %s", len(catalog.List.Licenses), targetDir)
 	if catalog.List.Licenses == nil {
@@ -102,7 +102,6 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 
 	var wg errgroup.Group
 	for _, l := range catalog.List.Licenses {
-		l := l
 		wg.Go(func() error {
 			if l.IsDeprecatedLicenseID {
 				return nil
@@ -125,7 +124,7 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 	return nil
 }
 
-// GetLicense returns a license struct from its SPDX ID label
+// GetLicense returns a license struct from its SPDX ID label.
 func (catalog *Catalog) GetLicense(label string) *License {
 	if lic, ok := catalog.List.Licenses[label]; ok {
 		return lic

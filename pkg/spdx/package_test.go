@@ -144,12 +144,12 @@ func TestPurlMatches(t *testing.T) {
 			Type:     "purl",
 			Locator:  tc.purl,
 		})
-		wildcardizePurl(&tc.spec)                                          //nolint: gosec
-		require.Equal(t, tc.mustMatch, sut.PurlMatches(&tc.spec), tc.spec) //nolint: gosec
+		wildcardizePurl(&tc.spec)
+		require.Equal(t, tc.mustMatch, sut.PurlMatches(&tc.spec), tc.spec)
 	}
 }
 
-// The spec for searching has to have wildcards
+// The spec for searching has to have wildcards.
 func wildcardizePurl(purlSpec *purl.PackageURL) {
 	if purlSpec.Type == "" {
 		purlSpec.Type = "*"

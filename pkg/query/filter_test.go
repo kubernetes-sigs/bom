@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
@@ -92,7 +93,7 @@ func TestDepth(t *testing.T) {
 	require.Len(t, newResults.Objects, 1)
 	for id, o := range newResults.Objects {
 		require.Equal(t, o.SPDXID(), id)
-		require.Equal(t, id, "subfile1")
+		require.Equal(t, "subfile1", id)
 	}
 
 	fr2 := testFilterResults()
@@ -107,7 +108,7 @@ func TestDepth(t *testing.T) {
 	fr3.Apply(&DepthFilter{TargetDepth: 2})
 	require.NotNil(t, fr3.Objects)
 	require.NoError(t, fr3.Error)
-	require.Len(t, fr3.Objects, 0)
+	require.Empty(t, fr3.Objects)
 }
 
 func TestName(t *testing.T) {

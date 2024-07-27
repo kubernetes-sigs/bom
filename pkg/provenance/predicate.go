@@ -30,17 +30,17 @@ type Predicate struct {
 	impl PredicateImplementation
 }
 
-// setImplementation sets the predicate implementation
+// setImplementation sets the predicate implementation.
 func (p *Predicate) SetImplementation(impl PredicateImplementation) {
 	p.impl = impl
 }
 
-// AddMaterial adds an entry to the listo of materials
+// AddMaterial adds an entry to the listo of materials.
 func (p *Predicate) AddMaterial(uri string, ds common.DigestSet) {
 	p.impl.AddMaterial(p, uri, ds)
 }
 
-// Write outputs the predicate as JSON to a file
+// Write outputs the predicate as JSON to a file.
 func (p *Predicate) Write(path string) error {
 	return p.impl.Write(p, path)
 }
@@ -53,7 +53,7 @@ type PredicateImplementation interface {
 
 type defaultPredicateImplementation struct{}
 
-// Write dumps the predicate data into a JSON file
+// Write dumps the predicate data into a JSON file.
 func (pi *defaultPredicateImplementation) Write(p *Predicate, path string) error {
 	jsonData, err := json.Marshal(p)
 	if err != nil {
@@ -67,7 +67,7 @@ func (pi *defaultPredicateImplementation) Write(p *Predicate, path string) error
 	return nil
 }
 
-// AddMaterial adds a material to the entry
+// AddMaterial adds a material to the entry.
 func (pi *defaultPredicateImplementation) AddMaterial(p *Predicate, uri string, ds common.DigestSet) {
 	if p.Materials == nil {
 		p.Materials = []common.ProvenanceMaterial{}

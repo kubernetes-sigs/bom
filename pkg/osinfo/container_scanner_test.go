@@ -28,7 +28,7 @@ func TestReadOSPackages(t *testing.T) {
 		"testdata/dpkg-layer1.tar.gz",       // The second layer contains the dpkg database
 	})
 	require.NoError(t, err)
-	require.Equal(t, layer, 1)
+	require.Equal(t, 1, layer)
 	require.Len(t, *packages, 84)
 
 	// No layers should yield no error

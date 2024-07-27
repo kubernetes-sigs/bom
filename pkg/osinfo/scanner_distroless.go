@@ -44,7 +44,7 @@ func (ct *distrolessScanner) OSType() OSType {
 }
 
 // ReadOSPackages reads the installed package configuration in the distroless
-// image. The debian database will be extracted to a temporary directory
+// image. The debian database will be extracted to a temporary directory.
 func (ct *distrolessScanner) ReadOSPackages(layers []string) (layer int, pk *[]PackageDBEntry, err error) {
 	tmpDBPath, err := os.MkdirTemp("", "distroless-db-")
 	if err != nil {
@@ -67,7 +67,7 @@ func (ct *distrolessScanner) ReadOSPackages(layers []string) (layer int, pk *[]P
 	return layer, db, nil
 }
 
-// ParseDB parses the split dpkg database extracted from the distroless filesystem
+// ParseDB parses the split dpkg database extracted from the distroless filesystem.
 func (ct *distrolessScanner) ParseDB(path string) (*[]PackageDBEntry, error) {
 	dpkgScanner := debianScanner{}
 	db := []PackageDBEntry{}

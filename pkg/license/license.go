@@ -44,7 +44,7 @@ const kubernetesBoilerPlate = `# Licensed under the Apache License, Version 2.0 
 #
 #     http://www.apache.org/licenses/LICENSE-2.0`
 
-// DebianLicenseLabels is a map to get the SPDX label from a debian label
+// DebianLicenseLabels is a map to get the SPDX label from a debian label.
 var DebianLicenseLabels = map[string]string{
 	"Apache-2.0": "Apache-2.0",
 	"Artistic":   "Artistic-1.0-Perl",
@@ -63,13 +63,13 @@ var DebianLicenseLabels = map[string]string{
 	"MPL-2.0":    "MPL-2.0",
 }
 
-// Reader is an object that finds and interprets license files
+// Reader is an object that finds and interprets license files.
 type Reader struct {
 	impl    ReaderImplementation
 	Options *ReaderOptions
 }
 
-// SetImplementation sets the implementation that the license reader will use
+// SetImplementation sets the implementation that the license reader will use.
 func (r *Reader) SetImplementation(i ReaderImplementation) error {
 	r.impl = i
 	if err := r.impl.Initialize(r.Options); err != nil {
@@ -78,12 +78,12 @@ func (r *Reader) SetImplementation(i ReaderImplementation) error {
 	return nil
 }
 
-// NewReader returns a license reader with the default options
+// NewReader returns a license reader with the default options.
 func NewReader() (*Reader, error) {
 	return NewReaderWithOptions(DefaultReaderOptions)
 }
 
-// NewReaderWithOptions returns a new license reader with the specified options
+// NewReaderWithOptions returns a new license reader with the specified options.
 func NewReaderWithOptions(opts *ReaderOptions) (r *Reader, err error) {
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("validating reader options: %w", err)
@@ -99,7 +99,7 @@ func NewReaderWithOptions(opts *ReaderOptions) (r *Reader, err error) {
 	return r, nil
 }
 
-// ReaderOptions are the optional settings for the license reader
+// ReaderOptions are the optional settings for the license reader.
 type ReaderOptions struct {
 	ConfidenceThreshold float64 // Miniumum confidence to consider a license detected
 	WorkDir             string  // Directory where the reader will store its data
@@ -108,7 +108,7 @@ type ReaderOptions struct {
 	LicenseListVersion  string  // Version of the SPDX license list to use
 }
 
-// Validate checks the options to verify the are sane
+// Validate checks the options to verify the are sane.
 func (ro *ReaderOptions) Validate() error {
 	// if there is no working dir, create one
 	if ro.WorkDir == "" {
@@ -126,7 +126,7 @@ func (ro *ReaderOptions) Validate() error {
 	return nil
 }
 
-// CachePath return the full path to the downloads cache
+// CachePath return the full path to the downloads cache.
 func (ro *ReaderOptions) CachePath() string {
 	if ro.CacheDir != "" {
 		return ro.CacheDir
@@ -135,7 +135,7 @@ func (ro *ReaderOptions) CachePath() string {
 	return filepath.Join(ro.WorkDir, defaultCacheSubDir)
 }
 
-// LicensesPath return the full path the dir where the licenses are
+// LicensesPath return the full path the dir where the licenses are.
 func (ro *ReaderOptions) LicensesPath() string {
 	if ro.LicenseDir != "" {
 		return ro.LicenseDir
@@ -144,17 +144,17 @@ func (ro *ReaderOptions) LicensesPath() string {
 	return filepath.Join(ro.WorkDir, defaultLicenseSubDir)
 }
 
-// DefaultReaderOptions is the default set of options for the classifier
+// DefaultReaderOptions is the default set of options for the classifier.
 var DefaultReaderOptions = &ReaderOptions{
 	ConfidenceThreshold: 0.9,
 }
 
-// LicenseFromLabel returns a spdx license from its label
+// LicenseFromLabel returns a spdx license from its label.
 func (r *Reader) LicenseFromLabel(label string) (license *License) {
 	return r.impl.LicenseFromLabel(label)
 }
 
-// LicenseFromFile reads a file ans returns its license
+// LicenseFromFile reads a file ans returns its license.
 func (r *Reader) LicenseFromFile(filePath string) (license *License, err error) {
 	license, err = r.impl.LicenseFromFile(filePath)
 	if err != nil {
@@ -163,7 +163,7 @@ func (r *Reader) LicenseFromFile(filePath string) (license *License, err error) 
 	return license, err
 }
 
-// ReadTopLicense returns the topmost license file in a directory
+// ReadTopLicense returns the topmost license file in a directory.
 func (r *Reader) ReadTopLicense(path string) (*ClassifyResult, error) {
 	licenseFilePath := ""
 	// First, if we have a topmost license, we use that one
@@ -232,7 +232,7 @@ func (r *Reader) ReadTopLicense(path string) (*ClassifyResult, error) {
 	return res, nil
 }
 
-// ReadLicenses returns an array of all licenses found in the specified path
+// ReadLicenses returns an array of all licenses found in the specified path.
 func (r *Reader) ReadLicenses(path string) (
 	licenseList []*ClassifyResult, unknownPaths []string, err error,
 ) {
@@ -248,7 +248,7 @@ func (r *Reader) ReadLicenses(path string) (
 	return licenseList, unknownPaths, nil
 }
 
-// ClassifyResult abstracts the data resulting from a file classification
+// ClassifyResult abstracts the data resulting from a file classification.
 type ClassifyResult struct {
 	File    string
 	Text    string
@@ -258,7 +258,7 @@ type ClassifyResult struct {
 //counterfeiter:generate . ReaderImplementation
 
 // ReaderImplementation implements the basic lifecycle of a license reader:
-// initializes -> finds license files to scan -> classifies them to a SPDX license
+// initializes -> finds license files to scan -> classifies them to a SPDX license.
 type ReaderImplementation interface {
 	Initialize(*ReaderOptions) error
 	ClassifyLicenseFiles([]string) ([]*ClassifyResult, []string, error)
@@ -268,7 +268,7 @@ type ReaderImplementation interface {
 	FindLicenseFiles(string) ([]string, error)
 }
 
-// HasKubernetesBoilerPlate checks if a file contains the Kubernetes License boilerplate
+// HasKubernetesBoilerPlate checks if a file contains the Kubernetes License boilerplate.
 func HasKubernetesBoilerPlate(filePath string) (bool, error) {
 	// kubernetesBoilerPlate
 	sut, err := os.Open(filePath)
@@ -298,7 +298,7 @@ func HasKubernetesBoilerPlate(filePath string) (bool, error) {
 	return false, nil
 }
 
-// List abstracts the list of licenses published by SPDX.org
+// List abstracts the list of licenses published by SPDX.org.
 type List struct {
 	sync.RWMutex
 	Version           string      `json:"licenseListVersion"`
@@ -307,7 +307,7 @@ type List struct {
 	Licenses          map[string]*License
 }
 
-// Add appends a license to the license list
+// Add appends a license to the license list.
 func (list *List) Add(license *License) {
 	list.Lock()
 	defer list.Unlock()
@@ -317,7 +317,7 @@ func (list *List) Add(license *License) {
 	list.Licenses[license.LicenseID] = license
 }
 
-// SPDXLicense is a license described in JSON
+// SPDXLicense is a license described in JSON.
 type License struct {
 	IsDeprecatedLicenseID         bool     `json:"isDeprecatedLicenseId"`
 	IsFsfLibre                    bool     `json:"isFsfLibre"`
@@ -331,7 +331,7 @@ type License struct {
 	SeeAlso                       []string `json:"seeAlso"`
 }
 
-// WriteText writes the SPDX license text to a text file
+// WriteText writes the SPDX license text to a text file.
 func (license *License) WriteText(filePath string) error {
 	if err := os.WriteFile(filePath, []byte(license.LicenseText), os.FileMode(0o644)); err != nil {
 		return fmt.Errorf("while writing license to text file: %w", err)
@@ -339,7 +339,7 @@ func (license *License) WriteText(filePath string) error {
 	return nil
 }
 
-// ListEntry a license entry in the list
+// ListEntry a license entry in the list.
 type ListEntry struct {
 	IsOsiApproved   bool     `json:"isOsiApproved"`
 	IsDeprectaed    bool     `json:"isDeprecatedLicenseId"`
@@ -351,7 +351,7 @@ type ListEntry struct {
 	SeeAlso         []string `json:"seeAlso"`
 }
 
-// ParseLicense parses a SPDX license from its JSON source
+// ParseLicense parses a SPDX license from its JSON source.
 func ParseLicense(licenseJSON []byte) (license *License, err error) {
 	license = &License{}
 	if err := json.Unmarshal(licenseJSON, license); err != nil {

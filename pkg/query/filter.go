@@ -81,7 +81,7 @@ func searchDepth(objectSet map[string]spdx.Object, currentDepth, targetDepth uin
 	return searchDepth(res, currentDepth+1, targetDepth)
 }
 
-// AllFilter matches everything
+// AllFilter matches everything.
 type AllFilter struct{}
 
 func (f *AllFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
@@ -169,7 +169,7 @@ func (cycler *ObjectCycler) CycleFull(objects map[string]spdx.Object, fn Matcher
 }
 
 // Recursion will traverse the SBOM graph and return the element that
-// matches the query without continuing down its relationships
+// matches the query without continuing down its relationships.
 func doRecursion(
 	//nolint:gocritic // seen is passed recursively
 	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},
@@ -209,7 +209,7 @@ func doRecursion(
 
 // doFullRecursion will probe all objects in the sbom, when matching an
 // object, it will continue traversing its relationships returning all
-// matching objects in a flat array
+// matching objects in a flat array.
 func doFullRecursion(
 	//nolint:gocritic // seen is passed recursively
 	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},

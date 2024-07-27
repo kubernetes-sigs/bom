@@ -64,7 +64,7 @@ func init() {
 	rootCmd.AddCommand(version.WithFont("doom"))
 }
 
-// Execute builds the command
+// Execute builds the command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		logrus.Fatal(err)

@@ -35,7 +35,7 @@ func New() *Engine {
 	}
 }
 
-// Open reads a document from the specified path
+// Open reads a document from the specified path.
 func (e *Engine) Open(path string) error {
 	doc, err := spdx.OpenDoc(path)
 	if err != nil {
@@ -45,7 +45,7 @@ func (e *Engine) Open(path string) error {
 	return nil
 }
 
-// Query takes an expression as a string and filters the loaded document
+// Query takes an expression as a string and filters the loaded document.
 func (e *Engine) Query(expString string) (fr FilterResults, err error) {
 	if e.Document == nil {
 		return fr, errors.New("query engine has no document open")

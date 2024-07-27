@@ -54,9 +54,9 @@ func TestPackageFromImageTarball(t *testing.T) {
 		// Run the test function
 		pkg, err := sut.PackageFromImageTarball("mock.tar")
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.NotNil(t, pkg)
 		}
 	}
@@ -87,10 +87,10 @@ func TestExtractTarballTmp(t *testing.T) {
 
 		path, err := sut.ExtractTarballTmp("/mock/path")
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
 			require.NotEmpty(t, path)
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 }
@@ -121,9 +121,9 @@ func TestPullImagesToArchive(t *testing.T) {
 
 		_, err := sut.PullImagesToArchive("mock-image:latest", "/tmp")
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 }

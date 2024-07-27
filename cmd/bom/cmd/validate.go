@@ -27,8 +27,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/bom/pkg/spdx"
 	"sigs.k8s.io/release-utils/util"
+
+	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 func AddValidate(parent *cobra.Command) {
@@ -117,7 +118,7 @@ type validateOptions struct {
 	dir      string
 }
 
-// Validate verify options consistency
+// Validate verify options consistency.
 func (opts *validateOptions) Validate() error {
 	if len(opts.files) == 0 && opts.dir == "" {
 		return errors.New("please provide at least one artifact file or directory to validate")

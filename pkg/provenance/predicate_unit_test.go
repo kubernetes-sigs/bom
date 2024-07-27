@@ -27,21 +27,21 @@ import (
 func TestWrite(t *testing.T) {
 	p := NewSLSAPredicate()
 	tmp, err := os.CreateTemp("", "predicate-test")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(tmp.Name())
 
 	res := p.Write(tmp.Name())
-	require.Nil(t, res)
+	require.NoError(t, res)
 	require.FileExists(t, tmp.Name())
 	s, err := os.Stat(tmp.Name())
-	require.Nil(t, err)
-	require.Greater(t, s.Size(), int64(0))
+	require.NoError(t, err)
+	require.Positive(t, s.Size())
 }
 
 func TestAddMaterial(t *testing.T) {
 	p := NewSLSAPredicate()
 	sha1 := "c91cc89922941ace4f79113227a0166f24b8a98b"
 	p.AddMaterial("https://www.example.com/", common.DigestSet{"sha1": sha1})
-	require.Equal(t, 1, len(p.Materials))
+	require.Len(t, p.Materials, 1)
 	require.Equal(t, sha1, p.Materials[0].Digest["sha1"])
 }

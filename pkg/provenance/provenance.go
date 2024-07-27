@@ -28,7 +28,7 @@ import (
 	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
 )
 
-// LoadStatement loads a statement from a json file
+// LoadStatement loads a statement from a json file.
 func LoadStatement(path string) (s *Statement, err error) {
 	statement := NewSLSAStatement()
 
@@ -44,7 +44,7 @@ func LoadStatement(path string) (s *Statement, err error) {
 	return statement, nil
 }
 
-// NewSLSAStatement creates a new attestation
+// NewSLSAStatement creates a new attestation.
 func NewSLSAStatement() *Statement {
 	return &Statement{
 		StatementHeader: intoto.StatementHeader{
@@ -58,7 +58,7 @@ func NewSLSAStatement() *Statement {
 	}
 }
 
-// NewSLSAPredicate returns a new SLSA provenance predicate
+// NewSLSAPredicate returns a new SLSA provenance predicate.
 func NewSLSAPredicate() Predicate {
 	return Predicate{
 		ProvenancePredicate: slsa.ProvenancePredicate{

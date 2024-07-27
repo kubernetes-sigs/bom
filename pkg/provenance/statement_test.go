@@ -59,9 +59,9 @@ func TestReadSubjectsFromDir(t *testing.T) {
 		s.SetImplementation(mock)
 		res := s.ReadSubjectsFromDir("/tmp/mock/")
 		if tc.shouldError {
-			require.NotNil(t, res)
+			require.Error(t, res)
 		} else {
-			require.Nil(t, res)
+			require.NoError(t, res)
 		}
 	}
 }
@@ -92,9 +92,9 @@ func TestAddSubjectFromFile(t *testing.T) {
 		s.SetImplementation(mock)
 		res := s.AddSubjectFromFile("/tmp/mock/")
 		if tc.shouldError {
-			require.NotNil(t, res)
+			require.Error(t, res)
 		} else {
-			require.Nil(t, res)
+			require.NoError(t, res)
 		}
 	}
 }
@@ -125,9 +125,9 @@ func TestWriteStatement(t *testing.T) {
 		p.SetImplementation(mock)
 		res := p.Write("/tmp/mock")
 		if tc.shouldError {
-			require.NotNil(t, res)
+			require.Error(t, res)
 		} else {
-			require.Nil(t, res)
+			require.NoError(t, res)
 		}
 	}
 }

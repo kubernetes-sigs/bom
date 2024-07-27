@@ -86,7 +86,7 @@ PackageCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
 
 `
 
-// Package groups a set of files
+// Package groups a set of files.
 type Package struct {
 	Entity
 	sync.RWMutex
@@ -136,7 +136,7 @@ func NewPackage() (p *Package) {
 	return p
 }
 
-// AddFile adds a file contained in the package
+// AddFile adds a file contained in the package.
 func (p *Package) AddFile(file *File) error {
 	p.Lock()
 	defer p.Unlock()
@@ -167,7 +167,7 @@ func (p *Package) AddFile(file *File) error {
 	return nil
 }
 
-// AddPackage adds a new subpackage to a package
+// AddPackage adds a new subpackage to a package.
 func (p *Package) AddPackage(pkg *Package) error {
 	p.AddRelationship(&Relationship{
 		Peer:       pkg,
@@ -177,7 +177,7 @@ func (p *Package) AddPackage(pkg *Package) error {
 	return nil
 }
 
-// AddDependency adds a new subpackage as a dependency
+// AddDependency adds a new subpackage as a dependency.
 func (p *Package) AddDependency(pkg *Package) error {
 	p.AddRelationship(&Relationship{
 		Peer:       pkg,
@@ -187,7 +187,7 @@ func (p *Package) AddDependency(pkg *Package) error {
 	return nil
 }
 
-// Files returns all contained files in the package
+// Files returns all contained files in the package.
 func (p *Package) Files() []*File {
 	ret := []*File{}
 	for _, rel := range p.Relationships {
@@ -201,7 +201,7 @@ func (p *Package) Files() []*File {
 }
 
 // ComputeVerificationCode calculates the package verification
-// code according to the SPDX spec
+// code according to the SPDX spec.
 func (p *Package) ComputeVerificationCode() error {
 	files := p.Files()
 	p.VerificationCode = ""
@@ -237,7 +237,7 @@ func (p *Package) ComputeVerificationCode() error {
 }
 
 // ComputeLicenseListComputes the license list from the
-// files contained in the package
+// files contained in the package.
 func (p *Package) ComputeLicenseList() error {
 	p.LicenseInfoFromFiles = []string{}
 	if !p.FilesAnalyzed {
@@ -281,7 +281,7 @@ func (p *Package) ComputeLicenseList() error {
 	return nil
 }
 
-// Render renders the document fragment of the package
+// Render renders the document fragment of the package.
 func (p *Package) Render() (docFragment string, err error) {
 	// First thing, check all relationships
 	if len(p.Relationships) > 0 {
@@ -343,7 +343,7 @@ func (p *Package) CheckRelationships() error {
 	return nil
 }
 
-// BuildID sets the file ID, optionally from a series of strings
+// BuildID sets the file ID, optionally from a series of strings.
 func (p *Package) BuildID(seeds ...string) {
 	prefix := ""
 	if p.Options() != nil {
@@ -371,7 +371,7 @@ func (p *Package) drawTitle(o *DrawingOptions) string {
 	return title
 }
 
-// drawName returns the name string to be used in the outline
+// drawName returns the name string to be used in the outline.
 func (p *Package) drawName(o *DrawingOptions) string {
 	name := p.SPDXID()
 	if o.Purls && p.Purl() != nil && p.Purl().Name != "" {
@@ -483,7 +483,7 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 }
 
 // ReadSourceFile reads a file from the filesystem and assigns its properties
-// to the package metadata
+// to the package metadata.
 func (p *Package) ReadSourceFile(path string) error {
 	if err := p.Entity.ReadSourceFile(path); err != nil {
 		return err
@@ -495,7 +495,7 @@ func (p *Package) ReadSourceFile(path string) error {
 }
 
 // GetElementByID search the package and its peers looking for the specified SPDX
-// id. If found, the function returns a copy of the object
+// id. If found, the function returns a copy of the object.
 func (p *Package) GetElementByID(id string) Object {
 	if p.SPDXID() == id {
 		return p
@@ -504,7 +504,7 @@ func (p *Package) GetElementByID(id string) Object {
 }
 
 // Purl searches the external refs in the package and returns
-// a parsed purl if it finds a purl PACKAGE_MANAGER extref:
+// a parsed purl if it finds a purl PACKAGE_MANAGER extref:.
 func (p *Package) Purl() *purl.PackageURL {
 	if p.ExternalRefs == nil {
 		return nil
@@ -530,7 +530,7 @@ func (p *Package) Purl() *purl.PackageURL {
 type PurlSearchOption string
 
 // PurlMatches gets a spec url and returns true if its defined parts
-// match the analog parts in the package's purl
+// match the analog parts in the package's purl.
 func (p *Package) PurlMatches(spec *purl.PackageURL, _ ...PurlSearchOption) bool {
 	pkgPurl := p.Purl()
 	if pkgPurl == nil {

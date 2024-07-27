@@ -55,7 +55,7 @@ func generateProvenanceSUT(t *testing.T) (doc *Document, tmpDir string) {
 }
 
 // testStatement returns a predictable statement that we can use to
-// compare generating functions
+// compare generating functions.
 func testStatement() *provenance.Statement {
 	statement := provenance.NewSLSAStatement()
 	statement.Subject = append(statement.Subject,
@@ -118,7 +118,7 @@ func TestWriteProvenance(t *testing.T) {
 }
 
 // This function gets two provenance statements and checks their
-// subjects to be equivalent, returning an error if they do not match
+// subjects to be equivalent, returning an error if they do not match.
 func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement) {
 	require.Equal(t, len(statement1.Subject), len(statement2.Subject))
 	// Compare the statements manually to ensure they are equivalent
@@ -139,7 +139,7 @@ func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement)
 func TestEnsureUniqueElementID(t *testing.T) {
 	doc := NewDocument()
 	name := "same-name"
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		subp := NewPackage()
 		subp.SetSPDXID(name)
 
@@ -167,7 +167,7 @@ func TestEnsureUniquePeerIDs(t *testing.T) {
 	// Build a package with 3 peers all with the same name
 	p := NewPackage()
 	p.SetSPDXID("parentNode")
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		subp := NewPackage()
 		subp.SetSPDXID(name)
 		require.NoError(t, p.AddPackage(subp))
@@ -324,6 +324,6 @@ func TestGetPackagesByPurl(t *testing.T) {
 		for _, p := range packages {
 			logrus.Infof("%s", p.Purl())
 		}
-		require.Equal(t, tc.len, len(packages), tc.purl)
+		require.Len(t, packages, tc.len, tc.purl)
 	}
 }

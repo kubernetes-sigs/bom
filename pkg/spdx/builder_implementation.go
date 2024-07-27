@@ -26,8 +26,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/bom/pkg/license"
+
 	"sigs.k8s.io/release-utils/util"
+
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 type DocBuilderImplementation interface {
@@ -46,7 +48,7 @@ type DocBuilderImplementation interface {
 }
 
 // defaultDocBuilderImpl is the default implementation for the
-// SPDX document builder
+// SPDX document builder.
 type defaultDocBuilderImpl struct {
 	format Format
 }
@@ -212,7 +214,7 @@ func (builder *defaultDocBuilderImpl) ScanFiles(genopts *DocGenerateOptions, spd
 }
 
 // ReadYamlConfiguration reads a yaml configuration and
-// set the values in an options struct
+// set the values in an options struct.
 func (builder *defaultDocBuilderImpl) ReadYamlConfiguration(
 	path string, genopts *DocGenerateOptions,
 ) (err error) {
@@ -276,7 +278,7 @@ func (builder *defaultDocBuilderImpl) ValidateOptions(genopts *DocGenerateOption
 	return nil
 }
 
-// WriteDoc renders the document to a file
+// WriteDoc renders the document to a file.
 func (builder *defaultDocBuilderImpl) WriteDoc(doc *Document, path string) error {
 	markup, err := doc.Render()
 	if err != nil {

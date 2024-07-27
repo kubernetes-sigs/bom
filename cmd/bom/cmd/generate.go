@@ -25,11 +25,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/version"
+
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/bom/pkg/serialize"
 	"sigs.k8s.io/bom/pkg/spdx"
-	"sigs.k8s.io/release-utils/util"
-	"sigs.k8s.io/release-utils/version"
 )
 
 type generateOptions struct {
@@ -54,7 +55,7 @@ type generateOptions struct {
 	ignorePatterns []string
 }
 
-// Validate verify options consistency
+// Validate verify options consistency.
 func (opts *generateOptions) Validate() error {
 	if opts.configFile == "" &&
 		len(opts.images) == 0 &&

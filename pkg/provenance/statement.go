@@ -49,7 +49,7 @@ func (s *Statement) SetImplementation(si StatementImplementation) {
 	s.impl = si
 }
 
-// Write outputs the predicate as JSON to a file
+// Write outputs the predicate as JSON to a file.
 func (s *Statement) Write(path string) error {
 	return s.impl.Write(s, path)
 }
@@ -64,12 +64,12 @@ func (s *Statement) ReadSubjectsFromDir(path string) (err error) {
 	return s.impl.ReadSubjectsFromDir(s, path)
 }
 
-// AddSubject adds an entry to the listo of materials
+// AddSubject adds an entry to the listo of materials.
 func (s *Statement) AddSubject(uri string, ds common.DigestSet) {
 	s.impl.AddSubject(s, uri, ds)
 }
 
-// AddSubjectFromFile adds a subject to the list by checking a file in the filesystem
+// AddSubjectFromFile adds a subject to the list by checking a file in the filesystem.
 func (s *Statement) AddSubjectFromFile(filePath string) error {
 	subject, err := s.impl.SubjectFromFile(filePath)
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *Statement) AddSubjectFromFile(filePath string) error {
 	return nil
 }
 
-// LoadPredicate loads a predicate from a json file
+// LoadPredicate loads a predicate from a json file.
 func (s *Statement) LoadPredicate(path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -118,7 +118,7 @@ type StatementImplementation interface {
 
 type defaultStatementImplementation struct{}
 
-// AddSubject adds a material to the entry
+// AddSubject adds a material to the entry.
 func (si *defaultStatementImplementation) AddSubject(
 	s *Statement, name string, ds common.DigestSet,
 ) {
@@ -160,7 +160,7 @@ func (si *defaultStatementImplementation) ReadSubjectsFromDir(
 	return nil
 }
 
-// SubjectFromFile reads a file and return an in-toto subject describing it
+// SubjectFromFile reads a file and return an in-toto subject describing it.
 func (si *defaultStatementImplementation) SubjectFromFile(filePath string) (subject intoto.Subject, err error) {
 	subject = intoto.Subject{
 		Name:   filePath,
@@ -189,7 +189,7 @@ func (si *defaultStatementImplementation) ToJSON(s *Statement) ([]byte, error) {
 	return jsonData, nil
 }
 
-// Write dumps the statement data to disk in json
+// Write dumps the statement data to disk in json.
 func (si *defaultStatementImplementation) Write(s *Statement, path string) error {
 	jsonData, err := si.ToJSON(s)
 	if err != nil {
@@ -204,7 +204,7 @@ func (si *defaultStatementImplementation) Write(s *Statement, path string) error
 }
 
 // ClonePredicate clones the predicate from the file in manifestPath
-// to into the Statement
+// to into the Statement.
 func (si *defaultStatementImplementation) ClonePredicate(s *Statement, manifestPath string) error {
 	otherStatment, err := LoadStatement(manifestPath)
 	if err != nil {
@@ -216,7 +216,7 @@ func (si *defaultStatementImplementation) ClonePredicate(s *Statement, manifestP
 }
 
 // VerifySubjects checks the subjects registered in the manifest to make
-// sure the attesttion data matches the artifacts
+// sure the attesttion data matches the artifacts.
 func (si *defaultStatementImplementation) VerifySubjects(path string, subjects *[]intoto.Subject) (err error) {
 	errs := 0
 	for _, sub := range *subjects {

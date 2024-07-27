@@ -17,16 +17,16 @@ limitations under the License.
 package serialize
 
 import (
+	gojson "encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	gojson "encoding/json"
+	"sigs.k8s.io/release-utils/version"
 
 	"sigs.k8s.io/bom/pkg/query"
 	"sigs.k8s.io/bom/pkg/spdx"
 	spdxJSON "sigs.k8s.io/bom/pkg/spdx/json/v2.3"
-	"sigs.k8s.io/release-utils/version"
 )
 
 type Serializer interface {
@@ -44,7 +44,7 @@ func (tv *TagValue) Serialize(doc *spdx.Document) (string, error) {
 
 type JSON struct{}
 
-// Serialize serializes the document into a spdx JSON
+// Serialize serializes the document into a spdx JSON.
 func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 	// The old Render() method finalizes the sbom before serializing
 	// it. We still need to call it before building the JSON struct.
@@ -130,7 +130,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 }
 
 // buildJSONPackage converts a SPDX package struct to a json package
-// TODO(puerco): Validate package information to make sure its a valid package
+// TODO(puerco): Validate package information to make sure its a valid package.
 func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Package, err error) {
 	// Update the Verification code
 	if err := p.ComputeVerificationCode(); err != nil {
@@ -225,7 +225,7 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 // buildJSONPackage converts a SPDX package struct to a json package
 // TODO(pueco): Validate file information , eg check checksums are
 // enum : [ "SHA256", "SHA1", "SHA384", "MD2", "MD4", "SHA512", "MD6", "MD5", "SHA224" ]
-// "required" : [ "SPDXID", "copyrightText", "fileName", "licenseConcluded" ],
+// "required" : [ "SPDXID", "copyrightText", "fileName", "licenseConcluded" ],.
 func (json *JSON) buildJSONFile(f *spdx.File) (jsonFile spdxJSON.File, err error) {
 	if f.SPDXID() == "" {
 		return jsonFile, errors.New("unamble to serialzie file, it has no SPDX ID defined")

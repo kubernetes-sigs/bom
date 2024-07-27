@@ -26,9 +26,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/release-utils/http"
 	"sigs.k8s.io/release-utils/util"
+
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 const (
@@ -97,7 +98,7 @@ func (h *goRunnerHandler) ReadPackageData(layerPath string, pkg *Package) error 
 	return nil
 }
 
-// licenseReader returns a reusable license reader
+// licenseReader returns a reusable license reader.
 func (h *goRunnerHandler) licenseReader(o *ContainerLayerAnalyzerOptions) (*license.Reader, error) {
 	if h.reader == nil {
 		logrus.Info("Initializing licence reader with default options")
@@ -128,7 +129,7 @@ func (h *goRunnerHandler) licenseReader(o *ContainerLayerAnalyzerOptions) (*lice
 }
 
 // CanHandle returns a bools indicating if this handle can supply more
-// data about the specified tarball
+// data about the specified tarball.
 func (h *goRunnerHandler) CanHandle(layerPath string) (can bool, err error) {
 	// Open the tar file
 	f, err := os.Open(layerPath)

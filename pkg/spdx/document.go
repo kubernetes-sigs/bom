@@ -43,10 +43,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
 
-	"sigs.k8s.io/bom/pkg/provenance"
 	"sigs.k8s.io/release-utils/hash"
 	"sigs.k8s.io/release-utils/util"
 	"sigs.k8s.io/release-utils/version"
+
+	"sigs.k8s.io/bom/pkg/provenance"
 )
 
 var docTemplate = `{{ if .Version }}SPDXVersion: {{.Version}}
@@ -86,7 +87,7 @@ const (
 	MessageHashMismatch = "Hash mismatch"
 )
 
-// Document abstracts the SPDX document
+// Document abstracts the SPDX document.
 type Document struct {
 	Version     string // SPDX-2.2
 	DataLicense string // CC0-1.0
@@ -105,14 +106,14 @@ type Document struct {
 	ExternalDocRefs    []ExternalDocumentRef // List of related external documents
 }
 
-// ExternalDocumentRef is a pointer to an external, related document
+// ExternalDocumentRef is a pointer to an external, related document.
 type ExternalDocumentRef struct {
 	ID        string            `yaml:"id"`        // Identifier for the external doc (eg "external-source-bom")
 	URI       string            `yaml:"uri"`       // URI where the doc can be retrieved
 	Checksums map[string]string `yaml:"checksums"` // Document checksums
 }
 
-// Example: cpe23Type cpe:2.3:a:base-files:base-files:10.3+deb10u9:*:*:*:*:*:*:*
+// Example: cpe23Type cpe:2.3:a:base-files:base-files:10.3+deb10u9:*:*:*:*:*:*:*.
 type ExternalRef struct {
 	Category string // SECURITY | PACKAGE-MANAGER | PERSISTENT-ID | OTHER
 	Type     string // cpe22Type | cpe23Type | maven-central | npm | nuget | bower | purl | swh | other
@@ -132,7 +133,7 @@ type DrawingOptions struct {
 	Version     bool
 }
 
-// String returns the SPDX string of the external document ref
+// String returns the SPDX string of the external document ref.
 func (ed *ExternalDocumentRef) String() string {
 	if len(ed.Checksums) == 0 || ed.ID == "" || ed.URI == "" {
 		return ""
@@ -146,7 +147,7 @@ func (ed *ExternalDocumentRef) String() string {
 }
 
 // ReadSourceFile populates the external reference data (the sha256 checksum)
-// from a given path
+// from a given path.
 func (ed *ExternalDocumentRef) ReadSourceFile(path string) error {
 	if ed.Checksums == nil {
 		ed.Checksums = map[string]string{}
@@ -161,7 +162,7 @@ func (ed *ExternalDocumentRef) ReadSourceFile(path string) error {
 	return nil
 }
 
-// NewDocument returns a new SPDX document with some defaults preloaded
+// NewDocument returns a new SPDX document with some defaults preloaded.
 func NewDocument() *Document {
 	return &Document{
 		ID:          "SPDXRef-DOCUMENT",
@@ -182,7 +183,7 @@ func NewDocument() *Document {
 	}
 }
 
-// AddPackage adds a new empty package to the document
+// AddPackage adds a new empty package to the document.
 func (d *Document) AddPackage(pkg *Package) error {
 	if d.Packages == nil {
 		d.Packages = map[string]*Package{}
@@ -203,7 +204,7 @@ func (d *Document) AddPackage(pkg *Package) error {
 	return nil
 }
 
-// Write outputs the SPDX document into a file
+// Write outputs the SPDX document into a file.
 func (d *Document) Write(path string) error {
 	content, err := d.Render()
 	if err != nil {
@@ -216,7 +217,7 @@ func (d *Document) Write(path string) error {
 	return nil
 }
 
-// Render reders the spdx manifest
+// Render reders the spdx manifest.
 func (d *Document) Render() (doc string, err error) {
 	var buf bytes.Buffer
 	funcMap := template.FuncMap{
@@ -274,7 +275,7 @@ func (d *Document) Render() (doc string, err error) {
 	return doc, err
 }
 
-// AddFile adds a file contained in the package
+// AddFile adds a file contained in the package.
 func (d *Document) AddFile(file *File) error {
 	if d.Files == nil {
 		d.Files = map[string]*File{}
@@ -312,7 +313,7 @@ func treeLines(o *DrawingOptions, depth int, connector string) string {
 	return res
 }
 
-// Outline draws an outline of the relationships inside the doc
+// Outline draws an outline of the relationships inside the doc.
 func (d *Document) Outline(o *DrawingOptions) (outline string, err error) {
 	seen := map[string]struct{}{}
 	builder := &strings.Builder{}
@@ -374,7 +375,7 @@ type ProvenanceOptions struct {
 	Relationships map[string][]RelationshipType
 }
 
-// DefaultProvenanceOptions we consider examples and dependencies as not part of the doc
+// DefaultProvenanceOptions we consider examples and dependencies as not part of the doc.
 var DefaultProvenanceOptions = &ProvenanceOptions{
 	Relationships: map[string][]RelationshipType{
 		"include": {},
@@ -403,7 +404,7 @@ func (d *Document) ToProvenanceStatement(opts *ProvenanceOptions) *provenance.St
 	return statement
 }
 
-// WriteProvenanceStatement writes the sbom as an in-toto provenance statement
+// WriteProvenanceStatement writes the sbom as an in-toto provenance statement.
 func (d *Document) WriteProvenanceStatement(opts *ProvenanceOptions, path string) error {
 	statement := d.ToProvenanceStatement(opts)
 	data, err := json.Marshal(statement)
@@ -445,7 +446,7 @@ func (d *Document) ensureUniqueElementID(o Object) {
 }
 
 // ensureUniquePeerIDs gets a relationship collection and ensures all peers
-// have unique IDs
+// have unique IDs.
 func (d *Document) ensureUniquePeerIDs(rels *[]*Relationship) {
 	// First, ensure peer names are unique among themselves
 	seen := map[string]struct{}{}
@@ -493,7 +494,7 @@ func (d *Document) GetElementByID(id string) Object {
 }
 
 // GetPackagesByPurl queries the document packages and returns all that
-// match the specified purl bits
+// match the specified purl bits.
 func (d *Document) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
 	seen := map[string]struct{}{}
 	foundPackages := []*Package{}
@@ -531,7 +532,7 @@ type ValidationResults struct {
 }
 
 // ValidateFiles gets a list of paths and checks the files in the document
-// to make sure their integrity is known
+// to make sure their integrity is known.
 func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error) {
 	results := []ValidationResults{}
 	if len(filePaths) == 0 {
