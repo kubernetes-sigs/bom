@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blang/semver/v4"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -54,10 +55,19 @@ func (builder *defaultDocBuilderImpl) CreateDocument(genopts *DocGenerateOptions
 	// Create the new document
 	doc := NewDocument()
 	doc.Name = genopts.Name
-	doc.LicenseListVersion = strings.TrimPrefix(license.DefaultCatalogOpts.Version, "v")
+	// Use the license list from the embedded catalog
+	ver := strings.TrimPrefix(license.DefaultCatalogOpts.Version, "v")
+	// ... unless there was one sepcified in the options
 	if genopts.LicenseListVersion != "" {
-		doc.LicenseListVersion = strings.TrimPrefix(genopts.LicenseListVersion, "v")
+		ver = strings.TrimPrefix(genopts.LicenseListVersion, "v")
 	}
+
+	// Trim the patch part of the license version
+	v, err := semver.New(ver)
+	if err != nil {
+		return nil, fmt.Errorf("parsing license list semver string %q: %w", ver, err)
+	}
+	doc.LicenseListVersion = fmt.Sprintf("%d.%d", v.Major, v.Minor)
 
 	// If we do not have a namespace, we generate one under the public SPDX
 	// URL as defined in the spec.
