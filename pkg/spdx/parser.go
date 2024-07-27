@@ -104,20 +104,18 @@ func OpenDoc(path string) (doc *Document, err error) {
 	return nil, errors.New("unknown SBOM encoding")
 }
 
+// TODO(puerco): Perhaps this function and isURL should be part of the http agent.
 func tempFileFromURL(query string) (*os.File, error) {
-	response, err := http.GetURLResponse(query, false)
-	if err != nil {
-		return nil, fmt.Errorf("retrieving URL resposne from %s: %w", query, err)
-	}
 	file, err := os.CreateTemp("", "sbom-")
 	if err != nil {
-		return nil, fmt.Errorf("create temp file for URL response: %w", err)
+		return nil, fmt.Errorf("creating temp file for URL response: %w", err)
 	}
-	if _, err := file.WriteString(response); err != nil {
-		return nil, fmt.Errorf("write response to file: %w", err)
+	if err := http.NewAgent().GetToWriter(file, query); err != nil {
+		return nil, fmt.Errorf("retrieving URL data from %q: %w", query, err)
 	}
+
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("seek file start: %w", err)
+		return nil, fmt.Errorf("seeking to temp file start: %w", err)
 	}
 	return file, nil
 }
