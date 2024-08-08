@@ -23,6 +23,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sirupsen/logrus"
+
 	"sigs.k8s.io/release-utils/util"
 )
 
@@ -87,6 +89,16 @@ type DocBuilder struct {
 // Generate creates a new SPDX SBOM. The resulting document will describe the all
 // artifacts specified in the DocGenerateOptions struct passed.
 func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
+	defer func() {
+		// cleanup tmp files
+		if util.Exists(filepath.Join(os.TempDir(), spdxTempDir)) {
+			logrus.Infof("Cleaning up temporary data at %s", filepath.Join(os.TempDir(), spdxTempDir))
+			if err := os.RemoveAll(filepath.Join(os.TempDir(), spdxTempDir)); err != nil {
+				logrus.Warnf("Failed to cleanup temporary data in the temporary directory: %v", err)
+			}
+		}
+	}()
+
 	if err := db.impl.ReadYamlConfiguration(genopts.ConfigFile, genopts); err != nil {
 		return nil, fmt.Errorf("parsing configuration file: %w", err)
 	}
