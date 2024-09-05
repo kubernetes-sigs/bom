@@ -1,6 +1,7 @@
 module sigs.k8s.io/bom
 
 go 1.22
+toolchain go1.22.5
 
 require (
 	github.com/blang/semver/v4 v4.0.0
@@ -17,8 +18,8 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/uwu-tools/magex v0.10.0
 	gitlab.alpinelinux.org/alpine/go v0.10.1
-	golang.org/x/mod v0.20.0
-	golang.org/x/term v0.23.0
+	golang.org/x/mod v0.21.0
+	golang.org/x/term v0.24.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.8.4
@@ -79,7 +80,7 @@ require (
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.8.0
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect
