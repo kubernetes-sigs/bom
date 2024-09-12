@@ -56,10 +56,10 @@ type DepthFilter struct {
 
 func (f *DepthFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
 	// Perform filter
-	return searchDepth(objects, 0, uint(f.TargetDepth)), nil
+	return searchDepth(objects, 0, f.TargetDepth), nil
 }
 
-func searchDepth(objectSet map[string]spdx.Object, currentDepth, targetDepth uint) map[string]spdx.Object {
+func searchDepth(objectSet map[string]spdx.Object, currentDepth, targetDepth int) map[string]spdx.Object {
 	// If we are at target depth, we are done
 	if targetDepth == currentDepth {
 		return objectSet

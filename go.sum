@@ -205,5 +205,5 @@ modernc.org/memory v1.7.2 h1:Klh90S215mmH8c9gO98QxQFsY+W451E8AnzjoE2ee1E=
 modernc.org/memory v1.7.2/go.mod h1:NO4NVCQy0N7ln+T9ngWqOQfi7ley4vpwvARR+Hjw95E=
 modernc.org/sqlite v1.28.0 h1:Zx+LyDDmXczNnEQdvPuEfcFVA2ZPyaD7UCZDjef3BHQ=
 modernc.org/sqlite v1.28.0/go.mod h1:Qxpazz0zH8Z1xCFyi5GSL3FzbtZ3fvbjmywNogldEW0=
-sigs.k8s.io/release-utils v0.8.4 h1:4QVr3UgbyY/d9p74LBhg0njSVQofUsAZqYOzVZBhdBw=
-sigs.k8s.io/release-utils v0.8.4/go.mod h1:m1bHfscTemQp+z+pLCZnkXih9n0+WukIUU70n6nFnU0=
+sigs.k8s.io/release-utils v0.8.5 h1:FUtFqEAN621gSXv0L7kHyWruBeS7TUU9aWf76olX7uQ=
+sigs.k8s.io/release-utils v0.8.5/go.mod h1:qsm5bdxdgoHkD8HsXpgme2/c3mdsNaiV53Sz2HmKeJA=

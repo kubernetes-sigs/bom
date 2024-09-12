@@ -107,7 +107,7 @@ func (h *distrolessHandler) ReadPackageData(layerPath string, pkg *Package) erro
 		if strings.HasPrefix(hdr.Name, distrolessLicensePath) && strings.HasSuffix(hdr.Name, distrolessLicenseName) {
 			// We infer the name of the package from the license directory
 			packageName := strings.TrimSuffix(strings.TrimPrefix(hdr.Name, distrolessLicensePath), distrolessLicenseName)
-			logrus.Infof("Creating SPDX subpackage " + packageName)
+			logrus.Infof("Creating SPDX subpackage %s", packageName)
 			subpkg := NewPackage()
 			subpkg.Name = packageName
 			if _, ok := packageList[subpkg.Name]; ok {
