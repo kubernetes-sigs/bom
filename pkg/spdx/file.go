@@ -70,7 +70,7 @@ func NewFile() (f *File) {
 // Render renders the document fragment of a file.
 func (f *File) Render() (docFragment string, err error) {
 	// If we have not yet checksummed the file, do it now:
-	if f.Checksum == nil || len(f.Checksum) == 0 {
+	if len(f.Checksum) == 0 {
 		if f.SourceFile != "" {
 			if err := f.ReadSourceFile(f.SourceFile); err != nil {
 				return "", fmt.Errorf("checksumming file: %w", err)

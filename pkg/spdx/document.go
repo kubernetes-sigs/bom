@@ -228,7 +228,7 @@ func (d *Document) Render() (doc string, err error) {
 
 	if d.Name == "" {
 		d.Name = "SBOM-SPDX-" + uuid.New().String()
-		logrus.Warnf("Document has no name defined, automatically set to " + d.Name)
+		logrus.Warnf("Document has no name defined, automatically set to %s", d.Name)
 	}
 
 	tmpl, err := template.New("document").Funcs(funcMap).Parse(docTemplate)
