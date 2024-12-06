@@ -11,12 +11,11 @@ tags: ["intro"]
 
 You can see releases of `bom` on [Github Releases](https://github.com/kubernetes-sigs/bom/releases/). 
 
-Replace the tag,os and architecture as required for below commands to install.
+Replace the tag, os and architecture as required for below commands to install.
 
 ```console
-curl -L  https://github.com/kubernetes-sigs/bom/releases/download/v0.2.2/bom-linux-amd64  -o bom
-sudo mv ./bom /usr/local/bin/bom
-sudo chmod +x /usr/local/bin/bom
+curl -L https://github.com/kubernetes-sigs/bom/releases/download/v0.6.0/bom-amd64-linux -o bom
+sudo install bom /usr/local/bin/
 ```
 
 ### Using go:
