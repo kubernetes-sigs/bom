@@ -129,7 +129,7 @@ information they contain is structured. Here is an example rendering the
 
 ```
 bom generate --output=debian.spdx --image \
-  debian@sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491 | bom document outline -
+  debian@sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491
 
 bom document outline debian.spdx
 
