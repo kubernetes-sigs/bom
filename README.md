@@ -123,7 +123,7 @@ Available Commands:
 
 ### `bom document outline`
 
-Using `bom document outline` SBOM contents can be rendered too see how the
+Using `bom document outline` SBOM contents can be rendered to see how the
 information they contain is structured. Here is an example rendering the
 `debian:bookworm-slim` image for amd64:
 
