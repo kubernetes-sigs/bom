@@ -454,7 +454,7 @@ func TestRecursiveSearch(t *testing.T) {
 	for i := range 3 {
 		subp := NewPackage()
 		subp.SetSPDXID(fmt.Sprintf("dep-%d", i))
-		require.NoError(t, p.GetElementByID("subpackage-1").(*Package).AddPackage(subp))
+		require.NoError(t, p.GetElementByID("subpackage-1").(*Package).AddPackage(subp)) //nolint: errcheck
 	}
 
 	// Same tests should still pass:

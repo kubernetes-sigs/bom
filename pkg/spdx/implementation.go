@@ -645,7 +645,7 @@ func (*spdxDefaultImplementation) purlFromImage(img *ImageReferenceInfo) string 
 	digest := ""
 	// If we have the digest, skip checking it from the registry
 	if _, ok := imageReference.(name.Digest); ok {
-		p := strings.Split(imageReference.(name.Digest).String(), "@")
+		p := strings.Split(imageReference.(name.Digest).String(), "@") //nolint: errcheck
 		if len(p) < 2 {
 			return ""
 		}

@@ -39,5 +39,5 @@ func TestParseExpression(t *testing.T) {
 	require.True(t, ok)
 	_, ok2 := exp.Filters[1].(*NameFilter)
 	require.True(t, ok2)
-	require.Equal(t, "Hola Mano", exp.Filters[1].(*NameFilter).Pattern)
+	require.Equal(t, "Hola Mano", exp.Filters[1].(*NameFilter).Pattern) //nolint: errcheck
 }

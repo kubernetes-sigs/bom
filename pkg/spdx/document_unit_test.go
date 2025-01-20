@@ -128,7 +128,7 @@ func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement)
 			if s1.Name == s2.Name {
 				for _, algo := range []string{"sha1", "sha256", "sha512"} {
 					require.Equal(
-						t, s1.Digest[algo], s2.Digest[algo], fmt.Sprintf("matching %s hash in %s", algo, s1.Name),
+						t, s1.Digest[algo], s2.Digest[algo], "matching %s hash in %s", algo, s1.Name,
 					)
 				}
 			}

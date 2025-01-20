@@ -131,7 +131,7 @@ func displayQueryResult(opts queryOptions, o spdx.Object) string {
 	case *spdx.Package:
 		s = no.Name
 		if opts.purl {
-			for _, er := range o.(*spdx.Package).ExternalRefs {
+			for _, er := range o.(*spdx.Package).ExternalRefs { //nolint: errcheck
 				if er.Type == "purl" {
 					s = er.Locator
 				}
@@ -147,7 +147,7 @@ func getObjectField(opts queryOptions, o spdx.Object, field string) (string, err
 		return displayQueryResult(opts, o), nil
 	case "version":
 		if _, ok := o.(*spdx.Package); ok {
-			return o.(*spdx.Package).Version, nil
+			return o.(*spdx.Package).Version, nil //nolint: errcheck
 		}
 	case "license":
 		switch c := o.(type) {
@@ -163,21 +163,21 @@ func getObjectField(opts queryOptions, o spdx.Object, field string) (string, err
 		}
 	case "supplier":
 		if _, ok := o.(*spdx.Package); ok {
-			if o.(*spdx.Package).Supplier.Organization != "" {
-				return o.(*spdx.Package).Supplier.Organization, nil
+			if o.(*spdx.Package).Supplier.Organization != "" { //nolint: errcheck
+				return o.(*spdx.Package).Supplier.Organization, nil //nolint: errcheck
 			}
-			return o.(*spdx.Package).Supplier.Person, nil
+			return o.(*spdx.Package).Supplier.Person, nil //nolint: errcheck
 		}
 	case "originator":
 		if _, ok := o.(*spdx.Package); ok {
-			if o.(*spdx.Package).Originator.Organization != "" {
-				return o.(*spdx.Package).Originator.Organization, nil
+			if o.(*spdx.Package).Originator.Organization != "" { //nolint: errcheck
+				return o.(*spdx.Package).Originator.Organization, nil //nolint: errcheck
 			}
-			return o.(*spdx.Package).Originator.Person, nil
+			return o.(*spdx.Package).Originator.Person, nil //nolint: errcheck
 		}
 	case "url":
 		if _, ok := o.(*spdx.Package); ok {
-			return o.(*spdx.Package).DownloadLocation, nil
+			return o.(*spdx.Package).DownloadLocation, nil //nolint: errcheck
 		}
 	default:
 		return "", fmt.Errorf("unknown or not supported field: %s", field)

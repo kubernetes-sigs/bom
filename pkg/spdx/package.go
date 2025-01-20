@@ -426,12 +426,12 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 
 			if !o.OnlyIDs {
 				if _, ok := rel.Peer.(*Package); ok {
-					name = rel.Peer.(*Package).drawName(o)
+					name = rel.Peer.(*Package).drawName(o) //nolint: errcheck
 					etype = "PACKAGE"
 				}
 
 				if _, ok := rel.Peer.(*File); ok {
-					name = rel.Peer.(*File).Name
+					name = rel.Peer.(*File).Name //nolint: errcheck
 					etype = "FILE"
 				}
 			}
@@ -447,8 +447,8 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 
 		// If it is a file, print the name
 		if _, ok := rel.Peer.(*File); ok {
-			if rel.Peer.(*File).Name != "" {
-				line += fmt.Sprintf(" (%s)", rel.Peer.(*File).Name)
+			if rel.Peer.(*File).Name != "" { //nolint: errcheck
+				line += fmt.Sprintf(" (%s)", rel.Peer.(*File).Name) //nolint: errcheck
 			}
 		}
 		if o.Width > 0 && len(line) > o.Width {
@@ -462,16 +462,16 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 				// if the child is a package:
 				if _, ok := rel.Peer.(*Package); ok {
 					o.SkipName = true
-					if len(rel.Peer.(*Package).Relationships) > 0 {
-						rel.Peer.(*Package).Draw(builder, o, depth+1, seen)
+					if len(rel.Peer.(*Package).Relationships) > 0 { //nolint: errcheck
+						rel.Peer.(*Package).Draw(builder, o, depth+1, seen) //nolint: errcheck
 					}
 				}
 
 				// If the child is a file:
 				if _, ok := rel.Peer.(*File); ok {
 					o.SkipName = false
-					if len(rel.Peer.(*File).Relationships) > 0 {
-						rel.Peer.(*File).Draw(builder, o, depth+1, seen)
+					if len(rel.Peer.(*File).Relationships) > 0 { //nolint: errcheck
+						rel.Peer.(*File).Draw(builder, o, depth+1, seen) //nolint: errcheck
 					}
 				}
 			}
