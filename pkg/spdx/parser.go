@@ -546,19 +546,19 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 			}
 			// Tags for packages
 		case "FilesAnalyzed":
-			currentObject.(*Package).FilesAnalyzed = value == "true"
+			currentObject.(*Package).FilesAnalyzed = value == "true" //nolint: errcheck
 		case "PackageVersion":
-			currentObject.(*Package).Version = value
+			currentObject.(*Package).Version = value //nolint: errcheck
 		case "PackageLicenseDeclared":
-			currentObject.(*Package).LicenseDeclared = value
+			currentObject.(*Package).LicenseDeclared = value //nolint: errcheck
 		case "PackageVerificationCode":
-			currentObject.(*Package).VerificationCode = value
+			currentObject.(*Package).VerificationCode = value //nolint: errcheck
 		case "PackageComment":
-			currentObject.(*Package).Comment = value
+			currentObject.(*Package).Comment = value //nolint: errcheck
 		case "PackageFileName":
-			currentObject.(*Package).FileName = value
+			currentObject.(*Package).FileName = value //nolint: errcheck
 		case "PackageHomePage":
-			currentObject.(*Package).HomePage = value
+			currentObject.(*Package).HomePage = value //nolint: errcheck
 		case "PrimaryPackagePurpose":
 			purpose := ""
 			for _, pp := range PackagePurposes {
@@ -571,18 +571,18 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 				// TODO: Check if the doc is SPDX 2.3 or higher
 				return nil, fmt.Errorf("invalid package purpose found %s", value)
 			}
-			currentObject.(*Package).PrimaryPurpose = purpose
+			currentObject.(*Package).PrimaryPurpose = purpose //nolint: errcheck
 		case "PackageLicenseInfoFromFiles":
 			have := false
 			// Check if we already have the license
-			for _, licid := range currentObject.(*Package).LicenseInfoFromFiles {
+			for _, licid := range currentObject.(*Package).LicenseInfoFromFiles { //nolint: errcheck
 				if licid == value {
 					have = true
 					break
 				}
 			}
 			if !have {
-				currentObject.(*Package).LicenseInfoFromFiles = append(currentObject.(*Package).LicenseInfoFromFiles, value)
+				currentObject.(*Package).LicenseInfoFromFiles = append(currentObject.(*Package).LicenseInfoFromFiles, value) //nolint: errcheck
 			}
 		case "PackageSupplier":
 			if value == NOASSERTION {
@@ -595,9 +595,9 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 			}
 			switch match[1] {
 			case entPerson:
-				currentObject.(*Package).Supplier.Person = match[2]
+				currentObject.(*Package).Supplier.Person = match[2] //nolint: errcheck
 			case entOrganization:
-				currentObject.(*Package).Supplier.Organization = match[2]
+				currentObject.(*Package).Supplier.Organization = match[2] //nolint: errcheck
 			default:
 				return nil, fmt.Errorf(
 					"invalid supplier tag '%s' syntax at line %d, valid values are 'Organization' or 'Person'",
@@ -606,7 +606,7 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 			}
 		case "LicenseInfoInFile":
 			if value != NONE {
-				currentObject.(*File).LicenseInfoInFile = value
+				currentObject.(*File).LicenseInfoInFile = value //nolint: errcheck
 			}
 		case "FileChecksum", "PackageChecksum":
 			// Checksums are also tag/value -> algo/hash
@@ -710,7 +710,7 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 					return nil, fmt.Errorf("invalid external reference type: %s", parts[1])
 				}
 
-				currentObject.(*Package).ExternalRefs = append(currentObject.(*Package).ExternalRefs, ExternalRef{
+				currentObject.(*Package).ExternalRefs = append(currentObject.(*Package).ExternalRefs, ExternalRef{ //nolint: errcheck
 					Category: parts[0],
 					Type:     parts[1],
 					Locator:  parts[2],
@@ -754,7 +754,7 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 
 			if f, ok := objects[rdata.Peer].(*File); ok {
 				logrus.Debugf("doc %s describes file %s", doc.ID, rdata.Peer)
-				doc.Files[(objects[rdata.Peer]).(*File).SPDXID()] = f
+				doc.Files[(objects[rdata.Peer]).(*File).SPDXID()] = f //nolint: errcheck
 			}
 			continue
 		}

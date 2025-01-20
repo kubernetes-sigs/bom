@@ -17,7 +17,6 @@ limitations under the License.
 package license
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -92,7 +91,7 @@ func TestFindLicenseFiles(t *testing.T) {
 	impl := ReaderDefaultImpl{}
 	res, err := impl.FindLicenseFiles(tempdir)
 	require.NoError(t, err)
-	require.Len(t, res, 8, fmt.Sprintf("%+v", res))
+	require.Len(t, res, 8, "%+v", res)
 	require.NotContains(t, res, filepath.Join(tempdir, "license.go"))
 	require.NotContains(t, res, filepath.Join(tempdir, "README.md"))
 }

@@ -304,7 +304,7 @@ func recursivePurlSearch(purlSpec *purl.PackageURL, o Object, seen *map[string]s
 	// Only packages can express purls
 	if p, ok := o.(*Package); ok {
 		if p.PurlMatches(purlSpec, opts...) {
-			foundPackages = append(foundPackages, o.(*Package))
+			foundPackages = append(foundPackages, o.(*Package)) //nolint: errcheck
 		}
 	}
 

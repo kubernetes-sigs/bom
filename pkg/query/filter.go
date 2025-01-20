@@ -108,10 +108,10 @@ func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Obje
 	cycler := ObjectCycler{}
 	return cycler.Cycle(objects, func(o spdx.Object) bool {
 		if _, ok := o.(*spdx.File); ok {
-			return f.Regexp.MatchString(o.(*spdx.File).FileName)
+			return f.Regexp.MatchString(o.(*spdx.File).FileName) //nolint: errcheck
 		}
 		if _, ok := o.(*spdx.Package); ok {
-			return f.Regexp.MatchString(o.(*spdx.Package).Name)
+			return f.Regexp.MatchString(o.(*spdx.Package).Name) //nolint: errcheck
 		}
 		return false
 	}), nil
