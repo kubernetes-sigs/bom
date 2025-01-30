@@ -70,7 +70,7 @@ over time. The following filters are available:
                 bom document query sbom.spdx.json 'purl:pkg:/oci/*'
 
 You can query files piped on STDIN by specifying the path as a dash (-) or
-ammitting it completely. These are equivalent:
+omitting it completely. These are equivalent:
 
     cat sbom.spdx.json | bom document query - 'name:log4j'
     cat sbom.spdx.json | bom document query 'name:log4j'
