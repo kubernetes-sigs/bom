@@ -21,8 +21,10 @@ require (
 	golang.org/x/term v0.28.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.10.0
+	sigs.k8s.io/release-utils v0.11.0
 )
+
+require github.com/avast/retry-go/v4 v4.6.0 // indirect
 
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1 // indirect
