@@ -99,7 +99,7 @@ data, and other attributes.
 [Packages](https://spdx.github.io/spdx-spec/3-package-information/) are a
 non-specific element in SPDX representing anything that can group other elements.
 An `.rpm` or `.deb` package can be an SPDX package, but so can be a container
-image or a tarball. Packages contain files, but can also contain other files
+image or a tarball. Packages contain files, but can also contain other packages
 or a mix of both. An image, for example, can be viewed as a package, which
 contains other packages (its layers), and those, in turn, a set of files.
 
