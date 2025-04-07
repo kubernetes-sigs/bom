@@ -18,13 +18,13 @@ require (
 	github.com/uwu-tools/magex v0.10.1
 	gitlab.alpinelinux.org/alpine/go v0.10.1
 	golang.org/x/mod v0.24.0
-	golang.org/x/term v0.30.0
+	golang.org/x/term v0.31.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/release-utils v0.11.0
+	sigs.k8s.io/release-utils v0.11.1
 )
 
-require github.com/avast/retry-go/v4 v4.6.0 // indirect
+require github.com/avast/retry-go/v4 v4.6.1 // indirect
 
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1 // indirect
@@ -60,15 +60,15 @@ require (
 	github.com/vbatts/tar-split v0.11.6 // indirect
 	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.12.0
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/sync v0.13.0
+	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect
+	k8s.io/utils v0.0.0-20241210054802-24370beab758 // indirect
 	modernc.org/libc v1.37.6 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
