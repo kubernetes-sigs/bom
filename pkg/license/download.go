@@ -295,7 +295,7 @@ func (ddi *DefaultDownloaderImpl) GetLicenses(tag string) (licenses *List, err e
 // cacheFileName return the cache filename for an URL.
 func (ddi *DefaultDownloaderImpl) cacheFileName(url string) string {
 	return filepath.Join(
-		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha256.New().Sum([]byte(url))),
+		ddi.Options.CacheDir, fmt.Sprintf("%x.json", sha256.Sum256([]byte(url))),
 	)
 }
 
