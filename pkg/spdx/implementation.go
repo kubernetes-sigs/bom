@@ -430,7 +430,7 @@ func createReferenceArchive(digest, path string) (tarPath string, err error) {
 
 	// Write image to tar archive
 	if err := tarball.MultiWriteToFile(
-		tarPath, map[name.Tag]v1.Image{d.Repository.Tag(p[1]): img},
+		tarPath, map[name.Tag]v1.Image{d.Tag(p[1]): img},
 	); err != nil {
 		return "", fmt.Errorf("writing image to disk: %w", err)
 	}

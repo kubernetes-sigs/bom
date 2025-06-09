@@ -132,7 +132,7 @@ var ExternalRefCategories = map[string][]string{
 
 func NewPackage() (p *Package) {
 	p = &Package{}
-	p.Entity.Opts = &ObjectOptions{}
+	p.Opts = &ObjectOptions{}
 	return p
 }
 

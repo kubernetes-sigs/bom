@@ -120,11 +120,11 @@ func TestWriteProvenance(t *testing.T) {
 // This function gets two provenance statements and checks their
 // subjects to be equivalent, returning an error if they do not match.
 func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement) {
-	require.Equal(t, len(statement1.Subject), len(statement2.Subject))
+	require.Len(t, statement2.Subject, len(statement1.Subject))
 	// Compare the statements manually to ensure they are equivalent
 	for _, s1 := range statement1.Subject {
 		for _, s2 := range statement2.Subject {
-			require.Equal(t, len(s1.Digest), len(s2.Digest))
+			require.Len(t, s2.Digest, len(s1.Digest))
 			if s1.Name == s2.Name {
 				for _, algo := range []string{"sha1", "sha256", "sha512"} {
 					require.Equal(
