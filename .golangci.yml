@@ -1,23 +1,8 @@
----
+version: "2"
 run:
   concurrency: 6
-  timeout: 10m
-issues:
-  exclude-rules:
-    # counterfeiter fakes are usually named 'fake_<something>.go'
-    - path: fake_.*\.go
-      linters:
-        - gocritic
-        - golint
-        - dupl
-
-  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
-  max-issues-per-linter: 0
-
-  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
-  max-same-issues: 0
 linters:
-  disable-all: true
+  default: none
   enable:
     - asasalint
     - asciicheck
@@ -35,7 +20,6 @@ linters:
     - errcheck
     - errchkjson
     - fatcontext
-    - gci
     - ginkgolinter
     - gocheckcompilerdirectives
     - gochecksumtype
@@ -44,15 +28,11 @@ linters:
     - gocyclo
     - godot
     - godox
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
     - gomoddirectives
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - gosmopolitan
     - govet
     - grouper
@@ -79,154 +59,135 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
     - tagalign
-    - tenv
     - testableexamples
     - testifylint
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - unused
     - usestdlibvars
     - whitespace
     - zerologlint
-    # - cyclop
-    # - depguard
-    # - err113
-    # - errname
-    # - errorlint
-    # - exhaustive
-    # - exhaustruct
-    # - exportloopref
-    # - forbidigo
-    # - forcetypeassert
-    # - funlen
-    # - gochecknoglobals
-    # - gochecknoinits
-    # - gocognit
-    # - inamedparam
-    # - interfacebloat
-    # - ireturn
-    # - lll
-    # - maintidx
-    # - mnd
-    # - musttag
-    # - nestif
-    # - nilerr
-    # - nilnil
-    # - nlreturn
-    # - nonamedreturns
-    # - paralleltest
-    # - tagliatelle
-    # - testpackage
-    # - thelper
-    # - varnamelen
-    # - wastedassign
-    # - wrapcheck
-    # - wsl
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(k8s.io)
-      - prefix(sigs.k8s.io)
-      - localmodule
-  godox:
-    keywords:
-      - BUG
-      - FIXME
-      - HACK
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  gocritic:
-    enabled-checks:
-      - appendCombine
-      - badLock
-      - badRegexp
-      - badSorting
-      - badSyncOnceFunc
-      - boolExprSimplify
-      - builtinShadow
-      - builtinShadowDecl
-      - commentedOutCode
-      - commentedOutImport
-      - deferUnlambda
-      - docStub
-      - dupImport
-      - dynamicFmtString
-      - emptyDecl
-      - emptyFallthrough
-      - emptyStringTest
-      - equalFold
-      - evalOrder
-      - externalErrorReassign
-      - hexLiteral
-      - httpNoBody
-      - hugeParam
-      - importShadow
-      - indexAlloc
-      - initClause
-      - methodExprCall
-      - nestingReduce
-      - nilValReturn
-      - octalLiteral
-      - paramTypeCombine
-      - preferDecodeRune
-      - preferFilepathJoin
-      - preferFprint
-      - preferStringWriter
-      - preferWriteByte
-      - ptrToRefParam
-      - rangeExprCopy
-      - rangeValCopy
-      - redundantSprint
-      - regexpPattern
-      - regexpSimplify
-      - returnAfterHttpError
-      - ruleguard
-      - sliceClear
-      - sloppyReassign
-      - sortSlice
-      - sprintfQuotedString
-      - sqlQuery
-      - stringConcatSimplify
-      - stringXbytes
-      - stringsCompare
-      - syncMapLoadAndDelete
-      - timeExprSimplify
-      - todoCommentWithoutDetail
-      - tooManyResultsChecker
-      - truncateCmp
-      - typeAssertChain
-      - typeUnparen
-      - unlabelStmt
-      - unnamedResult
-      - unnecessaryBlock
-      - unnecessaryDefer
-      - weakCond
-      - yodaStyleExpr
-      # - deferInLoop
-      # - exposedSyncMutex
-      # - filepathJoin
-      # - typeDefFirst
-      # - uncheckedInlineErr
-      # - whyNoLint
-  nolintlint:
-    # Enable to ensure that nolint directives are all used. Default is true.
-    allow-unused: false
-    # Disable to ensure that nolint directives don't have a leading space. Default is true.
-    # TODO(lint): Enforce machine-readable `nolint` directives
-    allow-leading-space: true
-    # Exclude following linters from requiring an explanation.  Default is [].
-    allow-no-explanation: []
-    # Enable to require an explanation of nonzero length after each nolint directive. Default is false.
-    # TODO(lint): Enforce explanations for `nolint` directives
-    require-explanation: false
-    # Enable to require nolint directives to mention the specific linter being suppressed. Default is false.
-    require-specific: true
-  goconst:
-    min-occurrences: 5
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    goconst:
+      min-occurrences: 5
+    gocritic:
+      enabled-checks:
+        - appendCombine
+        - badLock
+        - badRegexp
+        - badSorting
+        - badSyncOnceFunc
+        - boolExprSimplify
+        - builtinShadow
+        - builtinShadowDecl
+        - commentedOutCode
+        - commentedOutImport
+        - deferUnlambda
+        - docStub
+        - dupImport
+        - dynamicFmtString
+        - emptyDecl
+        - emptyFallthrough
+        - emptyStringTest
+        - equalFold
+        - evalOrder
+        - externalErrorReassign
+        - hexLiteral
+        - httpNoBody
+        - hugeParam
+        - importShadow
+        - indexAlloc
+        - initClause
+        - methodExprCall
+        - nestingReduce
+        - nilValReturn
+        - octalLiteral
+        - paramTypeCombine
+        - preferDecodeRune
+        - preferFilepathJoin
+        - preferFprint
+        - preferStringWriter
+        - preferWriteByte
+        - ptrToRefParam
+        - rangeExprCopy
+        - rangeValCopy
+        - redundantSprint
+        - regexpPattern
+        - regexpSimplify
+        - returnAfterHttpError
+        - ruleguard
+        - sliceClear
+        - sloppyReassign
+        - sortSlice
+        - sprintfQuotedString
+        - sqlQuery
+        - stringConcatSimplify
+        - stringXbytes
+        - stringsCompare
+        - syncMapLoadAndDelete
+        - timeExprSimplify
+        - todoCommentWithoutDetail
+        - tooManyResultsChecker
+        - truncateCmp
+        - typeAssertChain
+        - typeUnparen
+        - unlabelStmt
+        - unnamedResult
+        - unnecessaryBlock
+        - unnecessaryDefer
+        - weakCond
+        - yodaStyleExpr
+    godox:
+      keywords:
+        - BUG
+        - FIXME
+        - HACK
+    nolintlint:
+      require-explanation: false
+      require-specific: true
+      allow-unused: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - gocritic
+          - golint
+        path: fake_.*\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(k8s.io)
+        - prefix(sigs.k8s.io)
+        - localmodule
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

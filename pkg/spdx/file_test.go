@@ -43,7 +43,7 @@ func TestGetFileType(t *testing.T) {
 	fileType := getFileTypes(file.Name())
 
 	require.Len(t, fileType, 2)
-	require.EqualValues(t, []string{"BINARY", "APPLICATION"}, fileType)
+	require.Equal(t, []string{"BINARY", "APPLICATION"}, fileType)
 	require.NoError(t, os.RemoveAll(dir))
 
 	file, dir, err = createTempFile("honk.*.go")
@@ -52,7 +52,7 @@ func TestGetFileType(t *testing.T) {
 	fileType = getFileTypes(file.Name())
 
 	require.Len(t, fileType, 1)
-	require.EqualValues(t, []string{"SOURCE"}, fileType)
+	require.Equal(t, []string{"SOURCE"}, fileType)
 	require.NoError(t, os.RemoveAll(dir))
 
 	file, dir, err = createTempFile("honk.*.mp3")
@@ -61,7 +61,7 @@ func TestGetFileType(t *testing.T) {
 	fileType = getFileTypes(file.Name())
 
 	require.Len(t, fileType, 1)
-	require.EqualValues(t, []string{"AUDIO"}, fileType)
+	require.Equal(t, []string{"AUDIO"}, fileType)
 	require.NoError(t, os.RemoveAll(dir))
 
 	file, dir, err = createTempFile("say.*.honk")
@@ -70,6 +70,6 @@ func TestGetFileType(t *testing.T) {
 	fileType = getFileTypes(file.Name())
 
 	require.Len(t, fileType, 1)
-	require.EqualValues(t, []string{"OTHER"}, fileType)
+	require.Equal(t, []string{"OTHER"}, fileType)
 	require.NoError(t, os.RemoveAll(dir))
 }

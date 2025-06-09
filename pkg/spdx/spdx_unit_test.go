@@ -289,8 +289,8 @@ func TestGetImageReferences(t *testing.T) {
 	require.Len(t, references.Images, 5)
 	require.Equal(t, "application/vnd.docker.distribution.manifest.list.v2+json", references.MediaType)
 	// INdices should have no platform
-	require.Equal(t, "", references.Arch)
-	require.Equal(t, "", references.OS)
+	require.Empty(t, references.Arch)
+	require.Empty(t, references.OS)
 	for _, refData := range references.Images {
 		_, ok := images[refData.Digest]
 		require.True(t, ok, "Image not found "+refData.Digest)

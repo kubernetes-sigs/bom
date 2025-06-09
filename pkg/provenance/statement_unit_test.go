@@ -60,7 +60,7 @@ func TestReadSubjectsFromDir(t *testing.T) {
 
 	// Read the files as subjects of the predicate
 	require.NoError(t, s.ReadSubjectsFromDir(dir), "Reading subjects")
-	require.Equal(t, len(testdata), len(s.Subject))
+	require.Len(t, s.Subject, len(testdata))
 
 	// Cycle all subjects and check the hashes match
 	for _, subject := range s.Subject {

@@ -180,7 +180,7 @@ func TestComputeVerificationCode(t *testing.T) {
 
 	// If package has no files, it should return an empty code
 	require.NoError(t, p.ComputeVerificationCode())
-	require.Equal(t, "", p.VerificationCode)
+	require.Empty(t, p.VerificationCode)
 
 	// Add bunch of files
 	for _, s1 := range []string{
@@ -208,7 +208,7 @@ func TestComputeVerificationCode(t *testing.T) {
 	// If FilesAnalyzed is false, the code should be empty
 	p.FilesAnalyzed = false
 	require.NoError(t, p.ComputeVerificationCode())
-	require.Equal(t, "", p.VerificationCode)
+	require.Empty(t, p.VerificationCode)
 }
 
 func TestComputeLicenseList(t *testing.T) {

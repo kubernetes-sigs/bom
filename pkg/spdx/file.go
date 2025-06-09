@@ -63,7 +63,7 @@ type File struct {
 
 func NewFile() (f *File) {
 	f = &File{}
-	f.Entity.Opts = &ObjectOptions{}
+	f.Opts = &ObjectOptions{}
 	return f
 }
 
