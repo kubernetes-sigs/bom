@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/glebarez/go-sqlite v1.22.0
-	github.com/go-git/go-git/v5 v5.16.1
+	github.com/go-git/go-git/v5 v5.16.2
 	github.com/google/go-containerregistry v0.20.5
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.6.0
@@ -60,7 +60,7 @@ require (
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sync v0.14.0
+	golang.org/x/sync v0.15.0
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
