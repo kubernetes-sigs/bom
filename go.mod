@@ -17,8 +17,8 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/uwu-tools/magex v0.10.1
 	gitlab.alpinelinux.org/alpine/go v0.10.1
-	golang.org/x/mod v0.25.0
-	golang.org/x/term v0.32.0
+	golang.org/x/mod v0.26.0
+	golang.org/x/term v0.33.0
 	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/release-utils v0.11.1
@@ -60,8 +60,8 @@ require (
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sync v0.15.0
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sync v0.16.0
+	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
