@@ -25,6 +25,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -415,6 +416,88 @@ func TestIgnorePatterns(t *testing.T) {
 	p, err = impl.IgnorePatterns(dir, nil, false)
 	require.NoError(t, err)
 	require.Len(t, p, 4)
+}
+
+func TestStructToString(t *testing.T) {
+	testStruct := struct {
+		A string
+		B int
+		C struct {
+			D string
+			E int
+			F struct {
+				G bool
+			}
+		}
+	}{
+		"hello", 1, struct {
+			D string
+			E int
+			F struct {
+				G bool
+			}
+		}{"", 2, struct {
+			G bool
+		}{false}},
+	}
+	require.Empty(t, structToString(1, false))
+	require.Equal(t, `A: hello\nB: 1\nD: \nE: 2\nG: false\n`, structToString(testStruct, false))
+	require.Equal(t, `A: hello\nB: 1\nE: 2\nG: false\n`, structToString(testStruct, true))
+	require.Equal(t, `B: 1\nE: 2\n`, structToString(testStruct, true, "A", "G"))
+}
+
+func TestToDot(t *testing.T) {
+	/*
+		create the following package structure
+
+					root
+					 |
+				-----------
+				|         |
+			node-1       node-2
+			    |         |
+			    -----------
+			         |
+			       leaf
+	*/
+
+	packageIDs := []string{"root", "node-1", "node-2", "leaf"}
+	edges := []struct {
+		p string
+		c string
+	}{
+		{"root", "node-1"},
+		{"root", "node-2"},
+		{"node-1", "leaf"},
+		{"node-2", "leaf"},
+	}
+	packages := map[string]*Package{}
+	for _, id := range packageIDs {
+		p := NewPackage()
+		p.SetSPDXID(id)
+		p.Name = id
+		packages[id] = p
+	}
+
+	for _, edge := range edges {
+		require.NoError(t, packages[edge.p].AddPackage(packages[edge.c]))
+	}
+
+	// split and sort by line since order here is not deterministic.
+	expectedDot := strings.Split(`"root" [label="root" tooltip="ID: root\nName: root\nFilesAnalyzed: false\n" fontname="monospace"];
+"root" -> "node-1";
+"node-1" [label="node-1" tooltip="ID: node-1\nName: node-1\nFilesAnalyzed: false\n" fontname="monospace"];
+"node-1" -> "leaf";
+"leaf" [label="leaf" tooltip="ID: leaf\nName: leaf\nFilesAnalyzed: false\n" fontname="monospace"];
+"root" -> "node-2";
+"node-2" [label="node-2" tooltip="ID: node-2\nName: node-2\nFilesAnalyzed: false\n" fontname="monospace"];
+"node-2" -> "leaf";
+`, "\n")
+	// run function
+	actualDot := strings.Split(toDot(packages["root"], -1, &map[string]struct{}{}), "\n")
+	slices.Sort(expectedDot)
+	slices.Sort(actualDot)
+	require.Equal(t, expectedDot, actualDot)
 }
 
 func TestRecursiveNameFilter(t *testing.T) {

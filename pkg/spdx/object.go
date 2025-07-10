@@ -51,6 +51,7 @@ type Object interface {
 	getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []intoto.Subject
 	GetElementByID(string) Object
 	GetName() string
+	ToDot() string
 }
 
 type Entity struct {
