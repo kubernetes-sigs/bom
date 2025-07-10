@@ -31,5 +31,6 @@ func AddDocument(parent *cobra.Command) {
 
 	AddOutline(documentCmd)
 	AddQuery(documentCmd)
+	AddToDot(documentCmd)
 	parent.AddCommand(documentCmd)
 }
