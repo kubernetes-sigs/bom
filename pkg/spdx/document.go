@@ -131,6 +131,7 @@ type DrawingOptions struct {
 	ASCIIOnly   bool
 	Purls       bool
 	Version     bool
+	Find        string
 }
 
 // String returns the SPDX string of the external document ref.
@@ -311,6 +312,19 @@ func treeLines(o *DrawingOptions, depth int, connector string) string {
 	res := " " + strings.Repeat(fmt.Sprintf(" %s ", stick), depth)
 	res += " " + connector + " "
 	return res
+}
+
+// FilterReverseDependencies filters the document to only include direct paths to
+// Objects with the name name. Hence finding that Object's reverse dependencies.
+func (d *Document) FilterReverseDependencies(name string, depth int) {
+	keepPackages := map[string]*Package{}
+	for packageName, p := range d.Packages {
+		if !recursiveNameFilter(name, p, depth, &map[string]bool{}) {
+			continue
+		}
+		keepPackages[packageName] = p
+	}
+	d.Packages = keepPackages
 }
 
 // Outline draws an outline of the relationships inside the doc.
