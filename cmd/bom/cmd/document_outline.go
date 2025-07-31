@@ -54,6 +54,9 @@ set the --spdx-ids to only output the IDs of the entities.
 			if err != nil {
 				return fmt.Errorf("opening doc: %w", err)
 			}
+			if outlineOpts.Find != "" {
+				doc.FilterReverseDependencies(outlineOpts.Find, outlineOpts.Recursion)
+			}
 			output, err := doc.Outline(outlineOpts)
 			if err != nil {
 				return fmt.Errorf("generating document outline: %w", err)
@@ -88,6 +91,13 @@ set the --spdx-ids to only output the IDs of the entities.
 		"purl",
 		false,
 		"show package urls instead of name@version",
+	)
+	outlineCmd.PersistentFlags().StringVarP(
+		&outlineOpts.Find,
+		"find",
+		"f",
+		"",
+		"Find node in DAG",
 	)
 
 	parent.AddCommand(outlineCmd)

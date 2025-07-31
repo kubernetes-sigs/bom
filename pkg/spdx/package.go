@@ -401,7 +401,11 @@ func (p *Package) Draw(builder *strings.Builder, o *DrawingOptions, depth int, s
 		connector = connectorL
 	}
 
-	fmt.Fprintf(builder, treeLines(o, depth, connector)+"🔗 %d Relationships\n", len(p.Relationships))
+	// not printed when find is set since relationships will be filtered out from the graph.
+	if o.Find == "" {
+		fmt.Fprintf(builder, treeLines(o, depth, connector)+"🔗 %d Relationships\n", len(p.Relationships))
+	}
+
 	if depth >= o.Recursion && o.Recursion > 0 {
 		fmt.Fprintln(builder, treeLines(o, depth-1, ""))
 		return

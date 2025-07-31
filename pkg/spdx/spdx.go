@@ -264,6 +264,32 @@ func Banner() string {
 	return string(d)
 }
 
+// recursiveNameFilter is a function that recursivley filters an objects peers inplace
+// to include only those that are on a direct path to another object with the queried name.
+// If one or more path is found it returns true.
+//
+//nolint:gocritic // seen is a pointer recursively populated
+func recursiveNameFilter(name string, o Object, depth int, seen *map[string]bool) bool {
+	if o.GetName() == name {
+		o.FilterRelationships(func(_ *Relationship) bool { return false })
+		return true
+	}
+	// searched to the max depth and name not found
+	if depth == 1 {
+		return false
+	}
+	if out, ok := (*seen)[o.SPDXID()]; ok {
+		return out
+	}
+	filter := func(r *Relationship) bool {
+		return recursiveNameFilter(name, r.Peer, depth-1, seen)
+	}
+	o.FilterRelationships(filter)
+	out := len(*o.GetRelationships()) != 0
+	(*seen)[o.SPDXID()] = out
+	return out
+}
+
 // recursiveIDSearch is a function that recursively searches an object's peers
 // to find the specified SPDX ID. If found, returns a copy of the object.
 //

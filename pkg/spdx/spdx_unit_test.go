@@ -25,6 +25,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -414,6 +415,90 @@ func TestIgnorePatterns(t *testing.T) {
 	p, err = impl.IgnorePatterns(dir, nil, false)
 	require.NoError(t, err)
 	require.Len(t, p, 4)
+}
+
+func TestRecursiveNameFilter(t *testing.T) {
+	/*
+		create the starting package structure
+
+		root-p
+		|
+		|-target-p-0
+		| |-sub-p-0
+		|
+		|-sub-p-1
+		| |-target-p-1
+		| |-sub-p-2
+		|
+		|-sub-p-3
+	*/
+	packageIDs := []string{"root-p"}
+	for i := range 3 {
+		packageIDs = append(packageIDs, fmt.Sprintf("target-p-%d", i))
+	}
+	for i := range 7 {
+		packageIDs = append(packageIDs, fmt.Sprintf("sub-p-%d", i))
+	}
+	edges := []struct {
+		p string
+		c string
+	}{
+		{"root-p", "target-p-0"},
+		{"root-p", "sub-p-1"},
+		{"root-p", "sub-p-3"},
+		{"target-p-0", "sub-p-0"},
+		{"sub-p-1", "target-p-1"},
+		{"sub-p-1", "sub-p-2"},
+	}
+	packages := map[string]*Package{}
+	for _, id := range packageIDs {
+		p := NewPackage()
+		p.SetSPDXID(id)
+		p.Name = strings.Join(strings.Split(id, "-")[:2], "-")
+		packages[id] = p
+	}
+
+	for _, edge := range edges {
+		require.NoError(t, packages[edge.p].AddPackage(packages[edge.c]))
+	}
+
+	/*
+		create the expected package structure
+
+		root-p
+		|
+		|-target-p-0
+	*/
+	ePackageIDs := []string{"root-p", "target-p-0"}
+	eEdges := []struct {
+		p string
+		c string
+	}{
+		{"root-p", "target-p-0"},
+	}
+	ePackages := map[string]*Package{}
+	for _, id := range ePackageIDs {
+		p := NewPackage()
+		p.SetSPDXID(id)
+		p.Name = strings.Join(strings.Split(id, "-")[:2], "-")
+		ePackages[id] = p
+	}
+
+	for _, edge := range eEdges {
+		require.NoError(t, ePackages[edge.p].AddPackage(ePackages[edge.c]))
+	}
+
+	// filter the starting packages
+	ok := recursiveNameFilter(
+		"target-p",
+		packages["root-p"],
+		2,
+		&map[string]bool{},
+	)
+	require.True(t, ok)
+
+	// check filtered == expected
+	require.Equal(t, ePackages["root-p"], packages["root-p"])
 }
 
 func TestRecursiveSearch(t *testing.T) {
