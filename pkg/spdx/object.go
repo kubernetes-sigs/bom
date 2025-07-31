@@ -46,9 +46,11 @@ type Object interface {
 	SetEntity(*Entity)
 	AddRelationship(*Relationship)
 	GetRelationships() *[]*Relationship
+	FilterRelationships(filter func(r *Relationship) bool)
 	ToProvenanceSubject() *intoto.Subject
 	getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []intoto.Subject
 	GetElementByID(string) Object
+	GetName() string
 }
 
 type Entity struct {
@@ -77,6 +79,11 @@ func (e *Entity) Options() *ObjectOptions {
 // SPDXID returns the SPDX reference string for the object.
 func (e *Entity) SPDXID() string {
 	return e.ID
+}
+
+// GetName returns the Objects name as a string.
+func (e *Entity) GetName() string {
+	return e.Name
 }
 
 // SPDXID returns the SPDX reference string for the object.
@@ -153,6 +160,21 @@ func (e *Entity) Render() (string, error) {
 
 func (e *Entity) GetRelationships() *[]*Relationship {
 	return &e.Relationships
+}
+
+// FilterRelationships filters relationships according to a filter function.
+// On a true the relationship is kept, on a false the relationship is dropped.
+func (e *Entity) FilterRelationships(filter func(r *Relationship) bool) {
+	keepRelationships := []*Relationship{}
+	for _, rel := range e.Relationships {
+		if filter(rel) {
+			keepRelationships = append(keepRelationships, rel)
+		}
+	}
+	if len(keepRelationships) == 0 {
+		keepRelationships = nil
+	}
+	e.Relationships = keepRelationships
 }
 
 // ToProvenanceSubject converts the element to an intoto subject, suitable
