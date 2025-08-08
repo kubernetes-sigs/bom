@@ -26,8 +26,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/release-utils/http"
-	"sigs.k8s.io/release-utils/util"
 
 	"sigs.k8s.io/bom/pkg/license"
 )
@@ -111,7 +111,7 @@ func (h *goRunnerHandler) licenseReader(o *ContainerLayerAnalyzerOptions) (*lice
 		}
 
 		// If the license cache does not exist, create it
-		if !util.Exists(ldir) {
+		if !helpers.Exists(ldir) {
 			if err := os.MkdirAll(ldir, os.FileMode(0o0755)); err != nil {
 				return nil, fmt.Errorf("creating license cache directory: %w", err)
 			}

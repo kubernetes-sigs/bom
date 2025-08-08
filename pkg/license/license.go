@@ -29,7 +29,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 const (
@@ -169,7 +169,7 @@ func (r *Reader) ReadTopLicense(path string) (*ClassifyResult, error) {
 	// First, if we have a topmost license, we use that one
 	commonNames := []string{"LICENSE", "LICENSE.txt", "COPYING", "COPYRIGHT"}
 	for _, f := range commonNames {
-		if util.Exists(filepath.Join(path, f)) {
+		if helpers.Exists(filepath.Join(path, f)) {
 			licenseFilePath = filepath.Join(path, f)
 			break
 		}

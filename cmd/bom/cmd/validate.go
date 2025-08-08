@@ -23,11 +23,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 
 	"sigs.k8s.io/bom/pkg/spdx"
 )
@@ -55,7 +54,7 @@ for checking files.
 
 		RunE: func(_ *cobra.Command, args []string) error {
 			for i, arg := range args {
-				if util.Exists(arg) {
+				if helpers.Exists(arg) {
 					file, err := os.Open(arg)
 					if err != nil {
 						return fmt.Errorf("checking argument %d: %w", i, err)
@@ -192,13 +191,10 @@ func validateArtifacts(opts validateOptions) error {
 		data = append(data, resRow)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"FileName", "Valid", "Message", "Invalid Hashes"})
+	table := helpers.NewTableWriterWithDefaultsAndHeader(os.Stdout, []string{"FileName", "Valid", "Message", "Invalid Hashes"})
 
-	for _, v := range data {
-		table.Append(v)
-	}
-	table.Render()
+	_ = table.Bulk(data) //nolint: errcheck
+	_ = table.Render()   //nolint: errcheck
 
 	if errored {
 		return errors.New("failed to validate all files")

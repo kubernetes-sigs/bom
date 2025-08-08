@@ -27,7 +27,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 
 	"sigs.k8s.io/bom/pkg/license"
 )
@@ -94,7 +94,7 @@ func (builder *defaultDocBuilderImpl) CreateSPDXClient(genopts *DocGenerateOptio
 	spdx.Options().ScanImages = genopts.ScanImages
 	spdx.Options().LicenseListVersion = genopts.LicenseListVersion
 
-	if !util.Exists(opts.WorkDir) {
+	if !helpers.Exists(opts.WorkDir) {
 		if err := os.MkdirAll(opts.WorkDir, os.FileMode(0o755)); err != nil {
 			return nil, fmt.Errorf("creating builder worskpace dir: %w", err)
 		}

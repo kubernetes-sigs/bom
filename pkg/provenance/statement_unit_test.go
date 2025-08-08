@@ -25,7 +25,7 @@ import (
 	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
 	"github.com/stretchr/testify/require"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 func TestReadSubjectsFromDir(t *testing.T) {
@@ -49,7 +49,7 @@ func TestReadSubjectsFromDir(t *testing.T) {
 
 	for _, testfile := range testdata {
 		path := filepath.Join(dir, testfile.filename)
-		if !util.Exists(filepath.Dir(path)) {
+		if !helpers.Exists(filepath.Dir(path)) {
 			require.NoError(t, os.Mkdir(filepath.Dir(path), os.FileMode(0o755)))
 		}
 		require.NoError(t, os.WriteFile(

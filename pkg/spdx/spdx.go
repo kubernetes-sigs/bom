@@ -30,7 +30,7 @@ import (
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 const (
@@ -181,7 +181,7 @@ func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error)
 
 	// Scan the directory contents and if it is a go module, process the
 	// dependencies
-	if util.Exists(filepath.Join(dirPath, GoModFileName)) && spdx.Options().ProcessGoModules {
+	if helpers.Exists(filepath.Join(dirPath, GoModFileName)) && spdx.Options().ProcessGoModules {
 		logrus.Info("Directory contains a go module. Scanning go packages")
 		deps, err := spdx.impl.GetGoDependencies(dirPath, spdx.Options())
 		if err != nil {
@@ -217,7 +217,7 @@ func (spdx *SPDX) PackageFromArchive(archivePath string) (imagePackage *Package,
 
 // FileFromPath creates a File object from a path.
 func (spdx *SPDX) FileFromPath(filePath string) (*File, error) {
-	if !util.Exists(filePath) {
+	if !helpers.Exists(filePath) {
 		return nil, errors.New("file does not exist")
 	}
 	f := NewFile()

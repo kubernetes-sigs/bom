@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/release-utils/version"
 
 	"sigs.k8s.io/bom/pkg/license"
@@ -84,7 +84,7 @@ func (opts *generateOptions) Validate() error {
 	} {
 		// Check if image archives exist
 		for i, iPath := range col.Items {
-			if !isGlob(iPath) && !util.Exists(iPath) {
+			if !isGlob(iPath) && !helpers.Exists(iPath) {
 				return fmt.Errorf("%s #%d not found (%s)", col.Name, i+1, iPath)
 			}
 		}
@@ -125,7 +125,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		PersistentPreRunE: initLogging,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			for i, arg := range args {
-				if !util.Exists(arg) {
+				if !helpers.Exists(arg) {
 					continue
 				}
 				file, err := os.Open(arg)

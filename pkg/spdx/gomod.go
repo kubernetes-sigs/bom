@@ -33,7 +33,7 @@ import (
 	"golang.org/x/tools/go/vcs" //nolint:staticcheck
 
 	"sigs.k8s.io/release-utils/command"
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 
 	"sigs.k8s.io/bom/pkg/license"
 )
@@ -263,7 +263,7 @@ func (mod *GoModule) BuildFullPackageList(_ *modfile.File) (packageList []*GoPac
 	packageList = []*GoPackage{}
 
 	// If no go.sum is found, then there are no deps
-	if !util.Exists(filepath.Join(mod.opts.Path, GoSumFileName)) {
+	if !helpers.Exists(filepath.Join(mod.opts.Path, GoSumFileName)) {
 		return packageList, nil
 	}
 
@@ -340,7 +340,7 @@ func (mod *GoModule) BuildFullPackageList(_ *modfile.File) (packageList []*GoPac
 				LocalInstall: "",
 			}
 			status := ""
-			if fmod.Module.Dir != "" && util.Exists(fmod.Module.Dir) {
+			if fmod.Module.Dir != "" && helpers.Exists(fmod.Module.Dir) {
 				dep.LocalInstall = fmod.Module.Dir
 				status = "(available locally)"
 			}
@@ -349,7 +349,7 @@ func (mod *GoModule) BuildFullPackageList(_ *modfile.File) (packageList []*GoPac
 			if fmod.Module.Replace != nil &&
 				fmod.Module.Replace.Dir != "" &&
 				// If the local directory exists:
-				util.Exists(fmod.Module.Replace.Dir) {
+				helpers.Exists(fmod.Module.Replace.Dir) {
 				logrus.Infof(
 					"Package %s has local replacement in %s",
 					dep.ImportPath, fmod.Module.Replace.Dir,
@@ -403,7 +403,7 @@ func (di *GoModDefaultImpl) BuildPackageList(gomod *modfile.File) ([]*GoPackage,
 //
 //	the download dir in the LocalDir field
 func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, force bool) error {
-	if pkg.LocalDir != "" && util.Exists(pkg.LocalDir) && !force {
+	if pkg.LocalDir != "" && helpers.Exists(pkg.LocalDir) && !force {
 		logrus.WithField("package", pkg.ImportPath).Infof("Not downloading %s as it already has local data", pkg.ImportPath)
 		return nil
 	}
@@ -418,7 +418,7 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 		return fmt.Errorf("fetching package %s from %s: %w", pkg.ImportPath, repoName, err)
 	}
 
-	if !util.Exists(filepath.Join(os.TempDir(), downloadDir)) {
+	if !helpers.Exists(filepath.Join(os.TempDir(), downloadDir)) {
 		if err := os.MkdirAll(
 			filepath.Join(os.TempDir(), downloadDir), os.FileMode(0o755),
 		); err != nil {
@@ -462,7 +462,7 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 // RemoveDownloads takes a list of packages and remove its downloads.
 func (di *GoModDefaultImpl) RemoveDownloads(packageList []*GoPackage) error {
 	for _, pkg := range packageList {
-		if pkg.ImportPath != "" && util.Exists(pkg.LocalDir) && pkg.TmpDir {
+		if pkg.ImportPath != "" && helpers.Exists(pkg.LocalDir) && pkg.TmpDir {
 			if err := os.RemoveAll(pkg.LocalDir); err != nil {
 				return fmt.Errorf("removing package data: %w", err)
 			}
@@ -477,7 +477,7 @@ func (di *GoModDefaultImpl) LicenseReader() (*license.Reader, error) {
 		opts := license.DefaultReaderOptions
 		opts.CacheDir = filepath.Join(os.TempDir(), spdxLicenseDlCache)
 		opts.LicenseDir = filepath.Join(os.TempDir(), spdxLicenseData)
-		if !util.Exists(opts.CacheDir) {
+		if !helpers.Exists(opts.CacheDir) {
 			if err := os.MkdirAll(opts.CacheDir, os.FileMode(0o755)); err != nil {
 				return nil, fmt.Errorf("creating dir: %w", err)
 			}
