@@ -44,7 +44,7 @@ import (
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/bom/pkg/osinfo"
@@ -175,7 +175,7 @@ func sanitizeExtractPath(tmpDir, filePath string) (string, error) {
 // archive and returns the data as a struct.
 func (di *spdxDefaultImplementation) ReadArchiveManifest(manifestPath string) (manifest *ArchiveManifest, err error) {
 	// Check that we have the archive manifest.json file
-	if !util.Exists(manifestPath) {
+	if !helpers.Exists(manifestPath) {
 		return manifest, errors.New("unable to find manifest file " + manifestPath)
 	}
 
@@ -363,7 +363,7 @@ func (di *spdxDefaultImplementation) PullImagesToArchive(
 		return nil, err
 	}
 
-	if !util.Exists(path) {
+	if !helpers.Exists(path) {
 		if err := os.MkdirAll(path, os.FileMode(0o755)); err != nil {
 			return nil, fmt.Errorf("creating image directory: %w", err)
 		}
@@ -506,7 +506,7 @@ func (di *spdxDefaultImplementation) IgnorePatterns(
 		return patterns, nil
 	}
 
-	if util.Exists(filepath.Join(dirPath, gitIgnoreFile)) {
+	if helpers.Exists(filepath.Join(dirPath, gitIgnoreFile)) {
 		f, err := os.Open(filepath.Join(dirPath, gitIgnoreFile))
 		if err != nil {
 			return nil, fmt.Errorf("opening gitignore file: %w", err)

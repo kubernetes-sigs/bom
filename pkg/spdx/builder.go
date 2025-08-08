@@ -23,7 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 type YamlBuildArtifact struct {
@@ -163,7 +163,7 @@ func (o *DocGenerateOptions) Validate() error {
 		)
 	}
 
-	if o.ConfigFile != "" && !util.Exists(o.ConfigFile) {
+	if o.ConfigFile != "" && !helpers.Exists(o.ConfigFile) {
 		return errors.New("the specified configuration file was not found")
 	}
 

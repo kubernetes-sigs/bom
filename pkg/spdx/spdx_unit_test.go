@@ -30,7 +30,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 func TestBuildIDString(t *testing.T) {
@@ -71,9 +71,9 @@ func TestUnitExtractTarballTmp(t *testing.T) {
 		require.NoError(t, err, "extracting file")
 		defer os.RemoveAll(dir)
 
-		require.True(t, util.Exists(filepath.Join(dir, "/text.txt")), "checking directory")
-		require.True(t, util.Exists(filepath.Join(dir, "/subdir/text.txt")), "checking subdirectory")
-		require.True(t, util.Exists(dir), "checking directory")
+		require.True(t, helpers.Exists(filepath.Join(dir, "/text.txt")), "checking directory")
+		require.True(t, helpers.Exists(filepath.Join(dir, "/subdir/text.txt")), "checking subdirectory")
+		require.True(t, helpers.Exists(dir), "checking directory")
 	}
 }
 

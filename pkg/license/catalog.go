@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 // CatalogOptions are the spdx settings.
@@ -94,7 +94,7 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 	if catalog.List.Licenses == nil {
 		return errors.New("unable to write licenses, they have not been loaded yet")
 	}
-	if !util.Exists(targetDir) {
+	if !helpers.Exists(targetDir) {
 		if err := os.MkdirAll(targetDir, os.FileMode(0o755)); err != nil {
 			return fmt.Errorf("creating license data dir: %w", err)
 		}
@@ -107,7 +107,7 @@ func (catalog *Catalog) WriteLicensesAsText(targetDir string) error {
 				return nil
 			}
 			licPath := filepath.Join(targetDir, "assets", l.LicenseID)
-			if !util.Exists(licPath) {
+			if !helpers.Exists(licPath) {
 				if err := os.MkdirAll(licPath, 0o755); err != nil {
 					return fmt.Errorf("creating license directory: %w", err)
 				}

@@ -44,7 +44,7 @@ import (
 	"golang.org/x/term"
 
 	"sigs.k8s.io/release-utils/hash"
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/release-utils/version"
 
 	"sigs.k8s.io/bom/pkg/provenance"
@@ -593,7 +593,7 @@ func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error
 		res := ValidationResults{
 			FailedAlgorithms: []string{},
 		}
-		if !util.Exists(path) {
+		if !helpers.Exists(path) {
 			res.FileName = path
 			res.Message = "File not found"
 			results = append(results, res)

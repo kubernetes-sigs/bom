@@ -32,7 +32,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/release-utils/hash"
-	"sigs.k8s.io/release-utils/util"
+	"sigs.k8s.io/release-utils/helpers"
 )
 
 // Object is an interface that dictates the common methods of spdx
@@ -131,7 +131,7 @@ func (e *Entity) ReadChecksums(filePath string) error {
 //
 //	the fields derived from it (Checksums and FileName)
 func (e *Entity) ReadSourceFile(path string) error {
-	if !util.Exists(path) {
+	if !helpers.Exists(path) {
 		return errors.New("unable to find package source file")
 	}
 

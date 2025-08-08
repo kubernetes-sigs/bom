@@ -31,8 +31,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/release-utils/http"
-	"sigs.k8s.io/release-utils/util"
 )
 
 // ListURL is the json list of all spdx licenses.
@@ -86,14 +86,14 @@ func (do *DownloaderOptions) Validate() error {
 			if err != nil {
 				return fmt.Errorf("creating temporary directory: %w", err)
 			}
-		} else if !util.Exists(do.CacheDir) {
+		} else if !helpers.Exists(do.CacheDir) {
 			if err := os.MkdirAll(do.CacheDir, os.FileMode(0o755)); err != nil {
 				return fmt.Errorf("creating license downloader cache: %w", err)
 			}
 		}
 
 		// Is we have a cache dir, check if it exists
-		if !util.Exists(do.CacheDir) {
+		if !helpers.Exists(do.CacheDir) {
 			return errors.New("the specified cache directory does not exist: " + do.CacheDir)
 		}
 	}

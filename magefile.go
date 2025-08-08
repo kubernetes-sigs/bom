@@ -34,8 +34,8 @@ import (
 	"github.com/uwu-tools/magex/pkg"
 
 	"sigs.k8s.io/bom/pkg/license"
+	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/release-utils/mage"
-	"sigs.k8s.io/release-utils/util"
 )
 
 // Default target to run when none is specified
@@ -299,7 +299,7 @@ func checkEmbeddedDataWithTag(tag string) (err error) {
 		}
 	}
 
-	if !util.Exists(
+	if !helpers.Exists(
 		filepath.Join(license.EmbeddedDataDir, fmt.Sprintf("license-list-%s.zip", tag)),
 	) {
 		return fmt.Errorf("%s (%s)", oldLicErr, tag)
@@ -326,7 +326,7 @@ func UpdateEmbeddedData() error {
 		}
 	}
 
-	if util.Exists(license.EmbeddedDataDir) {
+	if helpers.Exists(license.EmbeddedDataDir) {
 		if err := os.RemoveAll(license.EmbeddedDataDir); err != nil {
 			return fmt.Errorf("removing embedded data: %w", err)
 		}
