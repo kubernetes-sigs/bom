@@ -25,9 +25,9 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 
 	"sigs.k8s.io/release-utils/helpers"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/bom/pkg/license"
 )
