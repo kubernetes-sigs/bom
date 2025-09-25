@@ -60,7 +60,7 @@ signs:
 
 sboms:
   - id: bom
-    cmd: ./bom-amd64-linux
+    cmd: ./bom_linux_amd64_v1/bom
     args:
       - generate
       - "--output"
