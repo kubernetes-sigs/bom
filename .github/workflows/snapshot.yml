@@ -5,10 +5,17 @@ on:
     branches:
       - 'main'
   pull_request:
+    branches:
+      - 'main'
+
+permissions: {}
 
 jobs:
   snapshot:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
 
     steps:
       - name: Check out code onto GOPATH
@@ -16,8 +23,9 @@ jobs:
 
       - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
-          go-version: '1.24'
+          go-version: '1.25'
           check-latest: true
+          cache: false
 
       - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@9ed2f89a662bf1735a48bc8557fd212fa902bebf # v6.1.0
@@ -32,5 +40,5 @@ jobs:
 
       - name: check binary
         run: |
-          ./dist/bom-amd64-linux version
+          ./dist/bom_linux_amd64_v1/bom version
           cat ./dist/bom.json.spdx

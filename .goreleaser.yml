@@ -16,8 +16,6 @@ gomod:
 
 builds:
   - id: bom
-    no_unique_dist_dir: true
-    binary: bom-{{ .Arch }}-{{ .Os }}
     main: ./cmd/bom
     goos:
       - darwin
@@ -48,6 +46,7 @@ builds:
 archives:
   - formats:
       - binary
+    name_template: "{{ .ProjectName }}-{{ .Arch }}-{{ .Os }}"
     allow_different_binary_count: true
 
 signs:
@@ -61,7 +60,7 @@ signs:
 
 sboms:
   - id: bom
-    cmd: ./bom-amd64-linux
+    cmd: ./bom_linux_amd64_v1/bom
     args:
       - generate
       - "--output"
