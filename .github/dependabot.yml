@@ -31,3 +31,13 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all:
+        update-types:
+          - "minor"
+          - "patch"
