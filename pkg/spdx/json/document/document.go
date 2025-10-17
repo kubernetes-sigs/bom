@@ -64,6 +64,8 @@ type Package interface {
 	GetCopyrightText() string
 	GetLicenseConcluded() string
 	GetFilesAnalyzed() bool
+	GetVendorInfo() string
+	GetSourceInfo() string
 	GetLicenseDeclared() string
 	GetVersion() string
 	GetVerificationCode() PackageVerificationCode
