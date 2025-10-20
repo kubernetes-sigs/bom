@@ -99,6 +99,7 @@ type Package struct {
 	Originator           string                   `json:"originator,omitempty"`
 	Supplier             string                   `json:"supplier,omitempty"`
 	SourceInfo           string                   `json:"sourceInfo,omitempty"`
+	VendorInfo           string                   `json:"vendorInfo,omitempty"`
 	CopyrightText        string                   `json:"copyrightText"`
 	HasFiles             []string                 `json:"hasFiles,omitempty"`
 	LicenseInfoFromFiles []string                 `json:"licenseInfoFromFiles,omitempty"`
@@ -117,6 +118,8 @@ func (p *Package) GetLicenseDeclared() string  { return p.LicenseDeclared }
 func (p *Package) GetVersion() string          { return p.Version }
 func (p *Package) GetPrimaryPurpose() string   { return "" }
 func (p *Package) GetSupplier() string         { return p.Supplier }
+func (p *Package) GetVendorInfo() string       { return p.VendorInfo }
+func (p *Package) GetSourceInfo() string       { return p.SourceInfo }
 func (p *Package) GetOriginator() string       { return p.Originator }
 
 func (p *Package) GetVerificationCode() document.PackageVerificationCode {
