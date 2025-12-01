@@ -287,6 +287,10 @@ func (d *Document) ToDot(o *ToDotOptions) string {
 	if o.SubGraphRoot == "" {
 		out = escape(d.Name) + ";\n"
 	}
+	if len(d.Packages) == 0 {
+		log.Fatal("No graphs to generate")
+	}
+
 	seenFilter := &map[string]struct{}{}
 	var ok bool
 	found := false
