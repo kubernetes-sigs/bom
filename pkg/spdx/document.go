@@ -289,6 +289,7 @@ func (d *Document) ToDot(o *ToDotOptions) string {
 	}
 	seenFilter := &map[string]struct{}{}
 	var ok bool
+	found := false
 	for _, p := range d.Packages {
 		if o.SubGraphRoot != "" {
 			p, ok = recursiveIDSearch(o.SubGraphRoot, p, &map[string]struct{}{}).(*Package)
@@ -298,10 +299,15 @@ func (d *Document) ToDot(o *ToDotOptions) string {
 			if !ok {
 				log.Fatal("Interface object is not of expected type Package")
 			}
+			found = true
 		} else {
+			found = true
 			out += escape(d.Name) + " -> " + escape(p.SPDXID()) + ";\n"
 		}
 		out += toDot(p, o.Depth, seenFilter)
+	}
+	if !found {
+		log.Fatalf("Unable to generate a dot file for the '%s' subgraph", o.SubGraphRoot)
 	}
 	return fmt.Sprintf("digraph {\n%s\n}\n", out)
 }
