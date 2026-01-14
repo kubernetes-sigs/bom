@@ -504,9 +504,8 @@ func (di *GoModDefaultImpl) BuildPackageList(gomod *modfile.File) ([]*GoPackage,
 	return pkgs, nil
 }
 
-// DownloadPackage takes a pkg, downloads it from its src and sets
-//
-//	the download dir in the LocalDir field
+// DownloadPackage takes a pkg, downloads it from the Go proxy and sets
+// the download dir in the LocalDir field.
 func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, force bool) error {
 	if pkg.LocalDir != "" && helpers.Exists(pkg.LocalDir) && !force {
 		logrus.WithField("package", pkg.ImportPath).Infof("Not downloading %s as it already has local data", pkg.ImportPath)
@@ -514,15 +513,8 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 	}
 
 	logrus.WithField("package", pkg.ImportPath).Debugf("Downloading package %s@%s", pkg.ImportPath, pkg.Revision)
-	repo, err := vcs.RepoRootForImportPath(pkg.ImportPath, true)
-	if err != nil {
-		repoName := "[unknown repo]"
-		if repo != nil {
-			repoName = repo.Repo
-		}
-		return fmt.Errorf("fetching package %s from %s: %w", pkg.ImportPath, repoName, err)
-	}
 
+	// Create temp directory
 	if !helpers.Exists(filepath.Join(os.TempDir(), downloadDir)) {
 		if err := os.MkdirAll(
 			filepath.Join(os.TempDir(), downloadDir), os.FileMode(0o755),
@@ -531,31 +523,27 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 		}
 	}
 
-	// Create tempdir
 	tmpDir, err := os.MkdirTemp(filepath.Join(os.TempDir(), downloadDir), "package-download-")
 	if err != nil {
 		return fmt.Errorf("creating temporary dir: %w", err)
 	}
-	// Create a clone of the module repo at the revision
-	rev := strings.TrimSuffix(pkg.Revision, "+incompatible")
 
-	// Strip the revision from the whole string part
-	if goModRevRe == nil {
-		goModRevRe = regexp.MustCompile(goModRevPtn)
+	// Build proxy URL
+	version := strings.TrimSuffix(pkg.Revision, "+incompatible")
+	proxyURL := getProxyURL()
+	encodedPath := encodeModulePath(pkg.ImportPath)
+	zipURL := fmt.Sprintf("%s/%s/@v/%s.zip", proxyURL, encodedPath, version)
+
+	// Download from proxy using release-utils http agent
+	agent := http.NewAgent()
+	data, err := agent.Get(zipURL)
+	if err != nil {
+		return fmt.Errorf("downloading %s from proxy (%s): %w", pkg.ImportPath, zipURL, err)
 	}
-	m := goModRevRe.FindStringSubmatch(pkg.Revision)
-	if len(m) > 1 {
-		rev = m[1]
-		logrus.WithField("package", pkg.ImportPath).Infof("Using commit %s as revision for download", rev)
-	}
-	if rev == "" {
-		if err := repo.VCS.Create(tmpDir, repo.Repo); err != nil {
-			return fmt.Errorf("creating local clone of %s: %w", repo.Repo, err)
-		}
-	} else {
-		if err := repo.VCS.CreateAtRev(tmpDir, repo.Repo, rev); err != nil {
-			return fmt.Errorf("creating local clone of %s: %w", repo.Repo, err)
-		}
+
+	// Extract zip to temp directory
+	if err := extractZip(data, tmpDir); err != nil {
+		return fmt.Errorf("extracting module zip: %w", err)
 	}
 
 	logrus.WithField("package", pkg.ImportPath).Infof("Go Package %s (rev %s) downloaded to %s", pkg.ImportPath, pkg.Revision, tmpDir)
