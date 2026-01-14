@@ -26,7 +26,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"unicode"
 
@@ -46,10 +45,7 @@ const (
 	downloadDir   = spdxTempDir + "/gomod-scanner"
 	GoModFileName = "go.mod"
 	GoSumFileName = "go.sum"
-	goModRevPtn   = `v\d+\.\d+\.\d+-[0-9.]+-([a-f0-9]+)` // Match revisions in go modules
 )
-
-var goModRevRe *regexp.Regexp
 
 // encodeModulePath encodes a module path for the Go proxy.
 // Go proxy requires uppercase letters to be escaped as !lowercase.
