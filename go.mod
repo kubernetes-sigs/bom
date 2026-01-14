@@ -19,7 +19,6 @@ require (
 	gitlab.alpinelinux.org/alpine/go v0.10.1
 	golang.org/x/mod v0.32.0
 	golang.org/x/term v0.39.0
-	golang.org/x/tools/go/vcs v0.1.0-deprecated
 	sigs.k8s.io/release-utils v0.12.2
 	sigs.k8s.io/yaml v1.6.0
 )
