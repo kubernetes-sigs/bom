@@ -27,12 +27,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"unicode"
+	"time"
 
 	"github.com/nozzle/throttler"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/helpers"
@@ -46,22 +47,6 @@ const (
 	GoModFileName = "go.mod"
 	GoSumFileName = "go.sum"
 )
-
-// encodeModulePath encodes a module path for the Go proxy.
-// Go proxy requires uppercase letters to be escaped as !lowercase.
-// e.g., github.com/Foo → github.com/!foo
-func encodeModulePath(path string) string {
-	var buf strings.Builder
-	for _, r := range path {
-		if unicode.IsUpper(r) {
-			buf.WriteRune('!')
-			buf.WriteRune(unicode.ToLower(r))
-		} else {
-			buf.WriteRune(r)
-		}
-	}
-	return buf.String()
-}
 
 // getProxyURL returns the Go proxy URL from GOPROXY env or default.
 func getProxyURL() string {
@@ -77,25 +62,38 @@ func getProxyURL() string {
 	return "https://proxy.golang.org"
 }
 
-// repoURLFromImportPath constructs a repository URL from an import path.
-// This is used for +incompatible versions where we need a VCS URL.
-func repoURLFromImportPath(importPath string) (string, error) {
+// proxyDownloadURL builds the Go proxy download URL for a module.
+// It uses golang.org/x/mod/module for proper path/version escaping and
+// handles +incompatible versions automatically.
+func proxyDownloadURL(importPath, version string) (string, error) {
+	// Validate import path has a domain-like first component
 	parts := strings.Split(importPath, "/")
-	if len(parts) < 2 {
+	if len(parts) == 0 || !strings.Contains(parts[0], ".") {
 		return "", fmt.Errorf("invalid import path: %s", importPath)
 	}
 
-	host := parts[0]
-	switch host {
-	case "github.com", "gitlab.com", "bitbucket.org":
-		if len(parts) >= 3 {
-			return fmt.Sprintf("git+https://%s/%s/%s", parts[0], parts[1], parts[2]), nil
-		}
-	case "gopkg.in":
-		return "git+https://" + importPath, nil
+	// Normalize version - remove +incompatible suffix for processing
+	ver := strings.TrimSuffix(version, "+incompatible")
+
+	// Check if version needs +incompatible suffix using module.MatchPathMajor
+	// For v2+ modules without /vN in path, the proxy requires +incompatible
+	_, pathMajor, _ := module.SplitPathVersion(importPath)
+	if !module.MatchPathMajor(ver, pathMajor) {
+		ver = ver + "+incompatible"
 	}
 
-	return "", fmt.Errorf("unknown host for import path: %s", importPath)
+	// Escape path and version for proxy URL
+	escapedPath, err := module.EscapePath(importPath)
+	if err != nil {
+		return "", fmt.Errorf("escaping module path %s: %w", importPath, err)
+	}
+	escapedVersion, err := module.EscapeVersion(ver)
+	if err != nil {
+		return "", fmt.Errorf("escaping module version %s: %w", ver, err)
+	}
+
+	proxyURL := getProxyURL()
+	return fmt.Sprintf("%s/%s/@v/%s.zip", proxyURL, escapedPath, escapedVersion), nil
 }
 
 // extractZip extracts a zip archive to the destination directory.
@@ -194,32 +192,21 @@ type GoPackage struct {
 
 // SPDXPackage builds a spdx package from the go package data.
 func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
-	// Validate import path - must have a domain-like first component
-	parts := strings.Split(pkg.ImportPath, "/")
-	if len(parts) < 2 || !strings.Contains(parts[0], ".") {
-		return nil, fmt.Errorf("invalid import path: %s", pkg.ImportPath)
+	// Build download URL (also validates import path)
+	downloadURL, err := proxyDownloadURL(pkg.ImportPath, pkg.Revision)
+	if err != nil {
+		return nil, fmt.Errorf("building download URL: %w", err)
 	}
 
 	spdxPackage := NewPackage()
 	spdxPackage.Options().Prefix = "gomod"
 	spdxPackage.Name = pkg.ImportPath
-
 	spdxPackage.BuildID(pkg.ImportPath, pkg.Revision)
-	if strings.Contains(pkg.Revision, "+incompatible") {
-		repoURL, err := repoURLFromImportPath(pkg.ImportPath)
-		if err != nil {
-			return nil, fmt.Errorf("building repository URL from import path: %w", err)
-		}
-		spdxPackage.DownloadLocation = repoURL
-	} else {
-		spdxPackage.DownloadLocation = fmt.Sprintf(
-			"https://proxy.golang.org/%s/@v/%s.zip", pkg.ImportPath,
-			strings.TrimSuffix(pkg.Revision, "+incompatible"),
-		)
-	}
+	spdxPackage.DownloadLocation = downloadURL
 	spdxPackage.LicenseConcluded = pkg.LicenseID
 	spdxPackage.Version = strings.TrimSuffix(pkg.Revision, "+incompatible")
 	spdxPackage.CopyrightText = pkg.CopyrightText
+
 	if packageurl := pkg.PackageURL(); packageurl != "" {
 		spdxPackage.ExternalRefs = append(spdxPackage.ExternalRefs, ExternalRef{
 			Category: CatPackageManager,
@@ -323,7 +310,6 @@ func (mod *GoModule) ScanLicenses() error {
 	// Create a new Throttler that will get parallelDownloads urls at a time
 	t := throttler.New(10, len(mod.Packages))
 	// Do a quick re-check for missing downloads
-	// todo: paralelize this. urgently.
 	for _, pkg := range mod.Packages {
 		// Launch a goroutine to fetch the package contents
 		go func(curPkg *GoPackage) {
@@ -332,6 +318,9 @@ func (mod *GoModule) ScanLicenses() error {
 				"Downloading package (%d total)", len(mod.Packages),
 			)
 			defer t.Done(err)
+
+			// If no local installation of the module was found we download
+			// the package to a temp location from the go proxy
 			if curPkg.LocalInstall == "" {
 				// Call download with no force in case local data is missing
 				if err2 := mod.impl.DownloadPackage(curPkg, mod.opts, false); err2 != nil {
@@ -343,10 +332,11 @@ func (mod *GoModule) ScanLicenses() error {
 				}
 			} else {
 				logrus.WithField("package", curPkg.ImportPath).Debugf(
-					"There is a local copy of %s@%s", curPkg.ImportPath, curPkg.Revision,
+					"There is a local copy of %s@%s in %s", curPkg.ImportPath, curPkg.Revision, curPkg.LocalInstall,
 				)
 			}
 
+			// Now that we are sure it's in the filesystem, scan the license
 			if err = mod.impl.ScanPackageLicense(curPkg, reader, mod.opts); err != nil {
 				logrus.WithField("package", curPkg.ImportPath).Errorf(
 					"scanning package %s for licensing info", curPkg.ImportPath,
@@ -530,17 +520,27 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 		return fmt.Errorf("creating temporary dir: %w", err)
 	}
 
-	// Build proxy URL
-	version := strings.TrimSuffix(pkg.Revision, "+incompatible")
-	proxyURL := getProxyURL()
-	encodedPath := encodeModulePath(pkg.ImportPath)
-	zipURL := fmt.Sprintf("%s/%s/@v/%s.zip", proxyURL, encodedPath, version)
+	// Build proxy download URL
+	zipURL, err := proxyDownloadURL(pkg.ImportPath, pkg.Revision)
+	if err != nil {
+		return fmt.Errorf("building proxy URL: %w", err)
+	}
 
 	// Download from proxy using release-utils http agent
 	agent := http.NewAgent()
-	data, err := agent.Get(zipURL)
-	if err != nil {
-		return fmt.Errorf("downloading %s from proxy (%s): %w", pkg.ImportPath, zipURL, err)
+	var data []byte
+	// Here we retry network timeouts because of this bug, remove when fixed:
+	// https://github.com/kubernetes-sigs/release-utils/issues/165
+	for i := range 5 {
+		var ierr error
+		data, ierr = agent.Get(zipURL)
+		if ierr != nil && strings.Contains(ierr.Error(), "context deadline exceeded") && i <= 5 {
+			time.Sleep(time.Duration(time.Duration(i*300) * time.Millisecond))
+			continue
+		}
+		if ierr != nil {
+			return fmt.Errorf("downloading %s from proxy (%s): %w", pkg.ImportPath, zipURL, ierr)
+		}
 	}
 
 	// Extract zip to temp directory
