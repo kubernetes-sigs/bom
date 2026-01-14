@@ -17,23 +17,27 @@ limitations under the License.
 package spdx
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/nozzle/throttler"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/vcs" //nolint:staticcheck
 
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/helpers"
+	"sigs.k8s.io/release-utils/http"
 
 	"sigs.k8s.io/bom/pkg/license"
 )
@@ -46,6 +50,107 @@ const (
 )
 
 var goModRevRe *regexp.Regexp
+
+// encodeModulePath encodes a module path for the Go proxy.
+// Go proxy requires uppercase letters to be escaped as !lowercase.
+// e.g., github.com/Foo → github.com/!foo
+func encodeModulePath(path string) string {
+	var buf strings.Builder
+	for _, r := range path {
+		if unicode.IsUpper(r) {
+			buf.WriteRune('!')
+			buf.WriteRune(unicode.ToLower(r))
+		} else {
+			buf.WriteRune(r)
+		}
+	}
+	return buf.String()
+}
+
+// getProxyURL returns the Go proxy URL from GOPROXY env or default.
+func getProxyURL() string {
+	if proxy := os.Getenv("GOPROXY"); proxy != "" {
+		// Handle comma-separated list, take first non-"off"/"direct" proxy
+		for _, p := range strings.Split(proxy, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" && p != "off" && p != "direct" {
+				return strings.TrimSuffix(p, "/")
+			}
+		}
+	}
+	return "https://proxy.golang.org"
+}
+
+// repoURLFromImportPath constructs a repository URL from an import path.
+// This is used for +incompatible versions where we need a VCS URL.
+func repoURLFromImportPath(importPath string) (string, error) {
+	parts := strings.Split(importPath, "/")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("invalid import path: %s", importPath)
+	}
+
+	host := parts[0]
+	switch host {
+	case "github.com", "gitlab.com", "bitbucket.org":
+		if len(parts) >= 3 {
+			return fmt.Sprintf("git+https://%s/%s/%s", parts[0], parts[1], parts[2]), nil
+		}
+	case "gopkg.in":
+		return "git+https://" + importPath, nil
+	}
+
+	return "", fmt.Errorf("unknown host for import path: %s", importPath)
+}
+
+// extractZip extracts a zip archive to the destination directory.
+// Module zips have format: module@version/path, so we strip the first component.
+func extractZip(data []byte, destDir string) error {
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return fmt.Errorf("opening zip: %w", err)
+	}
+
+	for _, file := range reader.File {
+		// Module zips have format: module@version/path
+		// Strip the first path component to extract to destDir directly
+		parts := strings.SplitN(file.Name, "/", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		destPath := filepath.Join(destDir, parts[1])
+
+		if file.FileInfo().IsDir() {
+			if err := os.MkdirAll(destPath, 0o755); err != nil {
+				return fmt.Errorf("creating directory: %w", err)
+			}
+			continue
+		}
+
+		// Create parent directories
+		if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
+			return fmt.Errorf("creating parent directory: %w", err)
+		}
+
+		rc, err := file.Open()
+		if err != nil {
+			return fmt.Errorf("opening file in zip: %w", err)
+		}
+
+		outFile, err := os.Create(destPath)
+		if err != nil {
+			rc.Close()
+			return fmt.Errorf("creating file: %w", err)
+		}
+
+		_, err = io.Copy(outFile, rc)
+		outFile.Close()
+		rc.Close()
+		if err != nil {
+			return fmt.Errorf("extracting file: %w", err)
+		}
+	}
+	return nil
+}
 
 // NewGoModule returns a new go module from the specified path.
 func NewGoModuleFromPath(path string) (*GoModule, error) {
@@ -93,17 +198,17 @@ type GoPackage struct {
 
 // SPDXPackage builds a spdx package from the go package data.
 func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
-	repo, err := vcs.RepoRootForImportPath(pkg.ImportPath, true)
-	if err != nil {
-		return nil, fmt.Errorf("building repository from package import path: %w", err)
-	}
 	spdxPackage := NewPackage()
 	spdxPackage.Options().Prefix = "gomod"
 	spdxPackage.Name = pkg.ImportPath
 
 	spdxPackage.BuildID(pkg.ImportPath, pkg.Revision)
 	if strings.Contains(pkg.Revision, "+incompatible") {
-		spdxPackage.DownloadLocation = repo.VCS.Scheme[0] + "+" + repo.Repo
+		repoURL, err := repoURLFromImportPath(pkg.ImportPath)
+		if err != nil {
+			return nil, fmt.Errorf("building repository URL from import path: %w", err)
+		}
+		spdxPackage.DownloadLocation = repoURL
 	} else {
 		spdxPackage.DownloadLocation = fmt.Sprintf(
 			"https://proxy.golang.org/%s/@v/%s.zip", pkg.ImportPath,
