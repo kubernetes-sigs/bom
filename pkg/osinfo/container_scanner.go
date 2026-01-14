@@ -62,6 +62,7 @@ func ReadOSPackages(layers []string) (
 		}
 	}
 
+	//nolint:gosec // G602: osInfoLayerNum is always valid - either 0 (with len check above) or set from loop index
 	osKind, err = ls.OSType(layers[osInfoLayerNum])
 	if err != nil {
 		return 0, nil, fmt.Errorf("reading os type from layer: %w", err)

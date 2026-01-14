@@ -319,13 +319,15 @@ func (p *Package) Render() (docFragment string, err error) {
 	docFragment = buf.String()
 
 	// Add the output from all related files
+	var docFragmentSb322 strings.Builder
 	for _, rel := range p.Relationships {
 		fragment, err := rel.Render(p)
 		if err != nil {
 			return "", fmt.Errorf("rendering relationship: %w", err)
 		}
-		docFragment += fragment
+		docFragmentSb322.WriteString(fragment)
 	}
+	docFragment += docFragmentSb322.String()
 	docFragment += "\n"
 	return docFragment, nil
 }

@@ -237,7 +237,7 @@ func TestValidateFiles(t *testing.T) {
 	} {
 		doc := NewDocument()
 		doc.Name = "test"
-		filePaths := []string{}
+		filePaths := make([]string, 0, len(tc.files))
 		for i, fm := range tc.files {
 			temp, err := os.CreateTemp("", "verify")
 			require.NoError(t, err)

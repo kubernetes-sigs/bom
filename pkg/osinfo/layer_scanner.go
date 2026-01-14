@@ -317,7 +317,9 @@ func isStreamCompressed(r io.ReadSeeker) (bool, error) {
 		return false, fmt.Errorf("rewinding read pointer: %w", err)
 	}
 
+	// Check for gzip magic bytes
 	// From: https://github.com/golang/go/blob/1fadc392ccaefd76ef7be5b685fb3889dbee27c6/src/compress/gzip/gunzip.go#L185
+	//nolint:gosec // G602: sample is a fixed [3]byte array, io.ReadFull ensures all 3 bytes are read
 	if sample[0] == 0x1f && sample[1] == 0x8b && sample[2] == 0x08 {
 		return true, nil
 	}

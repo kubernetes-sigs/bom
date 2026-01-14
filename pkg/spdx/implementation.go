@@ -95,6 +95,7 @@ func (di *spdxDefaultImplementation) ExtractTarballTmp(tarPath string) (tmpDir s
 		return "", fmt.Errorf("rewinding read pointer: %w", err)
 	}
 
+	//nolint:gosec // G602: sample is a fixed [3]byte array, io.ReadFull ensures all 3 bytes are read
 	if sample[0] == 0x1f && sample[1] == 0x8b && sample[2] == 0x08 {
 		gzipped = true
 	}

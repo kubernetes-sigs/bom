@@ -252,26 +252,32 @@ func (d *Document) Render() (doc string, err error) {
 		filesDescribed = "\n"
 	}
 
+	var docSb255 strings.Builder
+	var filesDescribedSb255 strings.Builder
 	for _, file := range d.Files {
 		fileDoc, err := file.Render()
 		if err != nil {
 			return "", fmt.Errorf("rendering file "+file.Name+" :%w", err)
 		}
-		doc += fileDoc
-		filesDescribed += fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID)
+		docSb255.WriteString(fileDoc)
+		filesDescribedSb255.WriteString(fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID))
 	}
+	doc += docSb255.String()
+	filesDescribed += filesDescribedSb255.String()
 	doc += filesDescribed
 
 	// Cycle all packages and get their data
+	var docSb266 strings.Builder
 	for _, pkg := range d.Packages {
 		pkgDoc, err := pkg.Render()
 		if err != nil {
 			return "", fmt.Errorf("rendering pkg "+pkg.Name+" :%w", err)
 		}
 
-		doc += pkgDoc
-		doc += fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, pkg.ID)
+		docSb266.WriteString(pkgDoc)
+		docSb266.WriteString(fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, pkg.ID))
 	}
+	doc += docSb266.String()
 
 	return doc, err
 }
@@ -402,7 +408,7 @@ var DefaultProvenanceOptions = &ProvenanceOptions{
 
 func (d *Document) ToProvenanceStatement(opts *ProvenanceOptions) *provenance.Statement {
 	statement := provenance.NewSLSAStatement()
-	subs := []intoto.Subject{}
+	subs := make([]intoto.Subject, 0, len(d.Packages)+len(d.Files))
 	seen := &map[string]struct{}{}
 
 	for _, p := range d.Packages {
@@ -511,7 +517,7 @@ func (d *Document) GetElementByID(id string) Object {
 // match the specified purl bits.
 func (d *Document) GetPackagesByPurl(purlSpec *purl.PackageURL, opts ...PurlSearchOption) []*Package {
 	seen := map[string]struct{}{}
-	foundPackages := []*Package{}
+	foundPackages := make([]*Package, 0, len(d.Packages))
 
 	if purlSpec.Type == "" {
 		purlSpec.Type = "*"

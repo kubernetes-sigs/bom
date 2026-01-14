@@ -62,7 +62,6 @@ func (opts *generateOptions) Validate() error {
 		len(opts.files) == 0 &&
 		len(opts.imageArchives) == 0 &&
 		len(opts.archives) == 0 &&
-		len(opts.archives) == 0 &&
 		len(opts.directories) == 0 {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
 	}

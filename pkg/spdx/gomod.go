@@ -46,7 +46,7 @@ const (
 	downloadDir   = spdxTempDir + "/gomod-scanner"
 	GoModFileName = "go.mod"
 	GoSumFileName = "go.sum"
-	// Maximum file size for extraction (100MB) to limit unzipping
+	// Maximum file size for extraction (100MB) to limit unzipping.
 	maxExtractFileSize = 100 * 1024 * 1024
 )
 
@@ -81,7 +81,7 @@ func proxyDownloadURL(importPath, version string) (string, error) {
 	// For v2+ modules without /vN in path, the proxy requires +incompatible
 	_, pathMajor, _ := module.SplitPathVersion(importPath)
 	if !module.MatchPathMajor(ver, pathMajor) {
-		ver = ver + "+incompatible"
+		ver += "+incompatible"
 	}
 
 	// Escape path and version for proxy URL
@@ -489,7 +489,7 @@ func (di *GoModDefaultImpl) OpenModule(opts *GoModuleOptions) (*modfile.File, er
 
 // BuildPackageList builds a slice of packages to assign to the module.
 func (di *GoModDefaultImpl) BuildPackageList(gomod *modfile.File) ([]*GoPackage, error) {
-	pkgs := []*GoPackage{}
+	pkgs := make([]*GoPackage, 0, len(gomod.Require))
 	for _, req := range gomod.Require {
 		pkgs = append(pkgs, &GoPackage{
 			ImportPath: req.Mod.Path,
@@ -538,7 +538,7 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 		var ierr error
 		data, ierr = agent.Get(zipURL)
 		if ierr != nil && strings.Contains(ierr.Error(), "context deadline exceeded") && i <= 5 {
-			time.Sleep(time.Duration(time.Duration(i*300) * time.Millisecond))
+			time.Sleep(time.Duration(i*300) * time.Millisecond)
 			continue
 		}
 		if ierr != nil {
