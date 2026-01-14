@@ -46,6 +46,8 @@ const (
 	downloadDir   = spdxTempDir + "/gomod-scanner"
 	GoModFileName = "go.mod"
 	GoSumFileName = "go.sum"
+	// Maximum file size for extraction (100MB) to limit unzipping
+	maxExtractFileSize = 100 * 1024 * 1024
 )
 
 // getProxyURL returns the Go proxy URL from GOPROXY env or default.
@@ -136,7 +138,8 @@ func extractZip(data []byte, destDir string) error {
 			return fmt.Errorf("creating file: %w", err)
 		}
 
-		_, err = io.Copy(outFile, rc)
+		limited := io.LimitReader(rc, maxExtractFileSize)
+		_, err = io.Copy(outFile, limited)
 		outFile.Close()
 		rc.Close()
 		if err != nil {
