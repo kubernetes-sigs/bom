@@ -43,14 +43,9 @@ func TestToSPDXPackage(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, tc.pkg.ImportPath, spdxPackage.Name)
-		if strings.HasSuffix(tc.pkg.Revision, "+incompatible") {
-			require.NotEqual(t, tc.pkg.Revision, spdxPackage.Version)
-			require.Equal(t, strings.TrimSuffix(tc.pkg.Revision, "+incompatible"), spdxPackage.Version)
-			require.NotContains(t, spdxPackage.DownloadLocation, "https://proxy.golang.org/")
-		} else {
-			require.Equal(t, tc.pkg.Revision, spdxPackage.Version)
-			require.Contains(t, spdxPackage.DownloadLocation, "https://proxy.golang.org/")
-		}
+		require.Equal(t, strings.TrimSuffix(tc.pkg.Revision, "+incompatible"), spdxPackage.Version)
+		// All versions (including +incompatible) use proxy URLs
+		require.Contains(t, spdxPackage.DownloadLocation, "https://proxy.golang.org/")
 	}
 }
 

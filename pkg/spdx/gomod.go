@@ -17,23 +17,27 @@ limitations under the License.
 package spdx
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
+	"time"
 
 	"github.com/nozzle/throttler"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/vcs" //nolint:staticcheck
+	"golang.org/x/mod/module"
 
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/helpers"
+	"sigs.k8s.io/release-utils/http"
 
 	"sigs.k8s.io/bom/pkg/license"
 )
@@ -42,10 +46,108 @@ const (
 	downloadDir   = spdxTempDir + "/gomod-scanner"
 	GoModFileName = "go.mod"
 	GoSumFileName = "go.sum"
-	goModRevPtn   = `v\d+\.\d+\.\d+-[0-9.]+-([a-f0-9]+)` // Match revisions in go modules
+	// Maximum file size for extraction (100MB) to limit unzipping.
+	maxExtractFileSize = 100 * 1024 * 1024
 )
 
-var goModRevRe *regexp.Regexp
+// getProxyURL returns the Go proxy URL from GOPROXY env or default.
+func getProxyURL() string {
+	if proxy := os.Getenv("GOPROXY"); proxy != "" {
+		// Handle comma-separated list, take first non-"off"/"direct" proxy
+		for _, p := range strings.Split(proxy, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" && p != "off" && p != "direct" {
+				return strings.TrimSuffix(p, "/")
+			}
+		}
+	}
+	return "https://proxy.golang.org"
+}
+
+// proxyDownloadURL builds the Go proxy download URL for a module.
+// It uses golang.org/x/mod/module for proper path/version escaping and
+// handles +incompatible versions automatically.
+func proxyDownloadURL(importPath, version string) (string, error) {
+	// Validate import path has a domain-like first component
+	parts := strings.Split(importPath, "/")
+	if len(parts) == 0 || !strings.Contains(parts[0], ".") {
+		return "", fmt.Errorf("invalid import path: %s", importPath)
+	}
+
+	// Normalize version - remove +incompatible suffix for processing
+	ver := strings.TrimSuffix(version, "+incompatible")
+
+	// Check if version needs +incompatible suffix using module.MatchPathMajor
+	// For v2+ modules without /vN in path, the proxy requires +incompatible
+	_, pathMajor, _ := module.SplitPathVersion(importPath)
+	if !module.MatchPathMajor(ver, pathMajor) {
+		ver += "+incompatible"
+	}
+
+	// Escape path and version for proxy URL
+	escapedPath, err := module.EscapePath(importPath)
+	if err != nil {
+		return "", fmt.Errorf("escaping module path %s: %w", importPath, err)
+	}
+	escapedVersion, err := module.EscapeVersion(ver)
+	if err != nil {
+		return "", fmt.Errorf("escaping module version %s: %w", ver, err)
+	}
+
+	proxyURL := getProxyURL()
+	return fmt.Sprintf("%s/%s/@v/%s.zip", proxyURL, escapedPath, escapedVersion), nil
+}
+
+// extractZip extracts a zip archive to the destination directory.
+// Module zips have format: module@version/path, so we strip the first component.
+func extractZip(data []byte, destDir string) error {
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return fmt.Errorf("opening zip: %w", err)
+	}
+
+	for _, file := range reader.File {
+		// Module zips have format: module@version/path
+		// Strip the first path component to extract to destDir directly
+		parts := strings.SplitN(file.Name, "/", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		destPath := filepath.Join(destDir, parts[1])
+
+		if file.FileInfo().IsDir() {
+			if err := os.MkdirAll(destPath, 0o755); err != nil {
+				return fmt.Errorf("creating directory: %w", err)
+			}
+			continue
+		}
+
+		// Create parent directories
+		if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
+			return fmt.Errorf("creating parent directory: %w", err)
+		}
+
+		rc, err := file.Open()
+		if err != nil {
+			return fmt.Errorf("opening file in zip: %w", err)
+		}
+
+		outFile, err := os.Create(destPath)
+		if err != nil {
+			rc.Close()
+			return fmt.Errorf("creating file: %w", err)
+		}
+
+		limited := io.LimitReader(rc, maxExtractFileSize)
+		_, err = io.Copy(outFile, limited)
+		outFile.Close()
+		rc.Close()
+		if err != nil {
+			return fmt.Errorf("extracting file: %w", err)
+		}
+	}
+	return nil
+}
 
 // NewGoModule returns a new go module from the specified path.
 func NewGoModuleFromPath(path string) (*GoModule, error) {
@@ -93,26 +195,21 @@ type GoPackage struct {
 
 // SPDXPackage builds a spdx package from the go package data.
 func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
-	repo, err := vcs.RepoRootForImportPath(pkg.ImportPath, true)
+	// Build download URL (also validates import path)
+	downloadURL, err := proxyDownloadURL(pkg.ImportPath, pkg.Revision)
 	if err != nil {
-		return nil, fmt.Errorf("building repository from package import path: %w", err)
+		return nil, fmt.Errorf("building download URL: %w", err)
 	}
+
 	spdxPackage := NewPackage()
 	spdxPackage.Options().Prefix = "gomod"
 	spdxPackage.Name = pkg.ImportPath
-
 	spdxPackage.BuildID(pkg.ImportPath, pkg.Revision)
-	if strings.Contains(pkg.Revision, "+incompatible") {
-		spdxPackage.DownloadLocation = repo.VCS.Scheme[0] + "+" + repo.Repo
-	} else {
-		spdxPackage.DownloadLocation = fmt.Sprintf(
-			"https://proxy.golang.org/%s/@v/%s.zip", pkg.ImportPath,
-			strings.TrimSuffix(pkg.Revision, "+incompatible"),
-		)
-	}
+	spdxPackage.DownloadLocation = downloadURL
 	spdxPackage.LicenseConcluded = pkg.LicenseID
 	spdxPackage.Version = strings.TrimSuffix(pkg.Revision, "+incompatible")
 	spdxPackage.CopyrightText = pkg.CopyrightText
+
 	if packageurl := pkg.PackageURL(); packageurl != "" {
 		spdxPackage.ExternalRefs = append(spdxPackage.ExternalRefs, ExternalRef{
 			Category: CatPackageManager,
@@ -216,7 +313,6 @@ func (mod *GoModule) ScanLicenses() error {
 	// Create a new Throttler that will get parallelDownloads urls at a time
 	t := throttler.New(10, len(mod.Packages))
 	// Do a quick re-check for missing downloads
-	// todo: paralelize this. urgently.
 	for _, pkg := range mod.Packages {
 		// Launch a goroutine to fetch the package contents
 		go func(curPkg *GoPackage) {
@@ -225,6 +321,9 @@ func (mod *GoModule) ScanLicenses() error {
 				"Downloading package (%d total)", len(mod.Packages),
 			)
 			defer t.Done(err)
+
+			// If no local installation of the module was found we download
+			// the package to a temp location from the go proxy
 			if curPkg.LocalInstall == "" {
 				// Call download with no force in case local data is missing
 				if err2 := mod.impl.DownloadPackage(curPkg, mod.opts, false); err2 != nil {
@@ -236,10 +335,11 @@ func (mod *GoModule) ScanLicenses() error {
 				}
 			} else {
 				logrus.WithField("package", curPkg.ImportPath).Debugf(
-					"There is a local copy of %s@%s", curPkg.ImportPath, curPkg.Revision,
+					"There is a local copy of %s@%s in %s", curPkg.ImportPath, curPkg.Revision, curPkg.LocalInstall,
 				)
 			}
 
+			// Now that we are sure it's in the filesystem, scan the license
 			if err = mod.impl.ScanPackageLicense(curPkg, reader, mod.opts); err != nil {
 				logrus.WithField("package", curPkg.ImportPath).Errorf(
 					"scanning package %s for licensing info", curPkg.ImportPath,
@@ -389,7 +489,7 @@ func (di *GoModDefaultImpl) OpenModule(opts *GoModuleOptions) (*modfile.File, er
 
 // BuildPackageList builds a slice of packages to assign to the module.
 func (di *GoModDefaultImpl) BuildPackageList(gomod *modfile.File) ([]*GoPackage, error) {
-	pkgs := []*GoPackage{}
+	pkgs := make([]*GoPackage, 0, len(gomod.Require))
 	for _, req := range gomod.Require {
 		pkgs = append(pkgs, &GoPackage{
 			ImportPath: req.Mod.Path,
@@ -399,9 +499,8 @@ func (di *GoModDefaultImpl) BuildPackageList(gomod *modfile.File) ([]*GoPackage,
 	return pkgs, nil
 }
 
-// DownloadPackage takes a pkg, downloads it from its src and sets
-//
-//	the download dir in the LocalDir field
+// DownloadPackage takes a pkg, downloads it from the Go proxy and sets
+// the download dir in the LocalDir field.
 func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, force bool) error {
 	if pkg.LocalDir != "" && helpers.Exists(pkg.LocalDir) && !force {
 		logrus.WithField("package", pkg.ImportPath).Infof("Not downloading %s as it already has local data", pkg.ImportPath)
@@ -409,15 +508,8 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 	}
 
 	logrus.WithField("package", pkg.ImportPath).Debugf("Downloading package %s@%s", pkg.ImportPath, pkg.Revision)
-	repo, err := vcs.RepoRootForImportPath(pkg.ImportPath, true)
-	if err != nil {
-		repoName := "[unknown repo]"
-		if repo != nil {
-			repoName = repo.Repo
-		}
-		return fmt.Errorf("fetching package %s from %s: %w", pkg.ImportPath, repoName, err)
-	}
 
+	// Create temp directory
 	if !helpers.Exists(filepath.Join(os.TempDir(), downloadDir)) {
 		if err := os.MkdirAll(
 			filepath.Join(os.TempDir(), downloadDir), os.FileMode(0o755),
@@ -426,31 +518,37 @@ func (di *GoModDefaultImpl) DownloadPackage(pkg *GoPackage, _ *GoModuleOptions, 
 		}
 	}
 
-	// Create tempdir
 	tmpDir, err := os.MkdirTemp(filepath.Join(os.TempDir(), downloadDir), "package-download-")
 	if err != nil {
 		return fmt.Errorf("creating temporary dir: %w", err)
 	}
-	// Create a clone of the module repo at the revision
-	rev := strings.TrimSuffix(pkg.Revision, "+incompatible")
 
-	// Strip the revision from the whole string part
-	if goModRevRe == nil {
-		goModRevRe = regexp.MustCompile(goModRevPtn)
+	// Build proxy download URL
+	zipURL, err := proxyDownloadURL(pkg.ImportPath, pkg.Revision)
+	if err != nil {
+		return fmt.Errorf("building proxy URL: %w", err)
 	}
-	m := goModRevRe.FindStringSubmatch(pkg.Revision)
-	if len(m) > 1 {
-		rev = m[1]
-		logrus.WithField("package", pkg.ImportPath).Infof("Using commit %s as revision for download", rev)
+
+	// Download from proxy using release-utils http agent
+	agent := http.NewAgent()
+	var data []byte
+	// Here we retry network timeouts because of this bug, remove when fixed:
+	// https://github.com/kubernetes-sigs/release-utils/issues/165
+	for i := range 5 {
+		var ierr error
+		data, ierr = agent.Get(zipURL)
+		if ierr != nil && strings.Contains(ierr.Error(), "context deadline exceeded") && i <= 5 {
+			time.Sleep(time.Duration(i*300) * time.Millisecond)
+			continue
+		}
+		if ierr != nil {
+			return fmt.Errorf("downloading %s from proxy (%s): %w", pkg.ImportPath, zipURL, ierr)
+		}
 	}
-	if rev == "" {
-		if err := repo.VCS.Create(tmpDir, repo.Repo); err != nil {
-			return fmt.Errorf("creating local clone of %s: %w", repo.Repo, err)
-		}
-	} else {
-		if err := repo.VCS.CreateAtRev(tmpDir, repo.Repo, rev); err != nil {
-			return fmt.Errorf("creating local clone of %s: %w", repo.Repo, err)
-		}
+
+	// Extract zip to temp directory
+	if err := extractZip(data, tmpDir); err != nil {
+		return fmt.Errorf("extracting module zip: %w", err)
 	}
 
 	logrus.WithField("package", pkg.ImportPath).Infof("Go Package %s (rev %s) downloaded to %s", pkg.ImportPath, pkg.Revision, tmpDir)

@@ -432,7 +432,8 @@ func TestRecursiveNameFilter(t *testing.T) {
 		|
 		|-sub-p-3
 	*/
-	packageIDs := []string{"root-p"}
+	packageIDs := make([]string, 0, 11)
+	packageIDs = append(packageIDs, "root-p")
 	for i := range 3 {
 		packageIDs = append(packageIDs, fmt.Sprintf("target-p-%d", i))
 	}
@@ -506,7 +507,7 @@ func TestRecursiveSearch(t *testing.T) {
 	p.SetSPDXID("p-top")
 
 	// Lets nest 3 packages
-	packages := []*Package{}
+	packages := make([]*Package, 0, 3)
 	for i := range 3 {
 		subp := NewPackage()
 		subp.SetSPDXID(fmt.Sprintf("subpackage-%d", i))
