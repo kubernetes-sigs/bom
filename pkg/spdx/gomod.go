@@ -194,6 +194,12 @@ type GoPackage struct {
 
 // SPDXPackage builds a spdx package from the go package data.
 func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
+	// Validate import path - must have a domain-like first component
+	parts := strings.Split(pkg.ImportPath, "/")
+	if len(parts) < 2 || !strings.Contains(parts[0], ".") {
+		return nil, fmt.Errorf("invalid import path: %s", pkg.ImportPath)
+	}
+
 	spdxPackage := NewPackage()
 	spdxPackage.Options().Prefix = "gomod"
 	spdxPackage.Name = pkg.ImportPath
