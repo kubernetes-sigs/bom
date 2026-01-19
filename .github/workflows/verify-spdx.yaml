@@ -33,17 +33,17 @@ jobs:
           go run ./cmd/bom/main.go generate -i registry.k8s.io/pause > example-image-pause.spdx
           go run ./cmd/bom/main.go generate --format=json -i registry.k8s.io/pause > example-image-pause.spdx.json
 
-      - uses: chainguard-dev/actions/setup-spdx@7d647f470c4d3692286221bd17ca78206976a61c # v1.5.11
+      - uses: chainguard-dev/actions/setup-spdx@f77a7c3431f961556be5a41e2602c450a590f3e5 # v1.5.12
         with:
           spdx-tools-version: 1.1.8
 
-      - uses: chainguard-dev/actions/setup-spdx@7d647f470c4d3692286221bd17ca78206976a61c # v1.5.11
+      - uses: chainguard-dev/actions/setup-spdx@f77a7c3431f961556be5a41e2602c450a590f3e5 # v1.5.12
         with:
           download: false
           spdx-tools-version: 1.1.8
           sbom-path: example-image-pause.spdx
 
-      - uses: chainguard-dev/actions/setup-spdx@7d647f470c4d3692286221bd17ca78206976a61c # v1.5.11
+      - uses: chainguard-dev/actions/setup-spdx@f77a7c3431f961556be5a41e2602c450a590f3e5 # v1.5.12
         with:
           download: false
           spdx-tools-version: 1.1.8
