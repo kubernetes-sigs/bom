@@ -29,9 +29,10 @@ import (
 	"os"
 	"path/filepath"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
+	slsa02 "github.com/in-toto/attestation/go/predicates/provenance/v02"
+	intoto "github.com/in-toto/attestation/go/v1"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"sigs.k8s.io/release-utils/hash"
 )
@@ -40,8 +41,8 @@ import (
 // unambiguously identifying the types of the predicate.
 // https://github.com/in-toto/attestation/blob/main/spec/README.md#statement
 type Statement struct {
-	intoto.StatementHeader
-	Predicate Predicate `json:"predicate"`
+	intoto.Statement
+	Predicate *Predicate
 	impl      StatementImplementation
 }
 
@@ -65,8 +66,8 @@ func (s *Statement) ReadSubjectsFromDir(path string) (err error) {
 }
 
 // AddSubject adds an entry to the listo of materials.
-func (s *Statement) AddSubject(uri string, ds common.DigestSet) {
-	s.impl.AddSubject(s, uri, ds)
+func (s *Statement) AddSubject(subject *intoto.ResourceDescriptor) {
+	s.Subject = append(s.Subject, subject)
 }
 
 // AddSubjectFromFile adds a subject to the list by checking a file in the filesystem.
@@ -75,7 +76,7 @@ func (s *Statement) AddSubjectFromFile(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("creating subject from file %s: %w", filePath, err)
 	}
-	s.impl.AddSubject(s, subject.Name, subject.Digest)
+	s.impl.AddSubject(s, subject)
 	return nil
 }
 
@@ -85,11 +86,22 @@ func (s *Statement) LoadPredicate(path string) error {
 	if err != nil {
 		return fmt.Errorf("opening predicate file: %w", err)
 	}
-	p := Predicate{}
-	if err := json.Unmarshal(data, &p); err != nil {
-		return fmt.Errorf("unmarshalling predicate json: %w", err)
+
+	switch s.PredicateType {
+	case "https://slsa.dev/provenance/v0.2":
+		pred := &slsa02.Provenance{}
+		err := protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		}.Unmarshal(data, pred)
+		if err != nil {
+			return fmt.Errorf("unmarshaling predicate json: %w", err)
+		}
+		s.Predicate = &Predicate{
+			PredicateContent: pred,
+		}
+	default:
+		return fmt.Errorf("unsupported predicate type: %s", s.PredicateType)
 	}
-	s.Predicate = p
 	return nil
 }
 
@@ -102,33 +114,25 @@ func (s *Statement) ClonePredicate(manifestPath string) error {
 // VerifySubjects checks the provenance metadata of the attestation
 // subjects by reading them from `path`.
 func (s *Statement) VerifySubjects(path string) (err error) {
-	return s.impl.VerifySubjects(path, &s.Subject)
+	return s.impl.VerifySubjects(path, s.Subject)
 }
 
 //counterfeiter:generate . StatementImplementation
 type StatementImplementation interface {
-	AddSubject(*Statement, string, common.DigestSet)
+	AddSubject(*Statement, *intoto.ResourceDescriptor)
 	ReadSubjectsFromDir(*Statement, string) error
-	SubjectFromFile(string) (intoto.Subject, error)
+	SubjectFromFile(string) (*intoto.ResourceDescriptor, error)
 	Write(*Statement, string) error
 	ToJSON(s *Statement) ([]byte, error)
 	ClonePredicate(*Statement, string) error
-	VerifySubjects(path string, subjects *[]intoto.Subject) (err error)
+	VerifySubjects(path string, subjects []*intoto.ResourceDescriptor) (err error)
 }
 
 type defaultStatementImplementation struct{}
 
 // AddSubject adds a material to the entry.
-func (si *defaultStatementImplementation) AddSubject(
-	s *Statement, name string, ds common.DigestSet,
-) {
-	if s.Subject == nil {
-		s.Subject = []intoto.Subject{}
-	}
-	s.Subject = append(s.Subject, intoto.Subject{
-		Name:   name,
-		Digest: ds,
-	})
+func (si *defaultStatementImplementation) AddSubject(s *Statement, subject *intoto.ResourceDescriptor) {
+	s.Subject = append(s.Subject, subject)
 }
 
 // ReadSubjectsFromDir reads a directory and adds all files found as
@@ -152,7 +156,13 @@ func (si *defaultStatementImplementation) ReadSubjectsFromDir(
 		if err != nil {
 			return fmt.Errorf("hashing file %s: %w", path, err)
 		}
-		s.AddSubject(path, common.DigestSet{"sha256": hashVal})
+		s.AddSubject(
+			&intoto.ResourceDescriptor{
+				Name:   path,
+				Uri:    "",
+				Digest: map[string]string{"sha256": hashVal},
+			},
+		)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("buiding directory tree: %w", err)
@@ -161,8 +171,8 @@ func (si *defaultStatementImplementation) ReadSubjectsFromDir(
 }
 
 // SubjectFromFile reads a file and return an in-toto subject describing it.
-func (si *defaultStatementImplementation) SubjectFromFile(filePath string) (subject intoto.Subject, err error) {
-	subject = intoto.Subject{
+func (si *defaultStatementImplementation) SubjectFromFile(filePath string) (subject *intoto.ResourceDescriptor, err error) {
+	subject = &intoto.ResourceDescriptor{
 		Name:   filePath,
 		Digest: map[string]string{},
 	}
@@ -216,40 +226,40 @@ func (si *defaultStatementImplementation) ClonePredicate(s *Statement, manifestP
 }
 
 // VerifySubjects checks the subjects registered in the manifest to make
-// sure the attesttion data matches the artifacts.
-func (si *defaultStatementImplementation) VerifySubjects(path string, subjects *[]intoto.Subject) (err error) {
+// sure the attestation data matches the artifacts.
+func (si *defaultStatementImplementation) VerifySubjects(path string, subjects []*intoto.ResourceDescriptor) (err error) {
 	errs := 0
-	for _, sub := range *subjects {
+	for _, sub := range subjects {
 		computed := ""
-		if sub.Name == "" {
+		if sub.GetName() == "" {
 			logrus.Error("found empty subject in provenance data")
 			errs++
 			continue
 		}
-		if len(sub.Digest) == 0 {
-			logrus.Errorf("%s has no hash information", sub.Name)
+		if len(sub.GetDigest()) == 0 {
+			logrus.Errorf("%s has no hash information", sub.GetName())
 			errs++
 			continue
 		}
-		for algo, val := range sub.Digest {
+		for algo, val := range sub.GetDigest() {
 			computed = ""
 
 			switch algo {
 			case "sha256":
-				computed, err = hash.SHA256ForFile(filepath.Join(path, sub.Name))
+				computed, err = hash.SHA256ForFile(filepath.Join(path, sub.GetName()))
 			case "sha512":
-				computed, err = hash.SHA512ForFile(filepath.Join(path, sub.Name))
+				computed, err = hash.SHA512ForFile(filepath.Join(path, sub.GetName()))
 			}
 
 			if err != nil {
-				logrus.Errorf("Error validating %s: %v", sub.Name, err)
+				logrus.Errorf("Error validating %s: %v", sub.GetName(), err)
 				errs++
 				continue
 			}
 
 			if val != computed {
 				errs++
-				logrus.Errorf("Invalid hash in %s", sub.Name)
+				logrus.Errorf("Invalid hash in %s", sub.GetName())
 			}
 		}
 	}

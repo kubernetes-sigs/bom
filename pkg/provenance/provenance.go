@@ -19,13 +19,13 @@ limitations under the License.
 package provenance
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
-	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	slsa02 "github.com/in-toto/attestation/go/predicates/provenance/v02"
+	intoto "github.com/in-toto/attestation/go/v1"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // LoadStatement loads a statement from a json file.
@@ -36,9 +36,33 @@ func LoadStatement(path string) (s *Statement, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("opening stament JSON file: %w", err)
 	}
-
-	if err := json.Unmarshal(jsonData, &statement); err != nil {
+	err = protojson.UnmarshalOptions{}.Unmarshal(jsonData, statement)
+	if err != nil {
 		return nil, fmt.Errorf("decoding attestation JSON data: %w", err)
+	}
+
+	// The protojson unmarshal populates the embedded intoto.Statement proto
+	// fields, including the predicate as a *structpb.Struct. Re-parse that
+	// into the typed predicate wrapper.
+	if statement.GetPredicate() != nil {
+		predData, err := protojson.Marshal(statement.GetPredicate())
+		if err != nil {
+			return nil, fmt.Errorf("re-marshaling predicate struct: %w", err)
+		}
+
+		switch statement.PredicateType {
+		case "https://slsa.dev/provenance/v0.1", "https://slsa.dev/provenance/v0.2":
+			pred := &slsa02.Provenance{}
+			err := (protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			}).Unmarshal(predData, pred)
+			if err != nil {
+				return nil, fmt.Errorf("unmarshaling predicate: %w", err)
+			}
+			statement.Predicate = &Predicate{PredicateContent: pred}
+		default:
+			return nil, fmt.Errorf("unsupported predicate type: %s", statement.PredicateType)
+		}
 	}
 
 	return statement, nil
@@ -47,37 +71,27 @@ func LoadStatement(path string) (s *Statement, err error) {
 // NewSLSAStatement creates a new attestation.
 func NewSLSAStatement() *Statement {
 	return &Statement{
-		StatementHeader: intoto.StatementHeader{
-			Type:          intoto.StatementInTotoV01,
-			PredicateType: slsa.PredicateSLSAProvenance,
-			Subject:       []intoto.Subject{},
+		impl: &defaultStatementImplementation{},
+		Statement: intoto.Statement{
+			Type:          intoto.StatementTypeUri,
+			Subject:       []*intoto.ResourceDescriptor{},
+			PredicateType: "https://slsa.dev/provenance/v0.2",
 		},
 		Predicate: NewSLSAPredicate(),
-
-		impl: &defaultStatementImplementation{},
 	}
 }
 
 // NewSLSAPredicate returns a new SLSA provenance predicate.
-func NewSLSAPredicate() Predicate {
-	return Predicate{
-		ProvenancePredicate: slsa.ProvenancePredicate{
-			Builder: common.ProvenanceBuilder{
-				ID: "",
-			},
-			Invocation: slsa.ProvenanceInvocation{
-				ConfigSource: slsa.ConfigSource{
-					Digest: map[string]string{},
-				},
-				Parameters:  nil,
-				Environment: nil,
-			},
-			Metadata: &slsa.ProvenanceMetadata{
-				Completeness: slsa.ProvenanceComplete{},
-			},
-			Materials: []common.ProvenanceMaterial{},
+func NewSLSAPredicate() *Predicate {
+	return &Predicate{
+		PredicateContent: &slsa02.Provenance{
+			Builder:     &slsa02.Builder{},
+			BuildType:   "",
+			Invocation:  &slsa02.Invocation{},
+			BuildConfig: &structpb.Struct{},
+			Metadata:    &slsa02.Metadata{},
+			Materials:   []*slsa02.Material{},
 		},
-		impl: &defaultPredicateImplementation{},
 	}
 }
 
@@ -85,7 +99,7 @@ func NewSLSAPredicate() Predicate {
 // serialization. The format and protocol are defined in DSSE and adopted by in-toto in ITE-5.
 // https://github.com/in-toto/attestation/blob/main/spec/README.md#envelope
 type Envelope struct {
-	PayloadType string        `json:"payloadType"`
-	Payload     string        `json:"payload"`
-	Signatures  []interface{} `json:"signatures"`
+	PayloadType string `json:"payloadType"`
+	Payload     string `json:"payload"`
+	Signatures  []any  `json:"signatures"`
 }

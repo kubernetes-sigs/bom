@@ -17,47 +17,79 @@ limitations under the License.
 package provenance
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
-	slsa "github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2"
+	slsa02 "github.com/in-toto/attestation/go/predicates/provenance/v02"
+	intoto "github.com/in-toto/attestation/go/v1"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
-type Predicate struct {
-	slsa.ProvenancePredicate
-	impl PredicateImplementation
+type PredicateContent proto.Message
+
+type Builder interface {
+	GetId() string
 }
 
-// setImplementation sets the predicate implementation.
-func (p *Predicate) SetImplementation(impl PredicateImplementation) {
-	p.impl = impl
+type Predicate struct {
+	PredicateContent
 }
 
 // AddMaterial adds an entry to the listo of materials.
-func (p *Predicate) AddMaterial(uri string, ds common.DigestSet) {
-	p.impl.AddMaterial(p, uri, ds)
+func (p *Predicate) AddMaterial(rs *intoto.ResourceDescriptor) {
+	switch v := p.PredicateContent.(type) {
+	case *slsa02.Provenance:
+		mat := &slsa02.Material{
+			Uri:    rs.GetUri(),
+			Digest: rs.GetDigest(),
+		}
+		v.Materials = append(v.Materials, mat)
+	default:
+		return
+	}
+}
+
+func (p *Predicate) GetMaterials() []*intoto.ResourceDescriptor {
+	ret := []*intoto.ResourceDescriptor{}
+	//nolint:gocritic // We'll add more formats
+	switch v := p.PredicateContent.(type) {
+	case *slsa02.Provenance:
+		for _, m := range v.GetMaterials() {
+			ret = append(ret, &intoto.ResourceDescriptor{
+				Uri:    m.GetUri(),
+				Digest: m.GetDigest(),
+			})
+		}
+	}
+	return ret
+}
+
+func (p *Predicate) SetBuilderID(id string) {
+	//nolint:gocritic // We'll add more formats
+	switch v := p.PredicateContent.(type) {
+	case *slsa02.Provenance:
+		if v.GetBuilder() == nil {
+			v.Builder = &slsa02.Builder{}
+		}
+		v.Builder.Id = id
+	}
+}
+
+func (p *Predicate) GetBuilder() Builder {
+	switch v := p.PredicateContent.(type) {
+	case *slsa02.Provenance:
+		return v.GetBuilder()
+	default:
+		return nil
+	}
 }
 
 // Write outputs the predicate as JSON to a file.
 func (p *Predicate) Write(path string) error {
-	return p.impl.Write(p, path)
-}
-
-//counterfeiter:generate . PredicateImplementation
-type PredicateImplementation interface {
-	AddMaterial(*Predicate, string, common.DigestSet)
-	Write(*Predicate, string) error
-}
-
-type defaultPredicateImplementation struct{}
-
-// Write dumps the predicate data into a JSON file.
-func (pi *defaultPredicateImplementation) Write(p *Predicate, path string) error {
-	jsonData, err := json.Marshal(p)
+	jsonData, err := protojson.MarshalOptions{}.Marshal(p)
 	if err != nil {
-		return fmt.Errorf("marshalling predicate to json: %w", err)
+		return fmt.Errorf("marshaling predicate to json: %w", err)
 	}
 
 	if err := os.WriteFile(path, jsonData, os.FileMode(0o644)); err != nil {
@@ -65,15 +97,4 @@ func (pi *defaultPredicateImplementation) Write(p *Predicate, path string) error
 	}
 
 	return nil
-}
-
-// AddMaterial adds a material to the entry.
-func (pi *defaultPredicateImplementation) AddMaterial(p *Predicate, uri string, ds common.DigestSet) {
-	if p.Materials == nil {
-		p.Materials = []common.ProvenanceMaterial{}
-	}
-	p.Materials = append(p.Materials, common.ProvenanceMaterial{
-		URI:    uri,
-		Digest: ds,
-	})
 }
