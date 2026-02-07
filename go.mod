@@ -19,7 +19,7 @@ require (
 	gitlab.alpinelinux.org/alpine/go v0.10.1
 	golang.org/x/mod v0.32.0
 	golang.org/x/term v0.39.0
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.11
 	sigs.k8s.io/release-utils v0.12.3
 	sigs.k8s.io/yaml v1.6.0
 )
