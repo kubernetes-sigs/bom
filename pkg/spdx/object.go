@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	intoto "github.com/in-toto/attestation/go/v1"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 
@@ -47,8 +47,8 @@ type Object interface {
 	AddRelationship(*Relationship)
 	GetRelationships() *[]*Relationship
 	FilterRelationships(filter func(r *Relationship) bool)
-	ToProvenanceSubject() *intoto.Subject
-	getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []intoto.Subject
+	ToProvenanceSubject() *intoto.ResourceDescriptor
+	getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []*intoto.ResourceDescriptor
 	GetElementByID(string) Object
 	GetName() string
 }
@@ -179,7 +179,7 @@ func (e *Entity) FilterRelationships(filter func(r *Relationship) bool) {
 
 // ToProvenanceSubject converts the element to an intoto subject, suitable
 // to use inprovenance attestaions.
-func (e *Entity) ToProvenanceSubject() *intoto.Subject {
+func (e *Entity) ToProvenanceSubject() *intoto.ResourceDescriptor {
 	location := ""
 	if e.DownloadLocation != "" {
 		location = e.DownloadLocation
@@ -203,7 +203,7 @@ func (e *Entity) ToProvenanceSubject() *intoto.Subject {
 		return nil
 	}
 
-	sub := &intoto.Subject{
+	sub := &intoto.ResourceDescriptor{
 		Name:   location,
 		Digest: map[string]string{},
 	}
@@ -218,13 +218,13 @@ func (e *Entity) ToProvenanceSubject() *intoto.Subject {
 // entity by scanning all relationships recursively
 //
 //nolint:gocritic // seen needs to be a pointer as it is used recursively
-func (e *Entity) getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []intoto.Subject {
-	ret := []intoto.Subject{}
+func (e *Entity) getProvenanceSubjects(opts *ProvenanceOptions, seen *map[string]struct{}) []*intoto.ResourceDescriptor {
+	ret := []*intoto.ResourceDescriptor{}
 
 	if _, ok := (*seen)[e.SPDXID()]; !ok {
 		esub := e.ToProvenanceSubject()
 		if esub != nil {
-			ret = append(ret, *esub)
+			ret = append(ret, esub)
 		}
 	}
 
@@ -273,7 +273,7 @@ mloop:
 		}
 
 		// Convert entity to subject
-		var subject *intoto.Subject
+		var subject *intoto.ResourceDescriptor
 		if p, ok := rel.Peer.(*Package); ok {
 			subject = p.ToProvenanceSubject()
 		}
@@ -282,7 +282,7 @@ mloop:
 		}
 
 		if subject != nil {
-			ret = append(ret, *subject)
+			ret = append(ret, subject)
 			(*seen)[rel.Peer.SPDXID()] = struct{}{}
 		}
 	}

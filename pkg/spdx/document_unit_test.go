@@ -23,8 +23,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/in-toto/in-toto-golang/in_toto"
-	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
+	intoto "github.com/in-toto/attestation/go/v1"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -59,25 +58,25 @@ func generateProvenanceSUT(t *testing.T) (doc *Document, tmpDir string) {
 func testStatement() *provenance.Statement {
 	statement := provenance.NewSLSAStatement()
 	statement.Subject = append(statement.Subject,
-		in_toto.Subject{
+		&intoto.ResourceDescriptor{
 			Name: "file0.txt",
-			Digest: common.DigestSet{
+			Digest: map[string]string{
 				"sha1":   "a9993e364706816aba3e25717850c26c9cd0d89d",
 				"sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
 				"sha512": "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
 			},
 		},
-		in_toto.Subject{
+		&intoto.ResourceDescriptor{
 			Name: "file1.txt",
-			Digest: common.DigestSet{
+			Digest: map[string]string{
 				"sha1":   "5af13954a67eab2973b4ade01186602dd8739787",
 				"sha256": "08a018a9549220d707e11c5c4fe94d8dd60825f010e71efaa91e5e784f364d7b",
 				"sha512": "7c487d7160da126d2c7b4509cf72e90b5e35594d1ef10c5077c8a958e26201d18cdea513abfd5731ed4d43287cf0879c4515f59f3a03843141ca2bfc623719dd",
 			},
 		},
-		in_toto.Subject{
+		&intoto.ResourceDescriptor{
 			Name: "file2.txt",
-			Digest: common.DigestSet{
+			Digest: map[string]string{
 				"sha1":   "66b27417d37e024c46526c2f6d358a754fc552f3",
 				"sha256": "3608bca1e44ea6c4d268eb6db02260269892c0b42b86bbf1e77a6fa16c3c9282",
 				"sha512": "4a3ed8147e37876adc8f76328e5abcc1b470e6acfc18efea0135f983604953a58e183c1a6086e91ba3e821d926f5fdeb37761c7ca0328a963f5e92870675b728",
@@ -124,11 +123,11 @@ func compareSubjects(t *testing.T, statement1, statement2 *provenance.Statement)
 	// Compare the statements manually to ensure they are equivalent
 	for _, s1 := range statement1.Subject {
 		for _, s2 := range statement2.Subject {
-			require.Len(t, s2.Digest, len(s1.Digest))
-			if s1.Name == s2.Name {
+			require.Len(t, s2.GetDigest(), len(s1.GetDigest()))
+			if s1.GetName() == s2.GetName() {
 				for _, algo := range []string{"sha1", "sha256", "sha512"} {
 					require.Equal(
-						t, s1.Digest[algo], s2.Digest[algo], "matching %s hash in %s", algo, s1.Name,
+						t, s1.GetDigest()[algo], s2.GetDigest()[algo], "matching %s hash in %s", algo, s1.GetName(),
 					)
 				}
 			}

@@ -21,8 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
-	"github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common"
+	intoto "github.com/in-toto/attestation/go/v1"
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/release-utils/helpers"
@@ -66,21 +65,26 @@ func TestReadSubjectsFromDir(t *testing.T) {
 	for _, subject := range s.Subject {
 		seen := false
 		for _, data := range testdata {
-			if data.filename == subject.Name {
+			if data.filename == subject.GetName() {
 				seen = true
-				require.Equal(t, data.hash, subject.Digest["sha256"], "invalid subject hash: "+subject.Name)
+				require.Equal(t, data.hash, subject.GetDigest()["sha256"], "invalid subject hash: "+subject.GetName())
 			}
 		}
-		require.True(t, seen, "file not found in subjects: "+subject.Name)
+		require.True(t, seen, "file not found in subjects: "+subject.GetName())
 	}
 }
 
 func TestAddSubject(t *testing.T) {
 	s := NewSLSAStatement()
 	sha1 := "cd7f2fdcbd859060732c8a9677d9e838babfa6b9"
-	s.AddSubject("https://www.example.com/", common.DigestSet{"sha1": sha1})
+	s.AddSubject(
+		&intoto.ResourceDescriptor{
+			Name:   "https://www.example.com/",
+			Uri:    "",
+			Digest: map[string]string{"sha1": sha1},
+		})
 	require.Len(t, s.Subject, 1)
-	require.Equal(t, sha1, s.Subject[0].Digest["sha1"])
+	require.Equal(t, sha1, s.Subject[0].GetDigest()["sha1"])
 }
 
 func TestLoadPredicate(t *testing.T) {
@@ -94,7 +98,7 @@ func TestLoadPredicate(t *testing.T) {
 	s := NewSLSAStatement()
 	require.NoError(t, s.LoadPredicate(file.Name()), "loading predicate from file")
 
-	require.Equal(t, "Test@1.0", s.Predicate.Builder.ID)
+	require.Equal(t, "Test@1.0", s.Predicate.GetBuilder().GetId())
 }
 
 func TestSubjectFromFile(t *testing.T) {
@@ -110,16 +114,16 @@ func TestSubjectFromFile(t *testing.T) {
 	require.NoError(t, err, "creating subject from file")
 
 	// Check the filename
-	require.Equal(t, f.Name(), subject.Name)
+	require.Equal(t, f.Name(), subject.GetName())
 
 	// Verify the hashes match the expected values
 	require.Equal(
 		t, "64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f3c",
-		subject.Digest["sha256"],
+		subject.GetDigest()["sha256"],
 	)
 	require.Equal(
 		t, "b7f783baed8297f0db917462184ff4f08e69c2d5e5f79a942600f9725f58ce1f29c18139bf80b06c0fff2bdd34738452ecf40c488c22a7e3d80cdf6f9c1c0d47",
-		subject.Digest["sha512"],
+		subject.GetDigest()["sha512"],
 	)
 
 	// Attempting a subject from a directory must fail
@@ -129,7 +133,7 @@ func TestSubjectFromFile(t *testing.T) {
 
 func TestWriteStatement(t *testing.T) {
 	s := NewSLSAStatement()
-	s.Predicate.Builder.ID = "asd"
+	s.Predicate.SetBuilderID("asd")
 	tmp, err := os.CreateTemp("", "statement-test")
 	require.NoError(t, err)
 	defer os.Remove(tmp.Name())
@@ -145,7 +149,7 @@ func TestWriteStatement(t *testing.T) {
 func TestClonePredicate(t *testing.T) {
 	s1 := NewSLSAStatement()
 	require.NoError(t, s1.ClonePredicate(testProvenanceFile1), "cloning predicate")
-	require.Equal(t, "pkg:github/puerco/release@provenance", s1.Predicate.Builder.ID)
+	require.Equal(t, "pkg:github/puerco/release@provenance", s1.Predicate.GetBuilder().GetId())
 }
 
 func TestVerifySubjects(t *testing.T) {
@@ -174,7 +178,7 @@ func TestVerifySubjects(t *testing.T) {
 				filepath.Join(dir, path, data.Letter+".txt"), []byte(data.Data), os.FileMode(0o644),
 			),
 		)
-		s.Subject = append(s.Subject, intoto.Subject{
+		s.Subject = append(s.Subject, &intoto.ResourceDescriptor{
 			Name:   filepath.Join(path, data.Letter+".txt"),
 			Digest: map[string]string{"sha256": data.Sha},
 		})
