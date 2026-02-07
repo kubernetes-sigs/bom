@@ -31,7 +31,7 @@ func TestReadStatment(t *testing.T) {
 
 	require.NotNil(t, s.Predicate)
 	require.Len(t, s.Subject, 461)
-	require.Equal(t, "pkg:github/puerco/release@provenance", s.Predicate.Builder.ID)
-	require.Equal(t, "94db9bed6b7c56420e722d1b15db4610c9cacd3f", s.Predicate.Materials[0].Digest["sha1"])
-	require.Equal(t, "git+https://github.com/kubernetes/kubernetes", s.Predicate.Materials[0].URI)
+	require.Equal(t, "pkg:github/puerco/release@provenance", s.Predicate.GetBuilder().GetId())
+	require.Equal(t, "94db9bed6b7c56420e722d1b15db4610c9cacd3f", s.Predicate.GetMaterials()[0].GetDigest()["sha1"])
+	require.Equal(t, "git+https://github.com/kubernetes/kubernetes", s.Predicate.GetMaterials()[0].GetUri())
 }

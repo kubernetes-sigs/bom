@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	intoto "github.com/in-toto/attestation/go/v1"
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/bom/pkg/provenance"
@@ -74,14 +74,14 @@ func TestAddSubjectFromFile(t *testing.T) {
 		{
 			// Read errors
 			prepare: func(mock *provenancefakes.FakeStatementImplementation) {
-				mock.SubjectFromFileReturns(intoto.Subject{}, errors.New("mock error"))
+				mock.SubjectFromFileReturns(&intoto.ResourceDescriptor{}, errors.New("mock error"))
 			},
 			shouldError: true,
 		},
 		{
 			// Read succeeds
 			prepare: func(mock *provenancefakes.FakeStatementImplementation) {
-				mock.SubjectFromFileReturns(intoto.Subject{}, nil)
+				mock.SubjectFromFileReturns(&intoto.ResourceDescriptor{}, nil)
 			},
 			shouldError: false,
 		},

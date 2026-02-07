@@ -17,51 +17,74 @@ limitations under the License.
 package provenance_test
 
 import (
-	"errors"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 
+	intoto "github.com/in-toto/attestation/go/v1"
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/bom/pkg/provenance"
-	"sigs.k8s.io/bom/pkg/provenance/provenancefakes"
 )
 
-// getPredicateSUT returns a predicate loaded with the test implementation.
-func getPredicateSUT() *provenance.Predicate {
-	p := provenance.NewSLSAPredicate()
-	p.SetImplementation(&provenancefakes.FakePredicateImplementation{})
-	return &p
-}
-
 func TestWrite(t *testing.T) {
-	for _, tc := range []struct {
-		prepare     func(*provenancefakes.FakePredicateImplementation)
-		shouldError bool
-	}{
-		{
-			// Write errors
-			prepare: func(mock *provenancefakes.FakePredicateImplementation) {
-				mock.WriteReturns(errors.New("Fake error"))
-			},
-			shouldError: true,
-		},
-		{
-			// Write succeeds
-			prepare: func(mock *provenancefakes.FakePredicateImplementation) {
-				mock.WriteReturns(nil)
-			},
-			shouldError: false,
-		},
-	} {
-		p := getPredicateSUT()
-		mock := &provenancefakes.FakePredicateImplementation{}
-		tc.prepare(mock)
-		p.SetImplementation(mock)
-		res := p.Write("/tmp/mock")
-		if tc.shouldError {
-			require.Error(t, res)
-		} else {
-			require.NoError(t, res)
+	t.Parallel()
+	t.Run("write-succeeds", func(t *testing.T) {
+		t.Parallel()
+		p := provenance.NewSLSAPredicate()
+		p.SetBuilderID("test-builder@v1")
+		p.AddMaterial(&intoto.ResourceDescriptor{
+			Uri:    "https://example.com/repo",
+			Digest: map[string]string{"sha256": "abc123"},
+		})
+
+		tmp := filepath.Join(t.TempDir(), "predicate.json")
+		require.NoError(t, p.Write(tmp))
+
+		data, err := os.ReadFile(tmp)
+		require.NoError(t, err)
+		require.True(t, json.Valid(data), "output should be valid JSON")
+
+		var parsed struct {
+			Builder struct {
+				ID string `json:"id"`
+			} `json:"builder"`
+			Materials []struct {
+				URI    string            `json:"uri"`
+				Digest map[string]string `json:"digest"`
+			} `json:"materials"`
 		}
-	}
+		require.NoError(t, json.Unmarshal(data, &parsed))
+		require.Equal(t, "test-builder@v1", parsed.Builder.ID)
+		require.Len(t, parsed.Materials, 1)
+		require.Equal(t, "https://example.com/repo", parsed.Materials[0].URI)
+		require.Equal(t, "abc123", parsed.Materials[0].Digest["sha256"])
+	})
+
+	t.Run("write-empty-predicate", func(t *testing.T) {
+		t.Parallel()
+		p := provenance.NewSLSAPredicate()
+
+		tmp := filepath.Join(t.TempDir(), "empty-predicate.json")
+		require.NoError(t, p.Write(tmp))
+
+		data, err := os.ReadFile(tmp)
+		require.NoError(t, err)
+		require.True(t, json.Valid(data))
+
+		var parsed struct {
+			Builder   map[string]any `json:"builder"`
+			Materials []any          `json:"materials"`
+		}
+		require.NoError(t, json.Unmarshal(data, &parsed))
+		require.NotNil(t, parsed.Builder)
+		require.Empty(t, parsed.Materials)
+	})
+
+	t.Run("write-fails", func(t *testing.T) {
+		p := provenance.NewSLSAPredicate()
+		err := p.Write("/nonexistent-dir/predicate.json")
+		require.Error(t, err)
+	})
 }
