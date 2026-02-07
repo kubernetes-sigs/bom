@@ -27,7 +27,6 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -38,10 +37,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	intoto "github.com/in-toto/in-toto-golang/in_toto"
+	intoto "github.com/in-toto/attestation/go/v1"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"sigs.k8s.io/release-utils/hash"
 	"sigs.k8s.io/release-utils/helpers"
@@ -408,7 +408,7 @@ var DefaultProvenanceOptions = &ProvenanceOptions{
 
 func (d *Document) ToProvenanceStatement(opts *ProvenanceOptions) *provenance.Statement {
 	statement := provenance.NewSLSAStatement()
-	subs := make([]intoto.Subject, 0, len(d.Packages)+len(d.Files))
+	subs := make([]*intoto.ResourceDescriptor, 0, len(d.Packages)+len(d.Files))
 	seen := &map[string]struct{}{}
 
 	for _, p := range d.Packages {
@@ -426,17 +426,17 @@ func (d *Document) ToProvenanceStatement(opts *ProvenanceOptions) *provenance.St
 
 // WriteProvenanceStatement writes the sbom as an in-toto provenance statement.
 func (d *Document) WriteProvenanceStatement(opts *ProvenanceOptions, path string) error {
+	// Render the SLSA attestation from the document data
 	statement := d.ToProvenanceStatement(opts)
-	data, err := json.Marshal(statement)
+
+	// Generate the JSON code using the protojson marshaller
+	data, err := protojson.Marshal(statement)
 	if err != nil {
 		return fmt.Errorf("serializing statement to json: %w", err)
 	}
 
 	if err := os.WriteFile(path, data, os.FileMode(0o644)); err != nil {
-		return fmt.Errorf(
-			"writing sbom as provenance statement: %w",
-			err,
-		)
+		return fmt.Errorf("writing sbom as provenance statement: %w", err)
 	}
 	return nil
 }
