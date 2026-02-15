@@ -21,6 +21,7 @@ package spdx
 import (
 	"archive/tar"
 	"bufio"
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"errors"
@@ -63,6 +64,9 @@ type spdxImplementation interface {
 	IgnorePatterns(string, []string, bool) ([]gitignore.Pattern, error)
 	ApplyIgnorePatterns([]string, []gitignore.Pattern) []string
 	GetGoDependencies(string, *Options) ([]*Package, error)
+	GetPythonDependencies(string, *Options) ([]*Package, error)
+	GetNodeDependencies(string, *Options) ([]*Package, error)
+	GetRustDependencies(string, *Options) ([]*Package, error)
 	GetDirectoryLicense(*license.Reader, string, *Options) (*license.License, error)
 	LicenseReader(*Options) (*license.Reader, error)
 	ImageRefToPackage(string, *Options) (*Package, error)
@@ -95,7 +99,8 @@ func (di *spdxDefaultImplementation) ExtractTarballTmp(tarPath string) (tmpDir s
 		return "", fmt.Errorf("rewinding read pointer: %w", err)
 	}
 
-	if sample[0] == 0x1f && sample[1] == 0x8b && sample[2] == 0x08 {
+	gzipMagic := []byte{0x1f, 0x8b, 0x08}
+	if bytes.Equal(sample[:], gzipMagic) {
 		gzipped = true
 	}
 
@@ -601,6 +606,144 @@ func (di *spdxDefaultImplementation) GetGoDependencies(
 	}
 
 	return spdxPackages, err
+}
+
+// spdxPackageConverter is implemented by language-specific package types
+// that can be converted to SPDX packages.
+type spdxPackageConverter interface {
+	ToSPDXPackage() (*Package, error)
+}
+
+// languageModule is a common interface for language-specific modules
+// (Python, Node, Rust) used to deduplicate dependency resolution logic.
+type languageModule interface {
+	Open() error
+	ScanLicenses() error
+	RemoveDownloads() error
+	GetPackageConverters() []spdxPackageConverter
+	SetScanLicenses(bool)
+}
+
+// getLanguageDependencies is a shared helper that opens a language module,
+// scans licenses if requested, and converts packages to SPDX format.
+func getLanguageDependencies(
+	mod languageModule, opts *Options, lang string,
+) (spdxPackages []*Package, err error) {
+	mod.SetScanLicenses(opts.ScanLicenses)
+
+	if err := mod.Open(); err != nil {
+		return nil, fmt.Errorf("opening %s module path: %w", lang, err)
+	}
+
+	defer func() {
+		preErr := err
+		err = mod.RemoveDownloads()
+		if preErr != nil {
+			err = preErr
+		}
+	}()
+
+	if opts.ScanLicenses {
+		if errScan := mod.ScanLicenses(); errScan != nil {
+			return nil, errScan
+		}
+	}
+
+	spdxPackages = []*Package{}
+	for _, pkg := range mod.GetPackageConverters() {
+		spdxPkg, err := pkg.ToSPDXPackage()
+		if err != nil {
+			logrus.Error(fmt.Errorf("converting %s dependency to spdx package: %w", lang, err))
+			continue
+		}
+		spdxPackages = append(spdxPackages, spdxPkg)
+	}
+
+	return spdxPackages, err
+}
+
+// GetPythonDependencies opens a Python project directory and returns the
+// dependencies as SPDX packages.
+func (di *spdxDefaultImplementation) GetPythonDependencies(
+	path string, opts *Options,
+) ([]*Package, error) {
+	mod, err := NewPythonModuleFromPath(path)
+	if err != nil {
+		return nil, fmt.Errorf("creating python module from the specified path: %w", err)
+	}
+	return getLanguageDependencies(mod, opts, "python")
+}
+
+// GetNodeDependencies opens a Node.js project directory and returns the
+// dependencies as SPDX packages.
+func (di *spdxDefaultImplementation) GetNodeDependencies(
+	path string, opts *Options,
+) ([]*Package, error) {
+	mod, err := NewNodeModuleFromPath(path)
+	if err != nil {
+		return nil, fmt.Errorf("creating node module from the specified path: %w", err)
+	}
+	return getLanguageDependencies(mod, opts, "node")
+}
+
+// GetRustDependencies opens a Rust project directory and returns the
+// dependencies as SPDX packages.
+func (di *spdxDefaultImplementation) GetRustDependencies(
+	path string, opts *Options,
+) ([]*Package, error) {
+	mod, err := NewRustModuleFromPath(path)
+	if err != nil {
+		return nil, fmt.Errorf("creating rust module from the specified path: %w", err)
+	}
+	return getLanguageDependencies(mod, opts, "rust")
+}
+
+// namedPackage is a constraint for package types that have a Name field.
+type namedPackage interface {
+	GetName() string
+}
+
+// scanPackageLicenses is a generic helper that scans licenses for a list of packages
+// using throttled goroutines. It deduplicates the identical logic in NodeModule.ScanLicenses
+// and RustModule.ScanLicenses.
+func scanPackageLicenses[P namedPackage](
+	packages []P,
+	lang string,
+	reader *license.Reader,
+	download func(P) error,
+	scanLicense func(P, *license.Reader) error,
+) error {
+	logrus.Infof("Scanning licenses for %d %s packages", len(packages), lang)
+
+	// Create a new Throttler that will get parallelDownloads urls at a time.
+	t := throttler.New(10, len(packages))
+	var scanErr error
+	for _, pkg := range packages {
+		go func(curPkg P) {
+			logrus.WithField(
+				"package", curPkg.GetName()).Debugf(
+				"Downloading package (%d total)", len(packages),
+			)
+			defer t.Done(scanErr)
+
+			if err2 := download(curPkg); err2 != nil {
+				logrus.WithField("package", curPkg.GetName()).Error(err2)
+				return
+			}
+
+			if scanErr = scanLicense(curPkg, reader); scanErr != nil {
+				logrus.WithField("package", curPkg.GetName()).Errorf(
+					"scanning package %s for licensing info", curPkg.GetName(),
+				)
+			}
+		}(pkg)
+		t.Throttle()
+	}
+
+	if t.Err() != nil {
+		return t.Err()
+	}
+	return nil
 }
 
 func (di *spdxDefaultImplementation) LicenseReader(spdxOpts *Options) (*license.Reader, error) {

@@ -89,6 +89,48 @@ type FakeSpdxImplementation struct {
 		result1 []*spdx.Package
 		result2 error
 	}
+	GetNodeDependenciesStub        func(string, *spdx.Options) ([]*spdx.Package, error)
+	getNodeDependenciesMutex       sync.RWMutex
+	getNodeDependenciesArgsForCall []struct {
+		arg1 string
+		arg2 *spdx.Options
+	}
+	getNodeDependenciesReturns struct {
+		result1 []*spdx.Package
+		result2 error
+	}
+	getNodeDependenciesReturnsOnCall map[int]struct {
+		result1 []*spdx.Package
+		result2 error
+	}
+	GetPythonDependenciesStub        func(string, *spdx.Options) ([]*spdx.Package, error)
+	getPythonDependenciesMutex       sync.RWMutex
+	getPythonDependenciesArgsForCall []struct {
+		arg1 string
+		arg2 *spdx.Options
+	}
+	getPythonDependenciesReturns struct {
+		result1 []*spdx.Package
+		result2 error
+	}
+	getPythonDependenciesReturnsOnCall map[int]struct {
+		result1 []*spdx.Package
+		result2 error
+	}
+	GetRustDependenciesStub        func(string, *spdx.Options) ([]*spdx.Package, error)
+	getRustDependenciesMutex       sync.RWMutex
+	getRustDependenciesArgsForCall []struct {
+		arg1 string
+		arg2 *spdx.Options
+	}
+	getRustDependenciesReturns struct {
+		result1 []*spdx.Package
+		result2 error
+	}
+	getRustDependenciesReturnsOnCall map[int]struct {
+		result1 []*spdx.Package
+		result2 error
+	}
 	IgnorePatternsStub        func(string, []string, bool) ([]gitignore.Pattern, error)
 	ignorePatternsMutex       sync.RWMutex
 	ignorePatternsArgsForCall []struct {
@@ -593,6 +635,201 @@ func (fake *FakeSpdxImplementation) GetGoDependenciesReturnsOnCall(i int, result
 		})
 	}
 	fake.getGoDependenciesReturnsOnCall[i] = struct {
+		result1 []*spdx.Package
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSpdxImplementation) GetNodeDependencies(arg1 string, arg2 *spdx.Options) ([]*spdx.Package, error) {
+	fake.getNodeDependenciesMutex.Lock()
+	ret, specificReturn := fake.getNodeDependenciesReturnsOnCall[len(fake.getNodeDependenciesArgsForCall)]
+	fake.getNodeDependenciesArgsForCall = append(fake.getNodeDependenciesArgsForCall, struct {
+		arg1 string
+		arg2 *spdx.Options
+	}{arg1, arg2})
+	stub := fake.GetNodeDependenciesStub
+	fakeReturns := fake.getNodeDependenciesReturns
+	fake.recordInvocation("GetNodeDependencies", []interface{}{arg1, arg2})
+	fake.getNodeDependenciesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeSpdxImplementation) GetNodeDependenciesCallCount() int {
+	fake.getNodeDependenciesMutex.RLock()
+	defer fake.getNodeDependenciesMutex.RUnlock()
+	return len(fake.getNodeDependenciesArgsForCall)
+}
+
+func (fake *FakeSpdxImplementation) GetNodeDependenciesCalls(stub func(string, *spdx.Options) ([]*spdx.Package, error)) {
+	fake.getNodeDependenciesMutex.Lock()
+	defer fake.getNodeDependenciesMutex.Unlock()
+	fake.GetNodeDependenciesStub = stub
+}
+
+func (fake *FakeSpdxImplementation) GetNodeDependenciesArgsForCall(i int) (string, *spdx.Options) {
+	fake.getNodeDependenciesMutex.RLock()
+	defer fake.getNodeDependenciesMutex.RUnlock()
+	argsForCall := fake.getNodeDependenciesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeSpdxImplementation) GetNodeDependenciesReturns(result1 []*spdx.Package, result2 error) {
+	fake.getNodeDependenciesMutex.Lock()
+	defer fake.getNodeDependenciesMutex.Unlock()
+	fake.GetNodeDependenciesStub = nil
+	fake.getNodeDependenciesReturns = struct {
+		result1 []*spdx.Package
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSpdxImplementation) GetNodeDependenciesReturnsOnCall(i int, result1 []*spdx.Package, result2 error) {
+	fake.getNodeDependenciesMutex.Lock()
+	defer fake.getNodeDependenciesMutex.Unlock()
+	fake.GetNodeDependenciesStub = nil
+	if fake.getNodeDependenciesReturnsOnCall == nil {
+		fake.getNodeDependenciesReturnsOnCall = make(map[int]struct {
+			result1 []*spdx.Package
+			result2 error
+		})
+	}
+	fake.getNodeDependenciesReturnsOnCall[i] = struct {
+		result1 []*spdx.Package
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSpdxImplementation) GetPythonDependencies(arg1 string, arg2 *spdx.Options) ([]*spdx.Package, error) {
+	fake.getPythonDependenciesMutex.Lock()
+	ret, specificReturn := fake.getPythonDependenciesReturnsOnCall[len(fake.getPythonDependenciesArgsForCall)]
+	fake.getPythonDependenciesArgsForCall = append(fake.getPythonDependenciesArgsForCall, struct {
+		arg1 string
+		arg2 *spdx.Options
+	}{arg1, arg2})
+	stub := fake.GetPythonDependenciesStub
+	fakeReturns := fake.getPythonDependenciesReturns
+	fake.recordInvocation("GetPythonDependencies", []interface{}{arg1, arg2})
+	fake.getPythonDependenciesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeSpdxImplementation) GetPythonDependenciesCallCount() int {
+	fake.getPythonDependenciesMutex.RLock()
+	defer fake.getPythonDependenciesMutex.RUnlock()
+	return len(fake.getPythonDependenciesArgsForCall)
+}
+
+func (fake *FakeSpdxImplementation) GetPythonDependenciesCalls(stub func(string, *spdx.Options) ([]*spdx.Package, error)) {
+	fake.getPythonDependenciesMutex.Lock()
+	defer fake.getPythonDependenciesMutex.Unlock()
+	fake.GetPythonDependenciesStub = stub
+}
+
+func (fake *FakeSpdxImplementation) GetPythonDependenciesArgsForCall(i int) (string, *spdx.Options) {
+	fake.getPythonDependenciesMutex.RLock()
+	defer fake.getPythonDependenciesMutex.RUnlock()
+	argsForCall := fake.getPythonDependenciesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeSpdxImplementation) GetPythonDependenciesReturns(result1 []*spdx.Package, result2 error) {
+	fake.getPythonDependenciesMutex.Lock()
+	defer fake.getPythonDependenciesMutex.Unlock()
+	fake.GetPythonDependenciesStub = nil
+	fake.getPythonDependenciesReturns = struct {
+		result1 []*spdx.Package
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSpdxImplementation) GetPythonDependenciesReturnsOnCall(i int, result1 []*spdx.Package, result2 error) {
+	fake.getPythonDependenciesMutex.Lock()
+	defer fake.getPythonDependenciesMutex.Unlock()
+	fake.GetPythonDependenciesStub = nil
+	if fake.getPythonDependenciesReturnsOnCall == nil {
+		fake.getPythonDependenciesReturnsOnCall = make(map[int]struct {
+			result1 []*spdx.Package
+			result2 error
+		})
+	}
+	fake.getPythonDependenciesReturnsOnCall[i] = struct {
+		result1 []*spdx.Package
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSpdxImplementation) GetRustDependencies(arg1 string, arg2 *spdx.Options) ([]*spdx.Package, error) {
+	fake.getRustDependenciesMutex.Lock()
+	ret, specificReturn := fake.getRustDependenciesReturnsOnCall[len(fake.getRustDependenciesArgsForCall)]
+	fake.getRustDependenciesArgsForCall = append(fake.getRustDependenciesArgsForCall, struct {
+		arg1 string
+		arg2 *spdx.Options
+	}{arg1, arg2})
+	stub := fake.GetRustDependenciesStub
+	fakeReturns := fake.getRustDependenciesReturns
+	fake.recordInvocation("GetRustDependencies", []interface{}{arg1, arg2})
+	fake.getRustDependenciesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeSpdxImplementation) GetRustDependenciesCallCount() int {
+	fake.getRustDependenciesMutex.RLock()
+	defer fake.getRustDependenciesMutex.RUnlock()
+	return len(fake.getRustDependenciesArgsForCall)
+}
+
+func (fake *FakeSpdxImplementation) GetRustDependenciesCalls(stub func(string, *spdx.Options) ([]*spdx.Package, error)) {
+	fake.getRustDependenciesMutex.Lock()
+	defer fake.getRustDependenciesMutex.Unlock()
+	fake.GetRustDependenciesStub = stub
+}
+
+func (fake *FakeSpdxImplementation) GetRustDependenciesArgsForCall(i int) (string, *spdx.Options) {
+	fake.getRustDependenciesMutex.RLock()
+	defer fake.getRustDependenciesMutex.RUnlock()
+	argsForCall := fake.getRustDependenciesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeSpdxImplementation) GetRustDependenciesReturns(result1 []*spdx.Package, result2 error) {
+	fake.getRustDependenciesMutex.Lock()
+	defer fake.getRustDependenciesMutex.Unlock()
+	fake.GetRustDependenciesStub = nil
+	fake.getRustDependenciesReturns = struct {
+		result1 []*spdx.Package
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSpdxImplementation) GetRustDependenciesReturnsOnCall(i int, result1 []*spdx.Package, result2 error) {
+	fake.getRustDependenciesMutex.Lock()
+	defer fake.getRustDependenciesMutex.Unlock()
+	fake.GetRustDependenciesStub = nil
+	if fake.getRustDependenciesReturnsOnCall == nil {
+		fake.getRustDependenciesReturnsOnCall = make(map[int]struct {
+			result1 []*spdx.Package
+			result2 error
+		})
+	}
+	fake.getRustDependenciesReturnsOnCall[i] = struct {
 		result1 []*spdx.Package
 		result2 error
 	}{result1, result2}
