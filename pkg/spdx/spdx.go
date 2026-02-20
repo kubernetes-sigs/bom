@@ -89,17 +89,20 @@ func (spdx *SPDX) SetImplementation(impl spdxImplementation) {
 }
 
 type Options struct {
-	AnalyzeLayers      bool
-	NoGitignore        bool     // Do not read exclusions from gitignore file
-	ProcessGoModules   bool     // If true, spdx will check if dirs are go modules and analize the packages
-	OnlyDirectDeps     bool     // Only include direct dependencies from go.mod
-	ScanLicenses       bool     // Scan licenses from everypossible place unless false
-	AddTarFiles        bool     // Scan and add files inside of tarfiles
-	ScanImages         bool     // When true, scan container images for OS information
-	LicenseCacheDir    string   // Directory to cache SPDX license downloads
-	LicenseData        string   // Directory to store the SPDX licenses
-	LicenseListVersion string   // Version of the SPDX license list to use
-	IgnorePatterns     []string // Patterns to ignore when scanning file
+	AnalyzeLayers        bool
+	NoGitignore          bool     // Do not read exclusions from gitignore file
+	ProcessGoModules     bool     // If true, spdx will check if dirs are go modules and analize the packages
+	ProcessPythonModules bool     // If true, spdx will check if dirs are python projects and analyze the packages
+	ProcessNodeModules   bool     // If true, spdx will check if dirs are node projects and analyze the packages
+	ProcessRustModules   bool     // If true, spdx will check if dirs are rust projects and analyze the packages
+	OnlyDirectDeps       bool     // Only include direct dependencies from go.mod
+	ScanLicenses         bool     // Scan licenses from everypossible place unless false
+	AddTarFiles          bool     // Scan and add files inside of tarfiles
+	ScanImages           bool     // When true, scan container images for OS information
+	LicenseCacheDir      string   // Directory to cache SPDX license downloads
+	LicenseData          string   // Directory to store the SPDX licenses
+	LicenseListVersion   string   // Version of the SPDX license list to use
+	IgnorePatterns       []string // Patterns to ignore when scanning file
 }
 
 func (spdx *SPDX) Options() *Options {
@@ -107,13 +110,16 @@ func (spdx *SPDX) Options() *Options {
 }
 
 var defaultSPDXOptions = Options{
-	LicenseCacheDir:  filepath.Join(os.TempDir(), spdxLicenseDlCache),
-	LicenseData:      filepath.Join(os.TempDir(), spdxLicenseData),
-	AnalyzeLayers:    true,
-	ProcessGoModules: true,
-	IgnorePatterns:   []string{},
-	ScanLicenses:     true,
-	ScanImages:       true,
+	LicenseCacheDir:      filepath.Join(os.TempDir(), spdxLicenseDlCache),
+	LicenseData:          filepath.Join(os.TempDir(), spdxLicenseData),
+	AnalyzeLayers:        true,
+	ProcessGoModules:     true,
+	ProcessPythonModules: true,
+	ProcessNodeModules:   true,
+	ProcessRustModules:   true,
+	IgnorePatterns:       []string{},
+	ScanLicenses:         true,
+	ScanImages:           true,
 }
 
 type ArchiveManifest struct {
@@ -195,7 +201,68 @@ func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error)
 		}
 	}
 
+	// Scan for Python dependencies
+	if spdx.Options().ProcessPythonModules && hasPythonManifest(dirPath) {
+		logrus.Info("Directory contains a Python project. Scanning python packages")
+		deps, err := spdx.impl.GetPythonDependencies(dirPath, spdx.Options())
+		if err != nil {
+			// Warn but don't fail - Python tooling may not be available
+			logrus.Warnf("Error scanning python packages: %v", err)
+		} else {
+			logrus.Infof("Python project built list of %d dependencies", len(deps))
+			for _, dep := range deps {
+				if err := pkg.AddDependency(dep); err != nil {
+					return nil, fmt.Errorf("adding python dependency: %w", err)
+				}
+			}
+		}
+	}
+
+	// Scan for Node.js dependencies
+	if spdx.Options().ProcessNodeModules && helpers.Exists(filepath.Join(dirPath, NodePackageFile)) {
+		logrus.Info("Directory contains a Node.js project. Scanning node packages")
+		deps, err := spdx.impl.GetNodeDependencies(dirPath, spdx.Options())
+		if err != nil {
+			logrus.Warnf("Error scanning node packages: %v", err)
+		} else {
+			logrus.Infof("Node.js project built list of %d dependencies", len(deps))
+			for _, dep := range deps {
+				if err := pkg.AddDependency(dep); err != nil {
+					return nil, fmt.Errorf("adding node dependency: %w", err)
+				}
+			}
+		}
+	}
+
+	// Scan for Rust dependencies
+	if spdx.Options().ProcessRustModules && helpers.Exists(filepath.Join(dirPath, RustCargoFile)) {
+		logrus.Info("Directory contains a Rust project. Scanning rust packages")
+		deps, err := spdx.impl.GetRustDependencies(dirPath, spdx.Options())
+		if err != nil {
+			logrus.Warnf("Error scanning rust packages: %v", err)
+		} else {
+			logrus.Infof("Rust project built list of %d dependencies", len(deps))
+			for _, dep := range deps {
+				if err := pkg.AddDependency(dep); err != nil {
+					return nil, fmt.Errorf("adding rust dependency: %w", err)
+				}
+			}
+		}
+	}
+
 	return pkg, nil
+}
+
+// hasPythonManifest checks if a directory contains any Python project manifest file.
+func hasPythonManifest(dirPath string) bool {
+	for _, f := range []string{
+		PythonRequirementsFile, PythonSetupFile, PythonPyprojectFile, PythonPipfile,
+	} {
+		if helpers.Exists(filepath.Join(dirPath, f)) {
+			return true
+		}
+	}
+	return false
 }
 
 // PackageFromImageTarball returns a SPDX package from a tarball.
