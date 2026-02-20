@@ -120,6 +120,12 @@ type ExternalRef struct {
 	Locator  string // unique string with no spaces
 }
 
+type ToDotOptions struct {
+	Find         string
+	Depth        int
+	SubGraphRoot string
+}
+
 type DrawingOptions struct {
 	Width       int
 	Height      int
@@ -280,6 +286,40 @@ func (d *Document) Render() (doc string, err error) {
 	doc += docSb266.String()
 
 	return doc, err
+}
+
+func (d *Document) ToDot(o *ToDotOptions) string {
+	out := ""
+	if o.SubGraphRoot == "" {
+		out = escape(d.Name) + ";\n"
+	}
+	if len(d.Packages) == 0 {
+		log.Fatal("No graphs to generate")
+	}
+
+	seenFilter := &map[string]struct{}{}
+	var ok bool
+	found := false
+	for _, p := range d.Packages {
+		if o.SubGraphRoot != "" {
+			p, ok = recursiveIDSearch(o.SubGraphRoot, p, &map[string]struct{}{}).(*Package)
+			if p == nil {
+				continue
+			}
+			if !ok {
+				log.Fatal("Interface object is not of expected type Package")
+			}
+			found = true
+		} else {
+			found = true
+			out += escape(d.Name) + " -> " + escape(p.SPDXID()) + ";\n"
+		}
+		out += toDot(p, o.Depth, seenFilter)
+	}
+	if !found {
+		log.Fatalf("Unable to generate a dot file for the '%s' subgraph", o.SubGraphRoot)
+	}
+	return fmt.Sprintf("digraph {\n%s\n}\n", out)
 }
 
 // AddFile adds a file contained in the package.

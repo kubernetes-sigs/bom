@@ -61,6 +61,10 @@ type File struct {
 	LicenseInfoInFile string // GPL-3.0-or-later
 }
 
+func (f *File) ToDot() string {
+	return fmt.Sprintf("%q", f.SPDXID())
+}
+
 func NewFile() (f *File) {
 	f = &File{}
 	f.Opts = &ObjectOptions{}

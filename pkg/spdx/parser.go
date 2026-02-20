@@ -251,6 +251,8 @@ func parseJSON(file *os.File) (doc *Document, err error) {
 			LicenseInfoFromFiles: []string{},
 			LicenseDeclared:      pData.GetLicenseDeclared(),
 			Version:              pData.GetVersion(),
+			VendorInfo:           pData.GetVendorInfo(),
+			SourceInfo:           pData.GetSourceInfo(),
 			VerificationCode:     pData.GetVerificationCode().GetValue(),
 			// Comment:              pData.Comment,
 			// HomePage:             pData.HomePage,

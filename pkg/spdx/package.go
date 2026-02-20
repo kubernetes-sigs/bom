@@ -98,6 +98,8 @@ type Package struct {
 	Comment              string   // a place for the SPDX document creator to record any general comments
 	HomePage             string   // A web site that serves as the package home page
 	PrimaryPurpose       string   // Estimate of the most likely package usage
+	VendorInfo           string
+	SourceInfo           string
 
 	// Supplier: the actual distribution source for the package/directory
 	Supplier struct {
@@ -134,6 +136,29 @@ func NewPackage() (p *Package) {
 	p = &Package{}
 	p.Opts = &ObjectOptions{}
 	return p
+}
+
+// ToDot returns a representation of the package as a dotlang node.
+func (p *Package) ToDot() string {
+	packageData := structToString(p, true, "RWMutex", "Opts", "Relationships")
+
+	sURL := ""
+	if url := p.Purl(); url != nil {
+		sURL = fmt.Sprintf(`URL: %s\n`, url.ToString())
+	}
+
+	name := p.Name
+	if p.Version != "" {
+		name = name + "@" + p.Version
+	}
+
+	return fmt.Sprintf(
+		`%q [label=%q tooltip="%s%s" fontname="monospace"]`,
+		p.SPDXID(),
+		name,
+		packageData,
+		sURL,
+	)
 }
 
 // AddFile adds a file contained in the package.
