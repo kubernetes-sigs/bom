@@ -424,7 +424,7 @@ func UpdateEmbeddedData() error {
 
 	// Here, wee patch the catalog source to hardcode the version we
 	// are embedding in the binary
-	re := regexp.MustCompile(`Version: "v\d+\.\d+"`)
+	re := regexp.MustCompile(`Version: "v\d+\.\d+\.\d+"`)
 	data = re.ReplaceAll(data, []byte(fmt.Sprintf(`Version: "%s"`, tag)))
 	if err := os.WriteFile("pkg/license/catalog.go", data, os.FileMode(0o644)); err != nil {
 		return fmt.Errorf("unable to write catalog file: %w", err)
