@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -34,25 +35,29 @@ import (
 )
 
 type generateOptions struct {
-	analyze        bool
-	noGitignore    bool
-	noGoModules    bool
-	noGoTransient  bool
-	scanImages     bool
-	name           string // Name to use in the document
-	namespace      string
-	format         string
-	outputFile     string
-	configFile     string
-	license        string
-	licenseListVer string
-	provenancePath string // Path to export the SBOM as provenance statement
-	images         []string
-	imageArchives  []string
-	archives       []string
-	files          []string
-	directories    []string
-	ignorePatterns []string
+	analyze         bool
+	noGitignore     bool
+	noGoModules     bool
+	noGoTransient   bool
+	noPythonModules bool
+	noNodeModules   bool
+	noRustModules   bool
+	scanImages      bool
+	name            string // Name to use in the document
+	namespace       string
+	format          string
+	outputFile      string
+	configFile      string
+	license         string
+	licenseListVer  string
+	provenancePath  string // Path to export the SBOM as provenance statement
+	multiLangMode   string // "merged" or "split"
+	images          []string
+	imageArchives   []string
+	archives        []string
+	files           []string
+	directories     []string
+	ignorePatterns  []string
 }
 
 // Validate verify options consistency.
@@ -69,6 +74,11 @@ func (opts *generateOptions) Validate() error {
 	if opts.format != spdx.FormatTagValue && opts.format != spdx.FormatJSON {
 		return fmt.Errorf("unknown format provided, must be one of [%s, %s]: %s",
 			spdx.FormatTagValue, spdx.FormatJSON, opts.format)
+	}
+
+	if opts.multiLangMode != spdx.MultiLangMerged && opts.multiLangMode != spdx.MultiLangSplit {
+		return fmt.Errorf("unknown multi-lang-mode, must be one of [%s, %s]: %s",
+			spdx.MultiLangMerged, spdx.MultiLangSplit, opts.multiLangMode)
 	}
 
 	// Check if specified local files exist
@@ -237,6 +247,35 @@ completed by a later stage in your CI/CD pipeline. See the
 		"don't include transient go dependencies, only direct deps from go.mod",
 	)
 
+	generateCmd.PersistentFlags().BoolVar(
+		&genOpts.noPythonModules,
+		"no-python",
+		false,
+		"don't perform Python dependency analysis (requirements.txt, pyproject.toml, etc.)",
+	)
+
+	generateCmd.PersistentFlags().BoolVar(
+		&genOpts.noNodeModules,
+		"no-node",
+		false,
+		"don't perform Node.js dependency analysis (package.json)",
+	)
+
+	generateCmd.PersistentFlags().BoolVar(
+		&genOpts.noRustModules,
+		"no-rust",
+		false,
+		"don't perform Rust dependency analysis (Cargo.toml)",
+	)
+
+	generateCmd.PersistentFlags().StringVar(
+		&genOpts.multiLangMode,
+		"multi-lang-mode",
+		spdx.MultiLangMerged,
+		fmt.Sprintf("how to handle multi-language projects: %q produces a single SBOM, %q produces per-language SBOM files",
+			spdx.MultiLangMerged, spdx.MultiLangSplit),
+	)
+
 	generateCmd.PersistentFlags().StringVarP(
 		&genOpts.namespace,
 		"namespace",
@@ -323,25 +362,36 @@ func generateBOM(opts *generateOptions) error {
 		version.GetVersionInfo().GitVersion,
 	)
 
+	if opts.multiLangMode == spdx.MultiLangSplit {
+		return generateSplitBOM(opts)
+	}
+
+	return generateMergedBOM(opts)
+}
+
+func generateMergedBOM(opts *generateOptions) error {
 	newDocBuilderOpts := []spdx.NewDocBuilderOption{spdx.WithFormat(spdx.Format(opts.format))}
 	builder := spdx.NewDocBuilder(newDocBuilderOpts...)
 	builderOpts := &spdx.DocGenerateOptions{
-		Tarballs:           opts.imageArchives,
-		Archives:           opts.archives,
-		Files:              opts.files,
-		Images:             opts.images,
-		Directories:        opts.directories,
-		Format:             opts.format,
-		OutputFile:         opts.outputFile,
-		Namespace:          opts.namespace,
-		AnalyseLayers:      opts.analyze,
-		ProcessGoModules:   !opts.noGoModules,
-		OnlyDirectDeps:     !opts.noGoTransient,
-		ConfigFile:         opts.configFile,
-		License:            opts.license,
-		LicenseListVersion: opts.licenseListVer,
-		ScanImages:         opts.scanImages,
-		Name:               opts.name,
+		Tarballs:             opts.imageArchives,
+		Archives:             opts.archives,
+		Files:                opts.files,
+		Images:               opts.images,
+		Directories:          opts.directories,
+		Format:               opts.format,
+		OutputFile:           opts.outputFile,
+		Namespace:            opts.namespace,
+		AnalyseLayers:        opts.analyze,
+		ProcessGoModules:     !opts.noGoModules,
+		ProcessPythonModules: !opts.noPythonModules,
+		ProcessNodeModules:   !opts.noNodeModules,
+		ProcessRustModules:   !opts.noRustModules,
+		OnlyDirectDeps:       !opts.noGoTransient,
+		ConfigFile:           opts.configFile,
+		License:              opts.license,
+		LicenseListVersion:   opts.licenseListVer,
+		ScanImages:           opts.scanImages,
+		Name:                 opts.name,
 	}
 
 	// We only replace the ignore patterns one or more where defined
@@ -353,6 +403,127 @@ func generateBOM(opts *generateOptions) error {
 		return fmt.Errorf("generating doc: %w", err)
 	}
 
+	if err := writeDocument(doc, opts); err != nil {
+		return err
+	}
+
+	// Export the SBOM as in-toto provenance
+	if opts.provenancePath != "" {
+		if err := doc.WriteProvenanceStatement(
+			spdx.DefaultProvenanceOptions, opts.provenancePath,
+		); err != nil {
+			return fmt.Errorf("writing SBOM as provenance statement: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// generateSplitBOM generates separate SBOM files per language ecosystem.
+// Each language that is detected produces its own SBOM file. Files are named
+// with a language suffix: output-go.spdx, output-python.spdx, etc.
+func generateSplitBOM(opts *generateOptions) error {
+	if opts.outputFile == "" {
+		return errors.New("--output (-o) is required when using --multi-lang-mode=split")
+	}
+
+	type langConfig struct {
+		name    string
+		enabled bool
+		goMod   bool
+		pyMod   bool
+		nodeMod bool
+		rustMod bool
+	}
+
+	languages := []langConfig{
+		{name: "go", enabled: !opts.noGoModules, goMod: true},
+		{name: "python", enabled: !opts.noPythonModules, pyMod: true},
+		{name: "node", enabled: !opts.noNodeModules, nodeMod: true},
+		{name: "rust", enabled: !opts.noRustModules, rustMod: true},
+	}
+
+	filesWritten := 0
+	for _, lang := range languages {
+		if !lang.enabled {
+			continue
+		}
+
+		logrus.Infof("Generating %s SBOM in split mode", lang.name)
+
+		newDocBuilderOpts := []spdx.NewDocBuilderOption{spdx.WithFormat(spdx.Format(opts.format))}
+		builder := spdx.NewDocBuilder(newDocBuilderOpts...)
+
+		// Build output filename with language suffix
+		outFile := buildSplitOutputFile(opts.outputFile, lang.name)
+
+		builderOpts := &spdx.DocGenerateOptions{
+			Tarballs:             opts.imageArchives,
+			Archives:             opts.archives,
+			Files:                opts.files,
+			Images:               opts.images,
+			Directories:          opts.directories,
+			Format:               opts.format,
+			OutputFile:           outFile,
+			Namespace:            opts.namespace,
+			AnalyseLayers:        opts.analyze,
+			ProcessGoModules:     lang.goMod,
+			ProcessPythonModules: lang.pyMod,
+			ProcessNodeModules:   lang.nodeMod,
+			ProcessRustModules:   lang.rustMod,
+			OnlyDirectDeps:       !opts.noGoTransient,
+			ConfigFile:           opts.configFile,
+			License:              opts.license,
+			LicenseListVersion:   opts.licenseListVer,
+			ScanImages:           opts.scanImages,
+			Name:                 fmt.Sprintf("%s-%s", opts.name, lang.name),
+		}
+
+		if len(opts.ignorePatterns) > 0 {
+			builderOpts.IgnorePatterns = opts.ignorePatterns
+		}
+
+		doc, err := builder.Generate(builderOpts)
+		if err != nil {
+			logrus.Warnf("Could not generate %s SBOM: %v", lang.name, err)
+			continue
+		}
+
+		splitOpts := *opts
+		splitOpts.outputFile = outFile
+		if err := writeDocument(doc, &splitOpts); err != nil {
+			return fmt.Errorf("writing %s SBOM: %w", lang.name, err)
+		}
+
+		logrus.Infof("Wrote %s SBOM to %s", lang.name, outFile)
+		filesWritten++
+	}
+
+	if filesWritten == 0 {
+		return errors.New("no SBOMs were generated in split mode, no language ecosystems detected")
+	}
+
+	logrus.Infof("Generated %d language-specific SBOM files", filesWritten)
+	return nil
+}
+
+// buildSplitOutputFile generates a filename with a language suffix.
+// For example: "output.spdx" -> "output-go.spdx", "output.spdx.json" -> "output-go.spdx.json".
+func buildSplitOutputFile(outputFile, lang string) string {
+	ext := filepath.Ext(outputFile)
+	base := strings.TrimSuffix(outputFile, ext)
+
+	// Handle double extensions like .spdx.json
+	if ext2 := filepath.Ext(base); ext2 != "" {
+		base = strings.TrimSuffix(base, ext2)
+		ext = ext2 + ext
+	}
+
+	return fmt.Sprintf("%s-%s%s", base, lang, ext)
+}
+
+// writeDocument serializes and writes an SPDX document to file or stdout.
+func writeDocument(doc *spdx.Document, opts *generateOptions) error {
 	var renderer serialize.Serializer
 	if opts.format == "json" {
 		renderer = &serialize.JSON{}
@@ -371,14 +542,5 @@ func generateBOM(opts *generateOptions) error {
 			return fmt.Errorf("writing SBOM: %w", err)
 		}
 	}
-	// Export the SBOM as in-toto provenance
-	if opts.provenancePath != "" {
-		if err := doc.WriteProvenanceStatement(
-			spdx.DefaultProvenanceOptions, opts.provenancePath,
-		); err != nil {
-			return fmt.Errorf("writing SBOM as provenance statement: %w", err)
-		}
-	}
-
 	return nil
 }
