@@ -9,7 +9,7 @@ require (
 	github.com/google/go-containerregistry v0.21.3
 	github.com/google/licenseclassifier/v2 v2.0.0
 	github.com/google/uuid v1.6.0
-	github.com/in-toto/attestation v1.1.2
+	github.com/in-toto/attestation v1.2.0
 	github.com/knqyf263/go-rpmdb v0.1.1
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/sirupsen/logrus v1.9.4
