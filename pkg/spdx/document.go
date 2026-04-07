@@ -260,7 +260,7 @@ func (d *Document) Render() (doc string, err error) {
 			return "", fmt.Errorf("rendering file "+file.Name+" :%w", err)
 		}
 		docSb255.WriteString(fileDoc)
-		filesDescribedSb255.WriteString(fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID))
+		fmt.Fprintf(&filesDescribedSb255, "Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID)
 	}
 	doc += docSb255.String()
 	filesDescribed += filesDescribedSb255.String()
@@ -275,7 +275,7 @@ func (d *Document) Render() (doc string, err error) {
 		}
 
 		docSb266.WriteString(pkgDoc)
-		docSb266.WriteString(fmt.Sprintf("Relationship: %s DESCRIBES %s\n\n", d.ID, pkg.ID))
+		fmt.Fprintf(&docSb266, "Relationship: %s DESCRIBES %s\n\n", d.ID, pkg.ID)
 	}
 	doc += docSb266.String()
 
