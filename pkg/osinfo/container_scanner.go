@@ -50,7 +50,7 @@ func ReadOSPackages(layers []string) (
 
 	// First, let's try to determine which OS the container is based on
 	osKind := OSType("")
-	osInfoLayerNum := 0
+	osInfoLayerPath := layers[0]
 	for i, lp := range layers {
 		exists, err := ls.FileExistsInTar(lp, OsReleasePath, AltOSReleasePath)
 		if err != nil {
@@ -58,11 +58,11 @@ func ReadOSPackages(layers []string) (
 		}
 		if exists {
 			logrus.Debugf(" > found os-release in layer %d", i)
-			osInfoLayerNum = i
+			osInfoLayerPath = lp
 		}
 	}
 
-	osKind, err = ls.OSType(layers[osInfoLayerNum])
+	osKind, err = ls.OSType(osInfoLayerPath)
 	if err != nil {
 		return 0, nil, fmt.Errorf("reading os type from layer: %w", err)
 	}
