@@ -750,13 +750,16 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 			if p, ok := objects[rdata.Peer].(*Package); ok {
 				logrus.Debugf("doc %s describes package %s", doc.ID, rdata.Peer)
 				doc.Packages[rdata.Peer] = p
+				continue
 			}
 
 			if f, ok := objects[rdata.Peer].(*File); ok {
 				logrus.Debugf("doc %s describes file %s", doc.ID, rdata.Peer)
 				doc.Files[(objects[rdata.Peer]).(*File).SPDXID()] = f //nolint: errcheck
+				continue
 			}
-			continue
+
+			return nil, fmt.Errorf("unable to find peer object with SPDXID %s", rdata.Peer)
 		}
 
 		// Check if the source object is defined
