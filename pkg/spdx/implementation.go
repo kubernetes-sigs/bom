@@ -1063,7 +1063,43 @@ func (di *spdxDefaultImplementation) PackageFromDirectory(opts *Options, dirPath
 
 	pkg = NewPackage()
 	pkg.FilesAnalyzed = true
+	// Default package name is the directory base name. If this directory
+	// (or one of its top-level children created during extraction) contains
+	// a go.mod, prefer the module path defined there so the root package
+	// reflects the module import path instead of a temp dirname.
 	pkg.Name = filepath.Base(dirPath)
+
+	// Look for a go.mod either at the root dirPath or in the scanned file
+	// tree (which may contain a nested module after extraction). Prefer an
+	// explicit go.mod at dirPath if present, otherwise use the first
+	// occurrence from fileList.
+	goModDir := ""
+	if helpers.Exists(filepath.Join(dirPath, GoModFileName)) {
+		goModDir = dirPath
+	} else {
+		for _, p := range fileList {
+			if filepath.Base(p) == GoModFileName {
+				// p is a relative path; derive the directory containing go.mod
+				goModDir = filepath.Join(dirPath, filepath.Dir(p))
+				break
+			}
+		}
+	}
+
+	if goModDir != "" {
+		// Try to read the module path from go.mod without doing full module
+		// processing. NewGoModuleFromPath provides a GoModule with the
+		// GoModDefaultImpl which implements OpenModule for parsing only.
+		if gm, err := NewGoModuleFromPath(goModDir); err == nil {
+			if gomod, err := gm.impl.OpenModule(gm.Options()); err == nil {
+				if gomod != nil && gomod.Module != nil && gomod.Module.Mod.Path != "" {
+					pkg.Name = gomod.Module.Mod.Path
+				}
+			} else {
+				logrus.Debugf("unable to parse go.mod for %s: %v", goModDir, err)
+			}
+		}
+	}
 	if pkg.Name == "" {
 		pkg.Name = uuid.NewString()
 	}

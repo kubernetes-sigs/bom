@@ -17,6 +17,8 @@ limitations under the License.
 package spdx
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -47,6 +49,29 @@ func TestToSPDXPackage(t *testing.T) {
 		// All versions (including +incompatible) use proxy URLs
 		require.Contains(t, spdxPackage.DownloadLocation, "https://proxy.golang.org/")
 	}
+}
+
+func TestPackageFromDirectory_UsesGoModModulePath(t *testing.T) {
+	// Create a temporary directory structure with a go.mod at a nested path
+	dir := t.TempDir()
+	// Simulate extraction where files are under a subdir
+	sub := filepath.Join(dir, "submodule")
+	require.NoError(t, os.MkdirAll(sub, 0o755))
+	// Write go.mod with module directive
+	gomod := "module example.com/my/module\n"
+	require.NoError(t, os.WriteFile(filepath.Join(sub, "go.mod"), []byte(gomod), 0o600))
+
+	// Create a dummy file so PackageFromDirectory has something to scan
+	require.NoError(t, os.WriteFile(filepath.Join(sub, "main.go"), []byte("package main"), 0o600))
+
+	// Call PackageFromDirectory on the parent dir; implementation should
+	// discover go.mod in scanned file tree and use module path.
+	di := &spdxDefaultImplementation{}
+	opts := &Options{IgnorePatterns: []string{}}
+	pkg, err := di.PackageFromDirectory(opts, dir)
+	require.NoError(t, err)
+	require.NotNil(t, pkg)
+	require.Equal(t, "example.com/my/module", pkg.Name)
 }
 
 func TestPackageURL(t *testing.T) {
