@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -264,6 +266,44 @@ func Banner() string {
 	return string(d)
 }
 
+func safeLen(v any) int {
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return rv.Len()
+	default:
+		return -1
+	}
+}
+
+func structToString(s any, ignoreNils bool, ignore ...string) string {
+	v := reflect.ValueOf(s)
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return ""
+	}
+	typeOf := v.Type()
+	out := ""
+	for i := range v.NumField() {
+		fieldName := typeOf.Field(i).Name
+		if slices.Contains(ignore, fieldName) {
+			continue
+		}
+		fieldValue := v.Field(i).Interface()
+		if ignoreNils && safeLen(fieldValue) == 0 {
+			continue
+		}
+		if reflect.TypeOf(fieldValue).Kind() == reflect.Struct {
+			out += structToString(fieldValue, ignoreNils, ignore...)
+		} else {
+			out += fmt.Sprintf(`%s: %v\n`, fieldName, fieldValue)
+		}
+	}
+	return out
+}
+
 // recursiveNameFilter is a function that recursivley filters an objects peers inplace
 // to include only those that are on a direct path to another object with the queried name.
 // If one or more path is found it returns true.
@@ -288,6 +328,37 @@ func recursiveNameFilter(name string, o Object, depth int, seen *map[string]bool
 	out := len(*o.GetRelationships()) != 0
 	(*seen)[o.SPDXID()] = out
 	return out
+}
+
+func escape(s string) string {
+	return fmt.Sprintf("%q", s)
+}
+
+// toDot traverses an objects relationships to return a representation
+// of the object and all its peers as a string of valid dotlang.
+//
+//nolint:gocritic // seen is a pointer recursively populated
+func toDot(o Object, depth int, seen *map[string]struct{}) string {
+	if _, ok := (*seen)[o.SPDXID()]; ok {
+		return ""
+	}
+	(*seen)[o.SPDXID()] = struct{}{}
+	s := o.ToDot() + ";\n"
+	if depth == 1 {
+		return s
+	}
+	rels := *o.GetRelationships()
+	if rels == nil {
+		return s
+	}
+	for _, rel := range rels {
+		if rel.Peer == nil {
+			continue
+		}
+		s += escape(o.SPDXID()) + " -> " + escape(rel.Peer.SPDXID()) + ";\n"
+		s += toDot(rel.Peer, depth-1, seen)
+	}
+	return s
 }
 
 // recursiveIDSearch is a function that recursively searches an object's peers
