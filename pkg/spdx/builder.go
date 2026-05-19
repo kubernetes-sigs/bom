@@ -128,28 +128,38 @@ func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 	return doc, nil
 }
 
+// MultiLangMode controls how multi-language SBOMs are generated.
+const (
+	MultiLangMerged = "merged" // Default: all languages in one SBOM
+	MultiLangSplit  = "split"  // Produce per-language SBOM files
+)
+
 type DocGenerateOptions struct {
-	AnalyseLayers       bool                  // A flag that controls if deep layer analysis should be performed
-	NoGitignore         bool                  // Do not read exclusions from gitignore file
-	ProcessGoModules    bool                  // Analyze go.mod to include data about packages
-	OnlyDirectDeps      bool                  // Only include direct dependencies from go.mod
-	ScanLicenses        bool                  // Try to look into files to determine their license
-	ScanImages          bool                  // When true, scan images for OS information
-	ConfigFile          string                // Path to SBOM configuration file
-	Format              string                // Output format
-	OutputFile          string                // Output location
-	Name                string                // Name to use in the resulting document
-	Namespace           string                // Namespace for the document (a unique URI)
-	CreatorPerson       string                // Document creator information
-	License             string                // Main license of the document
-	LicenseListVersion  string                // Version of the SPDX list to use
-	Tarballs            []string              // A slice of docker archives (tar)
-	Archives            []string              // A list of archive files to add as packages
-	Files               []string              // A slice of naked files to include in the bom
-	Images              []string              // A slice of docker images
-	Directories         []string              // A slice of directories to convert into packages
-	IgnorePatterns      []string              // A slice of regexp patterns to ignore when scanning dirs
-	ExternalDocumentRef []ExternalDocumentRef // List of external documents related to the bom
+	AnalyseLayers        bool                  // A flag that controls if deep layer analysis should be performed
+	NoGitignore          bool                  // Do not read exclusions from gitignore file
+	ProcessGoModules     bool                  // Analyze go.mod to include data about packages
+	ProcessPythonModules bool                  // Analyze Python manifests to include data about packages
+	ProcessNodeModules   bool                  // Analyze package.json to include data about packages
+	ProcessRustModules   bool                  // Analyze Cargo.toml to include data about packages
+	OnlyDirectDeps       bool                  // Only include direct dependencies from go.mod
+	ScanLicenses         bool                  // Try to look into files to determine their license
+	ScanImages           bool                  // When true, scan images for OS information
+	MultiLangMode        string                // How to handle multi-language projects: "merged" (default) or "split"
+	ConfigFile           string                // Path to SBOM configuration file
+	Format               string                // Output format
+	OutputFile           string                // Output location
+	Name                 string                // Name to use in the resulting document
+	Namespace            string                // Namespace for the document (a unique URI)
+	CreatorPerson        string                // Document creator information
+	License              string                // Main license of the document
+	LicenseListVersion   string                // Version of the SPDX list to use
+	Tarballs             []string              // A slice of docker archives (tar)
+	Archives             []string              // A list of archive files to add as packages
+	Files                []string              // A slice of naked files to include in the bom
+	Images               []string              // A slice of docker images
+	Directories          []string              // A slice of directories to convert into packages
+	IgnorePatterns       []string              // A slice of regexp patterns to ignore when scanning dirs
+	ExternalDocumentRef  []ExternalDocumentRef // List of external documents related to the bom
 }
 
 func (o *DocGenerateOptions) Validate() error {

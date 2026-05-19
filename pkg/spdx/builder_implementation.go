@@ -91,6 +91,9 @@ func (builder *defaultDocBuilderImpl) CreateSPDXClient(genopts *DocGenerateOptio
 	}
 	spdx.Options().AnalyzeLayers = genopts.AnalyseLayers
 	spdx.Options().ProcessGoModules = genopts.ProcessGoModules
+	spdx.Options().ProcessPythonModules = genopts.ProcessPythonModules
+	spdx.Options().ProcessNodeModules = genopts.ProcessNodeModules
+	spdx.Options().ProcessRustModules = genopts.ProcessRustModules
 	spdx.Options().ScanImages = genopts.ScanImages
 	spdx.Options().LicenseListVersion = genopts.LicenseListVersion
 
