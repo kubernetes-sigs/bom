@@ -17,8 +17,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/uwu-tools/magex v0.10.1
 	gitlab.alpinelinux.org/alpine/go v0.10.1
-	golang.org/x/mod v0.37.0
-	golang.org/x/term v0.44.0
+	golang.org/x/mod v0.38.0
+	golang.org/x/term v0.45.0
 	google.golang.org/protobuf v1.36.11
 	sigs.k8s.io/release-utils v0.12.4
 	sigs.k8s.io/yaml v1.6.0
@@ -64,10 +64,10 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/net v0.56.0 // indirect
-	golang.org/x/sync v0.21.0
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sync v0.22.0
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
-	golang.org/x/tools v0.46.0 // indirect
+	golang.org/x/tools v0.47.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
