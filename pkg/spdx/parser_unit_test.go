@@ -23,6 +23,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestParseTagValueMalformedPackageTags checks that package-only tags
+// (FilesAnalyzed, PackageVersion, etc) return an error instead of panicking
+// when they appear before a PackageName tag has set up a *Package object.
+func TestParseTagValueMalformedPackageTags(t *testing.T) {
+	for _, tag := range []string{
+		"FilesAnalyzed: true",
+		"PackageVersion: 1.0.0",
+		"PackageLicenseDeclared: MIT",
+		"PackageVerificationCode: abc123",
+		"PackageComment: a comment",
+		"PackageFileName: file.tar.gz",
+		"PackageHomePage: https://example.com",
+	} {
+		content := "SPDXVersion: SPDX-2.3\nDataLicense: CC0-1.0\n" + tag + "\n"
+
+		f, err := os.CreateTemp(t.TempDir(), "malformed-*.spdx")
+		require.NoError(t, err)
+
+		_, err = f.WriteString(content)
+		require.NoError(t, err)
+
+		_, err = f.Seek(0, 0)
+		require.NoError(t, err)
+
+		_, err = parseTagValue(f)
+		require.Error(t, err, "expected an error for tag %q, got none", tag)
+
+		require.NoError(t, f.Close())
+	}
+}
+
 func TestDetectSBOMEncoding(t *testing.T) {
 	for _, tc := range []struct {
 		fragment         string

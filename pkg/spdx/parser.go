@@ -546,19 +546,47 @@ func parseTagValue(file *os.File) (doc *Document, err error) {
 			}
 			// Tags for packages
 		case "FilesAnalyzed":
-			currentObject.(*Package).FilesAnalyzed = value == "true" //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.FilesAnalyzed = value == "true"
 		case "PackageVersion":
-			currentObject.(*Package).Version = value //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.Version = value
 		case "PackageLicenseDeclared":
-			currentObject.(*Package).LicenseDeclared = value //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.LicenseDeclared = value
 		case "PackageVerificationCode":
-			currentObject.(*Package).VerificationCode = value //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.VerificationCode = value
 		case "PackageComment":
-			currentObject.(*Package).Comment = value //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.Comment = value
 		case "PackageFileName":
-			currentObject.(*Package).FileName = value //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.FileName = value
 		case "PackageHomePage":
-			currentObject.(*Package).HomePage = value //nolint: errcheck
+			pkg, ok := currentObject.(*Package)
+			if !ok {
+				return nil, fmt.Errorf("tag %s found outside of a package entry at line %d", tag, i)
+			}
+			pkg.HomePage = value
 		case "PrimaryPackagePurpose":
 			purpose := ""
 			for _, pp := range PackagePurposes {
