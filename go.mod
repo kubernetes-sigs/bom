@@ -1,6 +1,6 @@
 module sigs.k8s.io/bom
 
-go 1.25.7
+go 1.25.11
 
 require (
 	github.com/blang/semver/v4 v4.0.0
@@ -12,7 +12,9 @@ require (
 	github.com/in-toto/attestation v1.2.0
 	github.com/knqyf263/go-rpmdb v0.1.1
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
+	github.com/protobom/protobom v0.5.8
 	github.com/sirupsen/logrus v1.9.4
+	github.com/spdx/tools-golang v0.5.7
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/uwu-tools/magex v0.10.1
@@ -25,9 +27,12 @@ require (
 )
 
 require (
+	github.com/CycloneDX/cyclonedx-go v0.11.0 // indirect
+	github.com/anchore/go-struct-converter v0.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 )
