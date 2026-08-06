@@ -71,6 +71,17 @@ type Options struct {
 	// directories to scan into top-level packages.
 	Directories []string
 
+	// Images lists OCI references of container images to scan into
+	// top-level packages: the package inventory is read from the
+	// image's squashed filesystem, and each layer is recorded as a
+	// node carrying its digest. Multi-arch references expand into one
+	// node per platform image under the index node.
+	Images []string
+
+	// ImageArchives lists paths, or glob patterns, of docker-archive
+	// tarballs (the docker save format) to scan like Images.
+	ImageArchives []string
+
 	// Archives lists paths, or glob patterns, of tar archives,
 	// compressed or not, to extract and scan into top-level packages
 	// with the directory semantics.
@@ -96,6 +107,12 @@ func Document(ctx context.Context, opts *Options) (*sbom.Document, error) {
 	}
 	doc := newDocument(opts)
 	if err := addDirectories(ctx, doc, opts); err != nil {
+		return nil, err
+	}
+	if err := addImages(ctx, doc, opts); err != nil {
+		return nil, err
+	}
+	if err := addImageArchives(ctx, doc, opts); err != nil {
 		return nil, err
 	}
 	if err := addArchives(ctx, doc, opts); err != nil {

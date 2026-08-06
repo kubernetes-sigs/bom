@@ -54,6 +54,17 @@ type GenerateOptions struct {
 	// indexed into contained file nodes.
 	Directories []string
 
+	// Images lists OCI references of container images to scan into
+	// top-level packages: the package inventory is read from the
+	// image's squashed filesystem, and each layer is recorded as a
+	// structural node carrying its digest. Multi-arch references
+	// expand into one node per platform image under the index node.
+	Images []string
+
+	// ImageArchives lists paths, or glob patterns, of docker-archive
+	// tarballs (the docker save format) to scan like Images.
+	ImageArchives []string
+
 	// Archives lists paths, or glob patterns, of tar archives, gzip
 	// compressed or not, to scan into top-level packages: each
 	// archive is extracted to a temporary directory and read with the
@@ -88,6 +99,8 @@ func Generate(ctx context.Context, opts *GenerateOptions) (*sbom.Document, error
 		Namespace:      opts.Namespace,
 		CreatorPerson:  opts.CreatorPerson,
 		Directories:    opts.Directories,
+		Images:         opts.Images,
+		ImageArchives:  opts.ImageArchives,
 		Archives:       opts.Archives,
 		Files:          opts.Files,
 		IgnorePatterns: opts.IgnorePatterns,
