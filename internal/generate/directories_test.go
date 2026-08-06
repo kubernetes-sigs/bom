@@ -50,9 +50,12 @@ func TestDirectoriesGoModule(t *testing.T) {
 		strings.HasPrefix(string(root.Purl()), "pkg:golang/example.com/bom-golden-fixture"),
 		"root purl %q", root.Purl(),
 	)
+	require.Equal(t, "Apache-2.0", root.GetLicenseConcluded(),
+		"the fixture LICENSE concludes the package license")
 
 	// The four fixture files hang off the root through one contains
-	// edge, each hashed with the three legacy algorithms.
+	// edge, each hashed with the three legacy algorithms and
+	// concluding to the directory license.
 	fileNames := map[string]bool{}
 	for _, node := range nl.GetNodes() {
 		if node.GetType() != sbom.Node_FILE {
@@ -66,6 +69,14 @@ func TestDirectoriesGoModule(t *testing.T) {
 			require.NotEmpty(t, node.GetHashes()[int32(algo)],
 				"file %q missing %s", node.GetName(), algo)
 		}
+		if node.GetName() == "LICENSE" {
+			require.Equal(t, []string{"Apache-2.0"}, node.GetLicenses())
+		} else {
+			require.Equal(t, []string{"NONE"}, node.GetLicenses(),
+				"file %q holds no license of its own", node.GetName())
+		}
+		require.Equal(t, "Apache-2.0", node.GetLicenseConcluded(),
+			"file %q concludes to the directory license", node.GetName())
 	}
 	require.Equal(t, map[string]bool{
 		"go.mod": true, "main.go": true, "LICENSE": true, "README.md": true,
@@ -94,6 +105,15 @@ func TestDirectoriesPlain(t *testing.T) {
 	require.Equal(t, sbom.Node_PACKAGE, root.GetType())
 	require.Equal(t, filepath.Base(dir), root.GetName())
 	require.Empty(t, root.Purl(), "plain directories have no purl")
+	require.Empty(t, root.GetLicenseConcluded(), "no license file, nothing to conclude")
+
+	for _, node := range nl.GetNodes() {
+		if node.GetType() != sbom.Node_FILE {
+			continue
+		}
+		require.Equal(t, []string{"NONE"}, node.GetLicenses())
+		require.Empty(t, node.GetLicenseConcluded())
+	}
 
 	edge := nl.GetEdgeByType(root.GetId(), sbom.Edge_contains)
 	require.NotNil(t, edge)
@@ -138,7 +158,17 @@ func TestDirectoriesConvert(t *testing.T) {
 	for id, pkg := range ldoc.Packages {
 		require.True(t, strings.HasPrefix(id, "SPDXRef-"), "legacy id %q", id)
 		require.Equal(t, "example.com/bom-golden-fixture", pkg.Name)
+		require.Equal(t, "Apache-2.0", pkg.LicenseConcluded)
+		require.Empty(t, pkg.LicenseDeclared, "directories never declare a license")
 		files := pkg.Files()
 		require.Len(t, files, 4)
+		for _, file := range files {
+			require.Equal(t, "Apache-2.0", file.LicenseConcluded)
+			if file.Name == "LICENSE" {
+				require.Equal(t, "Apache-2.0", file.LicenseInfoInFile)
+			} else {
+				require.Equal(t, "NONE", file.LicenseInfoInFile, "file %q", file.Name)
+			}
+		}
 	}
 }

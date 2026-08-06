@@ -101,6 +101,14 @@ func directoryNodeList(ctx context.Context, dir string, opts *Options) (*sbom.No
 	if err != nil {
 		return nil, err
 	}
+	// The directory license concluded from the file scan lands on the
+	// package node, as the legacy generator recorded it. Its declared
+	// license stays unset: the legacy generator never asserted one.
+	if tag := concludeLicenses(files); tag != "" {
+		if root := nl.GetNodeByID(rootID); root != nil {
+			root.LicenseConcluded = tag
+		}
+	}
 	if err := nl.RelateNodeListAtID(files, rootID, sbom.Edge_contains); err != nil {
 		return nil, fmt.Errorf("relating files to %q: %w", rootID, err)
 	}
@@ -149,15 +157,16 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 }
 
 // indexFiles hashes the directory tree into file nodes with the
-// checksums the legacy generator recorded (SHA1, SHA256 and SHA512),
-// identified with legacy-style IDs and sorted for deterministic
-// output.
+// checksums the legacy generator recorded (SHA1, SHA256 and SHA512)
+// and each file's classified license, identified with legacy-style
+// IDs and sorted for deterministic output.
 func indexFiles(dir, prefix string, opts *Options) (*sbom.NodeList, error) {
 	fsd, err := filesystem.New(
 		fsoptions.WithAlgorithms([]intoto.HashAlgorithm{
 			intoto.AlgorithmSHA1, intoto.AlgorithmSHA256, intoto.AlgorithmSHA512,
 		}),
 		fsoptions.WithIgnorePatterns(opts.IgnorePatterns),
+		fsoptions.WithFileProcessor(licenseProcessorID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating filesystem indexer: %w", err)
