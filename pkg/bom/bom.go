@@ -54,6 +54,13 @@ type GenerateOptions struct {
 	// indexed into contained file nodes.
 	Directories []string
 
+	// Archives lists paths, or glob patterns, of tar archives, gzip
+	// compressed or not, to scan into top-level packages: each
+	// archive is extracted to a temporary directory and read with the
+	// directory semantics, and its package node carries the archive's
+	// own file name and checksums.
+	Archives []string
+
 	// Files lists paths, or glob patterns, of plain files to add to
 	// the document as top-level elements with their checksums.
 	Files []string
@@ -81,6 +88,7 @@ func Generate(ctx context.Context, opts *GenerateOptions) (*sbom.Document, error
 		Namespace:      opts.Namespace,
 		CreatorPerson:  opts.CreatorPerson,
 		Directories:    opts.Directories,
+		Archives:       opts.Archives,
 		Files:          opts.Files,
 		IgnorePatterns: opts.IgnorePatterns,
 		Offline:        opts.Offline,

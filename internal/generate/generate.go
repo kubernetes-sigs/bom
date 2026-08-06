@@ -71,6 +71,11 @@ type Options struct {
 	// directories to scan into top-level packages.
 	Directories []string
 
+	// Archives lists paths, or glob patterns, of tar archives,
+	// compressed or not, to extract and scan into top-level packages
+	// with the directory semantics.
+	Archives []string
+
 	// IgnorePatterns holds extra gitignore-syntax patterns applied
 	// when scanning directories, in addition to the directory's own
 	// .gitignore.
@@ -91,6 +96,9 @@ func Document(ctx context.Context, opts *Options) (*sbom.Document, error) {
 	}
 	doc := newDocument(opts)
 	if err := addDirectories(ctx, doc, opts); err != nil {
+		return nil, err
+	}
+	if err := addArchives(ctx, doc, opts); err != nil {
 		return nil, err
 	}
 	if err := addFiles(doc, opts.Files); err != nil {
@@ -152,32 +160,44 @@ func addFiles(doc *sbom.Document, patterns []string) error {
 }
 
 // fileNode builds a file node carrying the checksums bom has always
-// recorded for plain files (SHA1, SHA256 and SHA512), computed with
-// unpack's file hasher.
+// recorded for plain files, computed with unpack's file hasher.
 func fileNode(path string) (*sbom.Node, error) {
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("resolving %q: %w", path, err)
-	}
 	name := strings.TrimPrefix(path, "/")
 	node := &sbom.Node{
-		Id:   elementID("File", name),
-		Type: sbom.Node_FILE,
-		Name: name,
-		// The hasher opens FileName relative to the filesystem it is
-		// handed; restored to the display value below.
-		FileName: filepath.Base(abs),
+		Id:       elementID("File", name),
+		Type:     sbom.Node_FILE,
+		Name:     name,
+		FileName: name,
+	}
+	if err := hashFileInto(node, path); err != nil {
+		return nil, err
+	}
+	return node, nil
+}
+
+// hashFileInto records the checksums bom has always recorded for
+// artifacts (SHA1, SHA256 and SHA512) on the node, computed with
+// unpack's file hasher.
+func hashFileInto(node *sbom.Node, path string) error {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("resolving %q: %w", path, err)
 	}
 	hashOpts := &fsoptions.Options{
 		Algorithms: []intoto.HashAlgorithm{
 			intoto.AlgorithmSHA1, intoto.AlgorithmSHA256, intoto.AlgorithmSHA512,
 		},
 	}
-	if err := processors.NewHasher().Process(hashOpts, os.DirFS(filepath.Dir(abs)), node); err != nil {
-		return nil, fmt.Errorf("hashing %q: %w", path, err)
+	// The hasher opens FileName relative to the filesystem it is
+	// handed; the display value is restored afterwards.
+	saved := node.GetFileName()
+	node.FileName = filepath.Base(abs)
+	err = processors.NewHasher().Process(hashOpts, os.DirFS(filepath.Dir(abs)), node)
+	node.FileName = saved
+	if err != nil {
+		return fmt.Errorf("hashing %q: %w", path, err)
 	}
-	node.FileName = name
-	return node, nil
+	return nil
 }
 
 // elementID builds a node identifier following the legacy SPDX ID

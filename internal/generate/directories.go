@@ -69,23 +69,27 @@ func addDirectories(ctx context.Context, doc *sbom.Document, opts *Options) erro
 // directoryNodeList scans one directory into a node list rooted at
 // its package node.
 func directoryNodeList(ctx context.Context, dir string, opts *Options) (*sbom.NodeList, error) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("resolving %q: %w", dir, err)
+	}
+	return treeNodeList(ctx, dir, filepath.Base(abs), opts)
+}
+
+// treeNodeList scans a directory tree into a node list rooted at its
+// package node. Trees holding no recognized codebase root a plain
+// package named fallbackName, as the legacy generator produced.
+func treeNodeList(ctx context.Context, dir, fallbackName string, opts *Options) (*sbom.NodeList, error) {
 	nl, err := codebaseNodeList(ctx, dir, opts)
 	if err != nil {
 		return nil, err
 	}
 	if nl == nil {
-		// Not a recognized codebase: a plain package named after the
-		// directory, as the legacy generator produced.
-		abs, err := filepath.Abs(dir)
-		if err != nil {
-			return nil, fmt.Errorf("resolving %q: %w", dir, err)
-		}
-		base := filepath.Base(abs)
 		nl = &sbom.NodeList{}
 		nl.AddRootNode(&sbom.Node{
-			Id:   elementID("Package", base),
+			Id:   elementID("Package", fallbackName),
 			Type: sbom.Node_PACKAGE,
-			Name: base,
+			Name: fallbackName,
 		})
 	}
 	if len(nl.GetRootElements()) == 0 {
