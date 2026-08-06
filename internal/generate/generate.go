@@ -66,15 +66,33 @@ type Options struct {
 	// Files lists paths, or glob patterns, of plain files to add to
 	// the document as top-level elements.
 	Files []string
+
+	// Directories lists paths, or glob patterns, of source
+	// directories to scan into top-level packages.
+	Directories []string
+
+	// IgnorePatterns holds extra gitignore-syntax patterns applied
+	// when scanning directories, in addition to the directory's own
+	// .gitignore.
+	IgnorePatterns []string
+
+	// Offline disables all network access during decomposition. The
+	// dependency data that needs the network (transitive Go module
+	// graphs, license lookups) degrades to what the local sources
+	// declare.
+	Offline bool
 }
 
 // Document runs the engine and returns the generated protobom
 // document.
-func Document(_ context.Context, opts *Options) (*sbom.Document, error) {
+func Document(ctx context.Context, opts *Options) (*sbom.Document, error) {
 	if opts == nil {
 		opts = &Options{}
 	}
 	doc := newDocument(opts)
+	if err := addDirectories(ctx, doc, opts); err != nil {
+		return nil, err
+	}
 	if err := addFiles(doc, opts.Files); err != nil {
 		return nil, err
 	}
