@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package convert_test
+package spdx_test
 
 import (
 	"os"
@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"sigs.k8s.io/bom/internal/convert"
 	"sigs.k8s.io/bom/pkg/serialize"
 	"sigs.k8s.io/bom/pkg/spdx"
 )
@@ -81,7 +80,7 @@ func testDocument(t *testing.T) *sbom.Document {
 }
 
 func TestToSPDXMetadata(t *testing.T) {
-	doc, err := convert.ToSPDX(testDocument(t))
+	doc, err := spdx.FromProtobom(testDocument(t))
 	require.NoError(t, err)
 
 	require.Equal(t, "convert-test", doc.Name)
@@ -108,7 +107,7 @@ func TestToSPDXNamespaces(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			pdoc := sbom.NewDocument()
 			pdoc.Metadata.Id = tc.id
-			doc, err := convert.ToSPDX(pdoc)
+			doc, err := spdx.FromProtobom(pdoc)
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, doc.Namespace)
 		})
@@ -116,7 +115,7 @@ func TestToSPDXNamespaces(t *testing.T) {
 }
 
 func TestToSPDXPackage(t *testing.T) {
-	doc, err := convert.ToSPDX(testDocument(t))
+	doc, err := spdx.FromProtobom(testDocument(t))
 	require.NoError(t, err)
 
 	require.Len(t, doc.Packages, 1)
@@ -144,7 +143,7 @@ func TestToSPDXPackage(t *testing.T) {
 }
 
 func TestToSPDXNestedFile(t *testing.T) {
-	doc, err := convert.ToSPDX(testDocument(t))
+	doc, err := spdx.FromProtobom(testDocument(t))
 	require.NoError(t, err)
 
 	// The contained file hangs off the package, not the document.
@@ -178,7 +177,7 @@ func TestToSPDXRootFile(t *testing.T) {
 		Name: "README.md",
 	})
 
-	doc, err := convert.ToSPDX(pdoc)
+	doc, err := spdx.FromProtobom(pdoc)
 	require.NoError(t, err)
 	require.Empty(t, doc.Packages)
 	require.Len(t, doc.Files, 1)
@@ -199,7 +198,7 @@ func TestToSPDXFullRenderOnce(t *testing.T) {
 	pdoc.GetNodeList().AddEdge(&sbom.Edge{Type: sbom.Edge_contains, From: "app-a", To: []string{"libfoo"}})
 	pdoc.GetNodeList().AddEdge(&sbom.Edge{Type: sbom.Edge_dependsOn, From: "app-b", To: []string{"libfoo"}})
 
-	doc, err := convert.ToSPDX(pdoc)
+	doc, err := spdx.FromProtobom(pdoc)
 	require.NoError(t, err)
 	require.Len(t, doc.Packages, 2)
 
@@ -231,7 +230,7 @@ func TestToSPDXPromotion(t *testing.T) {
 	pdoc.GetNodeList().AddEdge(&sbom.Edge{Type: sbom.Edge_contains, From: "cycle-a", To: []string{"cycle-b"}})
 	pdoc.GetNodeList().AddEdge(&sbom.Edge{Type: sbom.Edge_contains, From: "cycle-b", To: []string{"cycle-a"}})
 
-	doc, err := convert.ToSPDX(pdoc)
+	doc, err := spdx.FromProtobom(pdoc)
 	require.NoError(t, err)
 
 	// The orphan and the first cycle member become roots; the second
@@ -257,7 +256,7 @@ func TestToSPDXPromotion(t *testing.T) {
 // serializers and reparses the tag-value output with the legacy
 // parser, the same paths bom's API consumers exercise.
 func TestToSPDXSerializers(t *testing.T) {
-	doc, err := convert.ToSPDX(testDocument(t))
+	doc, err := spdx.FromProtobom(testDocument(t))
 	require.NoError(t, err)
 
 	tv, err := (&serialize.TagValue{}).Serialize(doc)
@@ -290,12 +289,12 @@ func TestToSPDXSerializers(t *testing.T) {
 }
 
 func TestToSPDXNilGuards(t *testing.T) {
-	_, err := convert.ToSPDX(nil)
+	_, err := spdx.FromProtobom(nil)
 	require.Error(t, err)
-	_, err = convert.ToSPDX(&sbom.Document{})
+	_, err = spdx.FromProtobom(&sbom.Document{})
 	require.Error(t, err)
 	// A document with no node list converts to an empty document.
-	doc, err := convert.ToSPDX(&sbom.Document{Metadata: &sbom.Metadata{Name: "empty"}})
+	doc, err := spdx.FromProtobom(&sbom.Document{Metadata: &sbom.Metadata{Name: "empty"}})
 	require.NoError(t, err)
 	require.Empty(t, doc.Packages)
 	require.Empty(t, doc.Files)

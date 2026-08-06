@@ -17,8 +17,8 @@ limitations under the License.
 // Package generate implements bom's protobom-native SBOM generation
 // engine. It maps bom's generation options onto unpack subjects and
 // assembles the resulting node lists into a protobom document; the
-// legacy DocBuilder API converts the result through internal/convert
-// to keep returning the pkg/spdx model.
+// legacy DocBuilder API converts the result with pkg/spdx's
+// FromProtobom to keep returning the legacy model.
 //
 // The engine keeps the observable conventions of the legacy generator
 // where they matter to consumers: the same default namespace shape,

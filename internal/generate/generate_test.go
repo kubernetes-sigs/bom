@@ -29,8 +29,8 @@ import (
 	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/stretchr/testify/require"
 
-	"sigs.k8s.io/bom/internal/convert"
 	"sigs.k8s.io/bom/internal/generate"
+	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 func TestDocumentMetadata(t *testing.T) {
@@ -120,7 +120,7 @@ func TestDocumentConverts(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ldoc, err := convert.ToSPDX(doc)
+	ldoc, err := spdx.FromProtobom(doc)
 	require.NoError(t, err)
 	require.Equal(t, "convert-me", ldoc.Name)
 	require.Equal(t, "https://sbom.k8s.io/test/engine-convert", ldoc.Namespace)

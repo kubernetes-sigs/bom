@@ -25,8 +25,8 @@ import (
 	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/stretchr/testify/require"
 
-	"sigs.k8s.io/bom/internal/convert"
 	"sigs.k8s.io/bom/internal/generate"
+	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 // gomoduleFixture is the dependency-free Go module the golden tests
@@ -152,7 +152,7 @@ func TestDirectoriesConvert(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ldoc, err := convert.ToSPDX(doc)
+	ldoc, err := spdx.FromProtobom(doc)
 	require.NoError(t, err)
 	require.Len(t, ldoc.Packages, 1)
 	for id, pkg := range ldoc.Packages {

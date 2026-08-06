@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package convert
+package spdx
 
 import (
 	"errors"
@@ -25,12 +25,10 @@ import (
 	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/spdx/tools-golang/spdx/v2/common"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"sigs.k8s.io/bom/pkg/spdx"
 )
 
-// FromSPDX converts a document in bom's legacy SPDX model to a
-// protobom document, the inverse of ToSPDX.
+// ToProtobom converts a document in bom's legacy SPDX model to a
+// protobom document, the inverse of FromProtobom.
 //
 // The document's top-level packages and files become root elements and
 // the relationship graph is walked breadth-first from them, turning
@@ -47,7 +45,7 @@ import (
 // verification codes, licenses found in files at the package level,
 // FilesAnalyzed, the document license list version, and relationship
 // comments.
-func FromSPDX(doc *spdx.Document) (*sbom.Document, error) {
+func ToProtobom(doc *Document) (*sbom.Document, error) {
 	if doc == nil {
 		return nil, errors.New("document is nil")
 	}
@@ -82,8 +80,8 @@ func FromSPDX(doc *spdx.Document) (*sbom.Document, error) {
 	// Walk the object graph breadth-first from the document roots,
 	// converting each object once, keyed by its protobom identifier.
 	visited := map[string]bool{}
-	queue := []spdx.Object{}
-	add := func(obj spdx.Object) {
+	queue := []Object{}
+	add := func(obj Object) {
 		id := protobomID(obj.SPDXID())
 		if id == "" || visited[id] {
 			return
@@ -137,7 +135,7 @@ func FromSPDX(doc *spdx.Document) (*sbom.Document, error) {
 }
 
 // protobomID strips the SPDXRef- prefix from a legacy identifier,
-// yielding the form protobom stores; ToSPDX's spdxID inverts it.
+// yielding the form protobom stores; FromProtobom's spdxID inverts it.
 func protobomID(id string) string {
 	return strings.TrimPrefix(id, "SPDXRef-")
 }
@@ -151,17 +149,17 @@ func sortedKeys[T any](m map[string]T) []string {
 	return keys
 }
 
-func objectToNode(obj spdx.Object) *sbom.Node {
+func objectToNode(obj Object) *sbom.Node {
 	switch typed := obj.(type) {
-	case *spdx.Package:
+	case *Package:
 		return packageToNode(typed)
-	case *spdx.File:
+	case *File:
 		return fileToNode(typed)
 	}
 	return nil
 }
 
-func packageToNode(p *spdx.Package) *sbom.Node {
+func packageToNode(p *Package) *sbom.Node {
 	n := &sbom.Node{
 		Id:               protobomID(p.SPDXID()),
 		Type:             sbom.Node_PACKAGE,
@@ -196,7 +194,7 @@ func packageToNode(p *spdx.Package) *sbom.Node {
 	return n
 }
 
-func fileToNode(f *spdx.File) *sbom.Node {
+func fileToNode(f *File) *sbom.Node {
 	n := &sbom.Node{
 		Id:               protobomID(f.SPDXID()),
 		Type:             sbom.Node_FILE,
@@ -216,7 +214,7 @@ func fileToNode(f *spdx.File) *sbom.Node {
 // licenseValue filters the SPDX no-claim marker, matching protobom's
 // unserializer convention.
 func licenseValue(license string) string {
-	if license == spdx.NOASSERTION {
+	if license == NOASSERTION {
 		return ""
 	}
 	return license
@@ -248,7 +246,7 @@ func hashesFromChecksums(sums map[string]string) map[int32]string {
 // referencesFromExternalRefs splits legacy external references into
 // protobom software identifiers and external references, the inverse
 // of externalRefs.
-func referencesFromExternalRefs(refs []spdx.ExternalRef) (map[int32]string, []*sbom.ExternalReference) {
+func referencesFromExternalRefs(refs []ExternalRef) (map[int32]string, []*sbom.ExternalReference) {
 	var identifiers map[int32]string
 	var external []*sbom.ExternalReference
 	for _, ref := range refs {
@@ -296,7 +294,7 @@ func extRefTypeFromSPDX(refType string) sbom.ExternalReference_ExternalReference
 // vocabulary, the inverse of primaryPurpose.
 func purposeFromSPDX(purpose string) []sbom.Purpose {
 	switch purpose {
-	case "APPLICATION":
+	case purposeApplication:
 		return []sbom.Purpose{sbom.Purpose_APPLICATION}
 	case "FRAMEWORK":
 		return []sbom.Purpose{sbom.Purpose_FRAMEWORK}
@@ -310,7 +308,7 @@ func purposeFromSPDX(purpose string) []sbom.Purpose {
 		return []sbom.Purpose{sbom.Purpose_DEVICE}
 	case "FIRMWARE":
 		return []sbom.Purpose{sbom.Purpose_FIRMWARE}
-	case "SOURCE":
+	case purposeSource:
 		return []sbom.Purpose{sbom.Purpose_SOURCE}
 	case "ARCHIVE":
 		return []sbom.Purpose{sbom.Purpose_ARCHIVE}
@@ -318,7 +316,7 @@ func purposeFromSPDX(purpose string) []sbom.Purpose {
 		return []sbom.Purpose{sbom.Purpose_FILE}
 	case "INSTALL":
 		return []sbom.Purpose{sbom.Purpose_INSTALL}
-	case "OTHER":
+	case purposeOther:
 		return []sbom.Purpose{sbom.Purpose_OTHER}
 	default:
 		return nil
@@ -329,8 +327,8 @@ func purposeFromSPDX(purpose string) []sbom.Purpose {
 // types with no protobom edge type (such as PATCH_FOR) resolve to the
 // zero value Edge_UNKNOWN, which protobom's own unserializer uses for
 // unknown relationship types.
-var relationshipEdgeTypes = func() map[spdx.RelationshipType]sbom.Edge_Type {
-	m := make(map[spdx.RelationshipType]sbom.Edge_Type, len(edgeTypeRelationships))
+var relationshipEdgeTypes = func() map[RelationshipType]sbom.Edge_Type {
+	m := make(map[RelationshipType]sbom.Edge_Type, len(edgeTypeRelationships))
 	for edgeType, relType := range edgeTypeRelationships {
 		m[relType] = edgeType
 	}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package convert_test
+package spdx_test
 
 import (
 	"path/filepath"
@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"sigs.k8s.io/bom/internal/convert"
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
@@ -71,7 +70,7 @@ func legacyDocument(t *testing.T) *spdx.Document {
 }
 
 func TestFromSPDXMetadata(t *testing.T) {
-	pdoc, err := convert.FromSPDX(legacyDocument(t))
+	pdoc, err := spdx.ToProtobom(legacyDocument(t))
 	require.NoError(t, err)
 
 	md := pdoc.GetMetadata()
@@ -91,7 +90,7 @@ func TestFromSPDXMetadata(t *testing.T) {
 }
 
 func TestFromSPDXGraph(t *testing.T) {
-	pdoc, err := convert.FromSPDX(legacyDocument(t))
+	pdoc, err := spdx.ToProtobom(legacyDocument(t))
 	require.NoError(t, err)
 
 	nl := pdoc.GetNodeList()
@@ -135,7 +134,7 @@ func TestFromSPDXGraph(t *testing.T) {
 }
 
 func TestFromSPDXNilGuard(t *testing.T) {
-	_, err := convert.FromSPDX(nil)
+	_, err := spdx.ToProtobom(nil)
 	require.Error(t, err)
 }
 
@@ -143,14 +142,14 @@ func TestFromSPDXNilGuard(t *testing.T) {
 // legacy model twice: after the first pass normalizes the data, the
 // second must reproduce it exactly.
 func TestConverterClosure(t *testing.T) {
-	l1, err := convert.ToSPDX(testDocument(t))
+	l1, err := spdx.FromProtobom(testDocument(t))
 	require.NoError(t, err)
-	pb1, err := convert.FromSPDX(l1)
+	pb1, err := spdx.ToProtobom(l1)
 	require.NoError(t, err)
 
-	l2, err := convert.ToSPDX(pb1)
+	l2, err := spdx.FromProtobom(pb1)
 	require.NoError(t, err)
-	pb2, err := convert.FromSPDX(l2)
+	pb2, err := spdx.ToProtobom(l2)
 	require.NoError(t, err)
 
 	require.True(t, pb1.GetNodeList().Equal(pb2.GetNodeList()), "node lists differ after round trip")
@@ -180,13 +179,13 @@ func TestConverterGoldenClosure(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			pb1, err := convert.FromSPDX(ldoc)
+			pb1, err := spdx.ToProtobom(ldoc)
 			require.NoError(t, err)
 			require.NotEmpty(t, pb1.GetNodeList().GetNodes())
 
-			l2, err := convert.ToSPDX(pb1)
+			l2, err := spdx.FromProtobom(pb1)
 			require.NoError(t, err)
-			pb2, err := convert.FromSPDX(l2)
+			pb2, err := spdx.ToProtobom(l2)
 			require.NoError(t, err)
 
 			require.True(t, pb1.GetNodeList().Equal(pb2.GetNodeList()), "node lists differ after round trip")

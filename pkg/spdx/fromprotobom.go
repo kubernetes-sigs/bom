@@ -14,17 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package convert translates between protobom documents and bom's
-// legacy SPDX object model in pkg/spdx. It is the keystone of the
-// modernization strategy: the generation and parsing engines become
-// protobom-native while the legacy model survives as a compatibility
-// facade for existing API consumers, converted at the boundary.
+package spdx
+
+// FromProtobom and ToProtobom bridge this legacy SPDX object model and
+// protobom documents. They are the keystone of the modernization
+// strategy: the generation and parsing engines are protobom-native
+// while this model survives as a compatibility facade for existing API
+// consumers, converted at the boundary.
 //
 // The field mapping follows the conventions of protobom's own SPDX 2.3
-// serializer so that documents translated through this package and
+// serializer so that documents translated through these functions and
 // documents rendered directly by protobom agree on how nodes, edges
 // and metadata are expressed in SPDX terms.
-package convert
 
 import (
 	"errors"
@@ -35,13 +36,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/protobom/protobom/pkg/sbom"
-
-	"sigs.k8s.io/bom/pkg/spdx"
 )
 
-// ToSPDX converts a protobom document to bom's legacy SPDX model.
+// SPDX 2.3 primary-purpose literals shared by both conversion
+// directions.
+const (
+	purposeApplication = "APPLICATION"
+	purposeSource      = "SOURCE"
+	purposeOther       = "OTHER"
+)
+
+// FromProtobom converts a protobom document to bom's legacy SPDX model.
 //
-// Nodes become *spdx.Package or *spdx.File; edges become relationships
+// Nodes become *Package or *File; edges become relationships
 // carrying live Peer pointers (the legacy JSON serializer requires
 // them). The protobom root elements become the document's top-level
 // packages and files — the legacy model has no DESCRIBES relationship
@@ -57,7 +64,7 @@ import (
 // summaries, descriptions, source info, attribution texts, properties,
 // per-node dates, identifiers on file nodes, and edges whose type
 // protobom does not know.
-func ToSPDX(doc *sbom.Document) (*spdx.Document, error) {
+func FromProtobom(doc *sbom.Document) (*Document, error) {
 	if doc == nil {
 		return nil, errors.New("document is nil")
 	}
@@ -65,11 +72,11 @@ func ToSPDX(doc *sbom.Document) (*spdx.Document, error) {
 		return nil, errors.New("document metadata is nil")
 	}
 
-	ldoc := spdx.NewDocument()
+	ldoc := NewDocument()
 	convertMetadata(doc.GetMetadata(), ldoc)
 
 	nodes := doc.GetNodeList().GetNodes()
-	objects := make([]spdx.Object, len(nodes))
+	objects := make([]Object, len(nodes))
 	byID := map[string]int{}
 	for i, node := range nodes {
 		objects[i] = nodeToObject(node)
@@ -92,11 +99,11 @@ func ToSPDX(doc *sbom.Document) (*spdx.Document, error) {
 		rendered[i] = true
 		queue = append(queue, i)
 		switch obj := objects[i].(type) {
-		case *spdx.Package:
+		case *Package:
 			if err := ldoc.AddPackage(obj); err != nil {
 				return fmt.Errorf("adding package %q to document: %w", nodes[i].GetId(), err)
 			}
-		case *spdx.File:
+		case *File:
 			if err := ldoc.AddFile(obj); err != nil {
 				return fmt.Errorf("adding file %q to document: %w", nodes[i].GetId(), err)
 			}
@@ -137,7 +144,7 @@ func ToSPDX(doc *sbom.Document) (*spdx.Document, error) {
 		}
 		processed[i] = true
 		for _, t := range outgoing[i] {
-			rel := &spdx.Relationship{
+			rel := &Relationship{
 				Type: t.relType,
 				Peer: objects[t.to],
 			}
@@ -154,8 +161,8 @@ func ToSPDX(doc *sbom.Document) (*spdx.Document, error) {
 }
 
 // convertMetadata fills the legacy document's header fields from the
-// protobom metadata, replacing the defaults spdx.NewDocument seeds.
-func convertMetadata(md *sbom.Metadata, ldoc *spdx.Document) {
+// protobom metadata, replacing the defaults NewDocument seeds.
+func convertMetadata(md *sbom.Metadata, ldoc *Document) {
 	ldoc.Name = md.GetName()
 	ldoc.Namespace = namespaceFromID(md.GetId())
 	if md.GetDate() != nil {
@@ -185,7 +192,7 @@ func convertMetadata(md *sbom.Metadata, ldoc *spdx.Document) {
 // triple is one expanded edge destination: the relationship it maps to
 // and the index of the target node.
 type triple struct {
-	relType spdx.RelationshipType
+	relType RelationshipType
 	to      int
 }
 
@@ -238,15 +245,15 @@ func spdxID(id string) string {
 	return "SPDXRef-" + id
 }
 
-func nodeToObject(node *sbom.Node) spdx.Object {
+func nodeToObject(node *sbom.Node) Object {
 	if node.GetType() == sbom.Node_FILE {
 		return nodeToFile(node)
 	}
 	return nodeToPackage(node)
 }
 
-func nodeToPackage(node *sbom.Node) *spdx.Package {
-	p := spdx.NewPackage()
+func nodeToPackage(node *sbom.Node) *Package {
+	p := NewPackage()
 	p.SetSPDXID(spdxID(node.GetId()))
 	p.Name = node.GetName()
 	p.Version = node.GetVersion()
@@ -279,8 +286,8 @@ func nodeToPackage(node *sbom.Node) *spdx.Package {
 	return p
 }
 
-func nodeToFile(node *sbom.Node) *spdx.File {
-	f := spdx.NewFile()
+func nodeToFile(node *sbom.Node) *File {
+	f := NewFile()
 	f.SetSPDXID(spdxID(node.GetId()))
 	f.Name = node.GetName()
 	f.FileType = node.GetFileTypes()
@@ -316,13 +323,13 @@ func checksums(hashes map[int32]string) map[string]string {
 // externalRefs renders the node's external references and software
 // identifiers as legacy external references, identifiers last and
 // sorted by type for deterministic output.
-func externalRefs(node *sbom.Node) []spdx.ExternalRef {
-	refs := []spdx.ExternalRef{}
+func externalRefs(node *sbom.Node) []ExternalRef {
+	refs := []ExternalRef{}
 	for _, er := range node.GetExternalReferences() {
 		if er.GetUrl() == "" {
 			continue
 		}
-		refs = append(refs, spdx.ExternalRef{
+		refs = append(refs, ExternalRef{
 			Category: extRefCategory(er.GetType()),
 			Type:     extRefType(er.GetType()),
 			Locator:  er.GetUrl(),
@@ -336,7 +343,7 @@ func externalRefs(node *sbom.Node) []spdx.ExternalRef {
 	slices.Sort(identifiers)
 	for _, t := range identifiers {
 		idType := sbom.SoftwareIdentifierType(t)
-		refs = append(refs, spdx.ExternalRef{
+		refs = append(refs, ExternalRef{
 			Category: idType.ToSPDX2Category(),
 			Type:     idType.ToSPDX2Type(),
 			Locator:  node.GetIdentifiers()[t],
@@ -356,13 +363,13 @@ func extRefCategory(t sbom.ExternalReference_ExternalReferenceType) string {
 		sbom.ExternalReference_MAVEN_CENTRAL,
 		sbom.ExternalReference_NPM,
 		sbom.ExternalReference_NUGET:
-		return spdx.CatPackageManager
+		return CatPackageManager
 	case sbom.ExternalReference_SECURITY_ADVISORY,
 		sbom.ExternalReference_SECURITY_FIX,
 		sbom.ExternalReference_SECURITY_OTHER:
 		return "SECURITY"
 	default:
-		return "OTHER"
+		return purposeOther
 	}
 }
 
@@ -385,7 +392,7 @@ func extRefType(t sbom.ExternalReference_ExternalReferenceType) string {
 	case sbom.ExternalReference_SECURITY_OTHER:
 		return "url"
 	default:
-		return "OTHER"
+		return purposeOther
 	}
 }
 
@@ -401,7 +408,7 @@ func primaryPurpose(node *sbom.Node) string {
 	case sbom.Purpose_UNKNOWN_PURPOSE:
 		return ""
 	case sbom.Purpose_APPLICATION, sbom.Purpose_EXECUTABLE:
-		return "APPLICATION"
+		return purposeApplication
 	case sbom.Purpose_FRAMEWORK:
 		return "FRAMEWORK"
 	case sbom.Purpose_LIBRARY, sbom.Purpose_MODULE:
@@ -415,7 +422,7 @@ func primaryPurpose(node *sbom.Node) string {
 	case sbom.Purpose_FIRMWARE:
 		return "FIRMWARE"
 	case sbom.Purpose_SOURCE, sbom.Purpose_PATCH:
-		return "SOURCE"
+		return purposeSource
 	case sbom.Purpose_ARCHIVE:
 		return "ARCHIVE"
 	case sbom.Purpose_FILE:
@@ -423,7 +430,7 @@ func primaryPurpose(node *sbom.Node) string {
 	case sbom.Purpose_INSTALL:
 		return "INSTALL"
 	default:
-		return "OTHER"
+		return purposeOther
 	}
 }
 
@@ -431,49 +438,49 @@ func primaryPurpose(node *sbom.Node) string {
 // relationship types, matching protobom's serializer table
 // (edgeTypeToSPDXRel, unexported there). Edge_UNKNOWN is absent on
 // purpose: the legacy renderer rejects empty relationship types.
-var edgeTypeRelationships = map[sbom.Edge_Type]spdx.RelationshipType{
-	sbom.Edge_amends:               spdx.AMENDS,
-	sbom.Edge_ancestor:             spdx.ANCESTOR_OF,
-	sbom.Edge_buildDependency:      spdx.BUILD_DEPENDENCY_OF,
-	sbom.Edge_buildTool:            spdx.BUILD_TOOL_OF,
-	sbom.Edge_contains:             spdx.CONTAINS,
-	sbom.Edge_contained_by:         spdx.CONTAINED_BY,
-	sbom.Edge_copy:                 spdx.COPY_OF,
-	sbom.Edge_dataFile:             spdx.DATA_FILE_OF,
-	sbom.Edge_dependencyManifest:   spdx.DEPENDENCY_MANIFEST_OF,
-	sbom.Edge_dependsOn:            spdx.DEPENDS_ON,
-	sbom.Edge_dependencyOf:         spdx.DEPENDENCY_OF,
-	sbom.Edge_descendant:           spdx.DESCENDANT_OF,
-	sbom.Edge_describes:            spdx.DESCRIBES,
-	sbom.Edge_describedBy:          spdx.DESCRIBED_BY,
-	sbom.Edge_devDependency:        spdx.DEV_DEPENDENCY_OF,
-	sbom.Edge_devTool:              spdx.DEV_TOOL_OF,
-	sbom.Edge_distributionArtifact: spdx.DISTRIBUTION_ARTIFACT,
-	sbom.Edge_documentation:        spdx.DOCUMENTATION_OF,
-	sbom.Edge_dynamicLink:          spdx.DYNAMIC_LINK,
-	sbom.Edge_example:              spdx.EXAMPLE_OF,
-	sbom.Edge_expandedFromArchive:  spdx.EXPANDED_FROM_ARCHIVE,
-	sbom.Edge_fileAdded:            spdx.FILE_ADDED,
-	sbom.Edge_fileDeleted:          spdx.FILE_DELETED,
-	sbom.Edge_fileModified:         spdx.FILE_MODIFIED,
-	sbom.Edge_generates:            spdx.GENERATES,
-	sbom.Edge_generatedFrom:        spdx.GENERATED_FROM,
-	sbom.Edge_metafile:             spdx.METAFILE_OF,
-	sbom.Edge_optionalComponent:    spdx.OPTIONAL_COMPONENT_OF,
-	sbom.Edge_optionalDependency:   spdx.OPTIONAL_DEPENDENCY_OF,
-	sbom.Edge_other:                spdx.OTHER,
-	sbom.Edge_packages:             spdx.PACKAGE_OF,
-	sbom.Edge_patch:                spdx.PATCH_APPLIED,
-	sbom.Edge_prerequisite:         spdx.HAS_PREREQUISITE,
-	sbom.Edge_prerequisiteFor:      spdx.PREREQUISITE_FOR,
-	sbom.Edge_providedDependency:   spdx.PROVIDED_DEPENDENCY_OF,
-	sbom.Edge_requirementFor:       spdx.REQUIREMENT_DESCRIPTION_FOR,
-	sbom.Edge_runtimeDependency:    spdx.RUNTIME_DEPENDENCY_OF,
-	sbom.Edge_specificationFor:     spdx.SPECIFICATION_FOR,
-	sbom.Edge_staticLink:           spdx.STATIC_LINK,
-	sbom.Edge_test:                 spdx.TEST_OF,
-	sbom.Edge_testCase:             spdx.TEST_CASE_OF,
-	sbom.Edge_testDependency:       spdx.TEST_DEPENDENCY_OF,
-	sbom.Edge_testTool:             spdx.TEST_TOOL_OF,
-	sbom.Edge_variant:              spdx.VARIANT_OF,
+var edgeTypeRelationships = map[sbom.Edge_Type]RelationshipType{
+	sbom.Edge_amends:               AMENDS,
+	sbom.Edge_ancestor:             ANCESTOR_OF,
+	sbom.Edge_buildDependency:      BUILD_DEPENDENCY_OF,
+	sbom.Edge_buildTool:            BUILD_TOOL_OF,
+	sbom.Edge_contains:             CONTAINS,
+	sbom.Edge_contained_by:         CONTAINED_BY,
+	sbom.Edge_copy:                 COPY_OF,
+	sbom.Edge_dataFile:             DATA_FILE_OF,
+	sbom.Edge_dependencyManifest:   DEPENDENCY_MANIFEST_OF,
+	sbom.Edge_dependsOn:            DEPENDS_ON,
+	sbom.Edge_dependencyOf:         DEPENDENCY_OF,
+	sbom.Edge_descendant:           DESCENDANT_OF,
+	sbom.Edge_describes:            DESCRIBES,
+	sbom.Edge_describedBy:          DESCRIBED_BY,
+	sbom.Edge_devDependency:        DEV_DEPENDENCY_OF,
+	sbom.Edge_devTool:              DEV_TOOL_OF,
+	sbom.Edge_distributionArtifact: DISTRIBUTION_ARTIFACT,
+	sbom.Edge_documentation:        DOCUMENTATION_OF,
+	sbom.Edge_dynamicLink:          DYNAMIC_LINK,
+	sbom.Edge_example:              EXAMPLE_OF,
+	sbom.Edge_expandedFromArchive:  EXPANDED_FROM_ARCHIVE,
+	sbom.Edge_fileAdded:            FILE_ADDED,
+	sbom.Edge_fileDeleted:          FILE_DELETED,
+	sbom.Edge_fileModified:         FILE_MODIFIED,
+	sbom.Edge_generates:            GENERATES,
+	sbom.Edge_generatedFrom:        GENERATED_FROM,
+	sbom.Edge_metafile:             METAFILE_OF,
+	sbom.Edge_optionalComponent:    OPTIONAL_COMPONENT_OF,
+	sbom.Edge_optionalDependency:   OPTIONAL_DEPENDENCY_OF,
+	sbom.Edge_other:                OTHER,
+	sbom.Edge_packages:             PACKAGE_OF,
+	sbom.Edge_patch:                PATCH_APPLIED,
+	sbom.Edge_prerequisite:         HAS_PREREQUISITE,
+	sbom.Edge_prerequisiteFor:      PREREQUISITE_FOR,
+	sbom.Edge_providedDependency:   PROVIDED_DEPENDENCY_OF,
+	sbom.Edge_requirementFor:       REQUIREMENT_DESCRIPTION_FOR,
+	sbom.Edge_runtimeDependency:    RUNTIME_DEPENDENCY_OF,
+	sbom.Edge_specificationFor:     SPECIFICATION_FOR,
+	sbom.Edge_staticLink:           STATIC_LINK,
+	sbom.Edge_test:                 TEST_OF,
+	sbom.Edge_testCase:             TEST_CASE_OF,
+	sbom.Edge_testDependency:       TEST_DEPENDENCY_OF,
+	sbom.Edge_testTool:             TEST_TOOL_OF,
+	sbom.Edge_variant:              VARIANT_OF,
 }
