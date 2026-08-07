@@ -151,6 +151,7 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 			continue
 		}
 		stripGoDirhashes(nl)
+		assignCodebaseIDs(nl)
 		if merged == nil {
 			merged = nl
 		} else {
@@ -158,6 +159,24 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 		}
 	}
 	return merged, nil
+}
+
+// assignCodebaseIDs replaces the random identifiers unpack assigns to
+// codebase package nodes with deterministic legacy-style element ids
+// seeded on the package name and version.
+func assignCodebaseIDs(nl *sbom.NodeList) {
+	renames := map[string]string{}
+	for _, node := range nl.GetNodes() {
+		if node.GetType() != sbom.Node_PACKAGE {
+			continue
+		}
+		seed := node.GetName()
+		if version := node.GetVersion(); version != "" {
+			seed += "-" + version
+		}
+		renames[node.GetId()] = elementID("Package", seed)
+	}
+	renameNodes(nl, renames)
 }
 
 // indexFiles hashes the directory tree into file nodes with the
@@ -187,6 +206,7 @@ func indexFiles(dir, prefix string, opts *Options) (*sbom.NodeList, error) {
 	roots := make([]string, 0, len(nodes))
 	for _, node := range nodes {
 		node.Id = elementID("File", prefix+"-"+node.GetName())
+		node.FileTypes = fileTypes(os.DirFS(dir), node.GetName())
 		roots = append(roots, node.GetId())
 	}
 	nl.RootElements = roots

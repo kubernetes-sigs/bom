@@ -157,6 +157,14 @@ func FromProtobom(doc *sbom.Document) (*Document, error) {
 		}
 	}
 
+	// Packages holding files had their files analyzed: the legacy
+	// renderers derive the verification code from this flag.
+	for _, obj := range objects {
+		if pkg, ok := obj.(*Package); ok && len(pkg.Files()) > 0 {
+			pkg.FilesAnalyzed = true
+		}
+	}
+
 	return ldoc, nil
 }
 

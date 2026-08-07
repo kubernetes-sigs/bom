@@ -179,12 +179,17 @@ func addFiles(doc *sbom.Document, patterns []string) error {
 // fileNode builds a file node carrying the checksums bom has always
 // recorded for plain files, computed with unpack's file hasher.
 func fileNode(path string) (*sbom.Node, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("resolving %q: %w", path, err)
+	}
 	name := strings.TrimPrefix(path, "/")
 	node := &sbom.Node{
-		Id:       elementID("File", name),
-		Type:     sbom.Node_FILE,
-		Name:     name,
-		FileName: name,
+		Id:        elementID("File", name),
+		Type:      sbom.Node_FILE,
+		Name:      name,
+		FileName:  name,
+		FileTypes: fileTypes(os.DirFS(filepath.Dir(abs)), filepath.Base(abs)),
 	}
 	if err := hashFileInto(node, path); err != nil {
 		return nil, err
