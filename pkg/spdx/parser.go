@@ -27,6 +27,7 @@ import (
 	"sync"
 
 	"github.com/protobom/protobom/pkg/reader"
+	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/release-utils/http"
@@ -37,47 +38,82 @@ import (
 // OpenDoc opens a file, parses a SPDX tag-value file and returns a loaded
 // spdx.Document object. This functions has the cyclomatic chec disabled as
 // it spans specific cases for each of the tags it recognizes.
-func OpenDoc(path string) (doc *Document, err error) {
-	// support reading SBOMs from STDIN
+func OpenDoc(path string) (*Document, error) {
+	pdoc, err := OpenProtobom(path)
+	if err != nil {
+		return nil, err
+	}
+	doc, err := FromProtobom(pdoc)
+	if err != nil {
+		return nil, fmt.Errorf("converting document: %w", err)
+	}
+	return doc, nil
+}
+
+// OpenProtobom reads an SBOM from the same sources as OpenDoc and
+// returns it as a protobom document, the format-neutral model the
+// document is parsed into before conversion. Consumers that do not
+// need the legacy object model should prefer it.
+func OpenProtobom(path string) (*sbom.Document, error) {
+	file, cleanup, err := openSBOMFile(path)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	registerFormats()
+
+	doc, err := reader.New().ParseStream(file)
+	if err != nil {
+		return nil, fmt.Errorf("parsing SBOM: %w", err)
+	}
+	return doc, nil
+}
+
+// openSBOMFile resolves the document location to an open file: a dash
+// or an empty path reads STDIN, a URL is downloaded, anything else is
+// opened from disk. The returned function closes the file and removes
+// it when it was buffered to a temporary location.
+func openSBOMFile(path string) (*os.File, func(), error) {
 	var file *os.File
 	var isTemp bool
+	var err error
 
 	switch {
 	case path == "-", path == "":
 		if path == "" {
 			fi, err := os.Stdin.Stat()
 			if err != nil {
-				return nil, fmt.Errorf("checking stdin for data: %w", err)
+				return nil, nil, fmt.Errorf("checking stdin for data: %w", err)
 			}
 			if (fi.Mode() & os.ModeCharDevice) != 0 {
-				return nil, errors.New("document path not specified")
+				return nil, nil, errors.New("document path not specified")
 			}
 		}
 		isTemp = true
 		file, err = bufferSTDIN()
 		if err != nil {
-			return nil, fmt.Errorf("reading STDIN: %w", err)
+			return nil, nil, fmt.Errorf("reading STDIN: %w", err)
 		}
 	case isURL(path):
 		file, err = tempFileFromURL(path)
 		if err != nil {
-			return nil, fmt.Errorf("get temp file from url: %w", err)
+			return nil, nil, fmt.Errorf("get temp file from url: %w", err)
 		}
 		isTemp = true
 	default:
 		file, err = os.Open(path)
 		if err != nil {
-			return nil, fmt.Errorf("opening document from %s: %w", path, err)
+			return nil, nil, fmt.Errorf("opening document from %s: %w", path, err)
 		}
 	}
-	defer func() {
+
+	return file, func() {
 		file.Close()
 		if isTemp {
 			os.Remove(file.Name())
 		}
-	}()
-
-	return parseStream(file)
+	}, nil
 }
 
 // registerFormats makes bom's SPDX tag-value and SPDX 2.2 drivers
@@ -85,25 +121,6 @@ func OpenDoc(path string) (doc *Document, err error) {
 // when sniffing but ships no drivers for them, so without this the
 // reader rejects every tag-value document.
 var registerFormats = sync.OnceFunc(tagvalue.Register)
-
-// parseStream reads an SBOM from an open file and converts it to the
-// legacy model. The format is detected by protobom, which recognizes
-// SPDX 2.2 and 2.3 in both tag-value and JSON encodings as well as
-// CycloneDX JSON.
-func parseStream(file *os.File) (*Document, error) {
-	registerFormats()
-
-	pdoc, err := reader.New().ParseStream(file)
-	if err != nil {
-		return nil, fmt.Errorf("parsing SBOM: %w", err)
-	}
-
-	doc, err := FromProtobom(pdoc)
-	if err != nil {
-		return nil, fmt.Errorf("converting document: %w", err)
-	}
-	return doc, nil
-}
 
 // TODO(puerco): Perhaps this function and isURL should be part of the http agent.
 func tempFileFromURL(query string) (*os.File, error) {

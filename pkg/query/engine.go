@@ -20,12 +20,14 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/protobom/protobom/pkg/sbom"
+
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 type Engine struct {
 	impl     engineImplementation
-	Document *spdx.Document
+	Document *sbom.Document
 	MaxDepth int
 }
 
@@ -37,7 +39,7 @@ func New() *Engine {
 
 // Open reads a document from the specified path.
 func (e *Engine) Open(path string) error {
-	doc, err := spdx.OpenDoc(path)
+	doc, err := spdx.OpenProtobom(path)
 	if err != nil {
 		return fmt.Errorf("opening doc: %w", err)
 	}
@@ -66,26 +68,119 @@ func (e *Engine) Query(expString string) (fr FilterResults, err error) {
 }
 
 type engineImplementation interface {
-	resultsFromDocument(*spdx.Document) FilterResults
+	resultsFromDocument(*sbom.Document) FilterResults
 }
 
 type defaultEngineImplementation struct{}
 
-func (di *defaultEngineImplementation) resultsFromDocument(doc *spdx.Document) FilterResults {
-	fr := FilterResults{
-		Objects: map[string]spdx.Object{},
+// resultsFromDocument seeds a result set with the document's top-level
+// elements, the entries the query language considers depth zero.
+func (di *defaultEngineImplementation) resultsFromDocument(doc *sbom.Document) FilterResults {
+	graph := NewGraph(doc.GetNodeList())
+	objects := map[string]*sbom.Node{}
+	for _, node := range graph.Roots() {
+		objects[node.GetId()] = node
 	}
-	for _, p := range doc.Packages {
-		if p.SPDXID() == "" {
+	return FilterResults{graph: graph, Objects: objects}
+}
+
+// Graph indexes a protobom node list for traversal. The legacy object
+// model carried live pointers from each element to its peers, while
+// protobom keeps the relationships in a separate edge list, so the
+// filters need an adjacency index to walk the document.
+type Graph struct {
+	nodes map[string]*sbom.Node
+	edges map[string][]string
+	roots []string
+}
+
+// NewGraph indexes a node list. Edges pointing at nodes the list does
+// not contain are dropped: they cannot be traversed and, since
+// protobom expresses a relationship to another document by naming an
+// element this document does not define, they are not ours to follow.
+func NewGraph(nl *sbom.NodeList) *Graph {
+	g := &Graph{
+		nodes: map[string]*sbom.Node{},
+		edges: map[string][]string{},
+	}
+	for _, node := range nl.GetNodes() {
+		if node.GetId() == "" {
 			continue
 		}
-		fr.Objects[p.SPDXID()] = p
+		g.nodes[node.GetId()] = node
 	}
-	for _, f := range doc.Files {
-		if f.SPDXID() == "" {
+
+	referenced := map[string]struct{}{}
+	for _, edge := range nl.GetEdges() {
+		from := edge.GetFrom()
+		if _, ok := g.nodes[from]; !ok {
 			continue
 		}
-		fr.Objects[f.SPDXID()] = f
+		seen := map[string]struct{}{}
+		for _, id := range g.edges[from] {
+			seen[id] = struct{}{}
+		}
+		for _, to := range edge.GetTo() {
+			if _, ok := g.nodes[to]; !ok {
+				continue
+			}
+			referenced[to] = struct{}{}
+			if _, dup := seen[to]; dup {
+				continue
+			}
+			seen[to] = struct{}{}
+			g.edges[from] = append(g.edges[from], to)
+		}
 	}
-	return fr
+
+	// The document's declared roots, plus any node no relationship
+	// reaches. bom's parser surfaced those unreferenced elements as
+	// top-level entries too, and dropping them here would hide them
+	// from every query.
+	for _, id := range nl.GetRootElements() {
+		if _, ok := g.nodes[id]; ok {
+			g.roots = append(g.roots, id)
+		}
+	}
+	declared := map[string]struct{}{}
+	for _, id := range g.roots {
+		declared[id] = struct{}{}
+	}
+	for _, node := range nl.GetNodes() {
+		id := node.GetId()
+		if id == "" {
+			continue
+		}
+		if _, isRoot := declared[id]; isRoot {
+			continue
+		}
+		if _, isReferenced := referenced[id]; !isReferenced {
+			g.roots = append(g.roots, id)
+		}
+	}
+	return g
+}
+
+// Node returns the node with the given identifier, nil when the graph
+// does not hold it.
+func (g *Graph) Node(id string) *sbom.Node {
+	return g.nodes[id]
+}
+
+// Roots returns the document's top-level nodes.
+func (g *Graph) Roots() []*sbom.Node {
+	nodes := make([]*sbom.Node, 0, len(g.roots))
+	for _, id := range g.roots {
+		nodes = append(nodes, g.nodes[id])
+	}
+	return nodes
+}
+
+// Related returns the nodes reachable from id in a single step.
+func (g *Graph) Related(id string) []*sbom.Node {
+	nodes := make([]*sbom.Node, 0, len(g.edges[id]))
+	for _, to := range g.edges[id] {
+		nodes = append(nodes, g.nodes[to])
+	}
+	return nodes
 }

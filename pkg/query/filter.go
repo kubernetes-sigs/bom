@@ -21,17 +21,16 @@ import (
 	"regexp"
 
 	purl "github.com/package-url/packageurl-go"
-	"github.com/sirupsen/logrus"
-
-	"sigs.k8s.io/bom/pkg/spdx"
+	"github.com/protobom/protobom/pkg/sbom"
 )
 
 type Filter interface {
-	Apply(map[string]spdx.Object) (map[string]spdx.Object, error)
+	Apply(*Graph, map[string]*sbom.Node) (map[string]*sbom.Node, error)
 }
 
 type FilterResults struct {
-	Objects map[string]spdx.Object
+	graph   *Graph
+	Objects map[string]*sbom.Node
 	Error   error
 }
 
@@ -41,7 +40,7 @@ func (fr *FilterResults) Apply(filter Filter) *FilterResults {
 		return fr
 	}
 
-	newObjSet, err := filter.Apply(fr.Objects)
+	newObjSet, err := filter.Apply(fr.graph, fr.Objects)
 	if err != nil {
 		fr.Error = err
 		return fr
@@ -54,39 +53,36 @@ type DepthFilter struct {
 	TargetDepth int
 }
 
-func (f *DepthFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+func (f *DepthFilter) Apply(graph *Graph, objects map[string]*sbom.Node) (map[string]*sbom.Node, error) {
 	// Perform filter
-	return searchDepth(objects, 0, f.TargetDepth), nil
+	return searchDepth(graph, objects, 0, f.TargetDepth), nil
 }
 
-func searchDepth(objectSet map[string]spdx.Object, currentDepth, targetDepth int) map[string]spdx.Object {
+func searchDepth(
+	graph *Graph, objectSet map[string]*sbom.Node, currentDepth, targetDepth int,
+) map[string]*sbom.Node {
 	// If we are at target depth, we are done
 	if targetDepth == currentDepth {
 		return objectSet
 	}
 
-	res := map[string]spdx.Object{}
+	res := map[string]*sbom.Node{}
 	for _, o := range objectSet {
-		// If not, cycle the objects relationships to search further down
-		for _, r := range *o.GetRelationships() {
-			if r.Peer != nil && r.Peer.SPDXID() != "" {
-				res[r.Peer.SPDXID()] = r.Peer
-			}
+		// If not, cycle the node's relationships to search further down
+		for _, peer := range graph.Related(o.GetId()) {
+			res[peer.GetId()] = peer
 		}
 	}
-	if targetDepth == currentDepth {
-		return res
-	}
 
-	return searchDepth(res, currentDepth+1, targetDepth)
+	return searchDepth(graph, res, currentDepth+1, targetDepth)
 }
 
 // AllFilter matches everything.
 type AllFilter struct{}
 
-func (f *AllFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+func (f *AllFilter) Apply(graph *Graph, objects map[string]*sbom.Node) (map[string]*sbom.Node, error) {
 	cycler := ObjectCycler{}
-	return cycler.CycleFull(objects, func(spdx.Object) bool { return true }), nil
+	return cycler.CycleFull(graph, objects, func(*sbom.Node) bool { return true }), nil
 }
 
 type NameFilter struct {
@@ -94,7 +90,7 @@ type NameFilter struct {
 	Regexp  *regexp.Regexp
 }
 
-func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+func (f *NameFilter) Apply(graph *Graph, objects map[string]*sbom.Node) (map[string]*sbom.Node, error) {
 	// Compile the pattern once if required
 	if f.Regexp == nil {
 		re, err := regexp.Compile(f.Pattern)
@@ -106,14 +102,8 @@ func (f *NameFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Obje
 
 	// Perform filter
 	cycler := ObjectCycler{}
-	return cycler.Cycle(objects, func(o spdx.Object) bool {
-		if _, ok := o.(*spdx.File); ok {
-			return f.Regexp.MatchString(o.(*spdx.File).FileName) //nolint: errcheck
-		}
-		if _, ok := o.(*spdx.Package); ok {
-			return f.Regexp.MatchString(o.(*spdx.Package).Name) //nolint: errcheck
-		}
-		return false
+	return cycler.Cycle(graph, objects, func(node *sbom.Node) bool {
+		return f.Regexp.MatchString(node.GetName())
 	}), nil
 }
 
@@ -121,7 +111,7 @@ type PurlFilter struct {
 	Pattern string
 }
 
-func (f *PurlFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Object, error) {
+func (f *PurlFilter) Apply(graph *Graph, objects map[string]*sbom.Node) (map[string]*sbom.Node, error) {
 	patternPurl, err := purl.FromString(f.Pattern)
 	if err != nil {
 		return nil, fmt.Errorf("parsing purl: %w", err)
@@ -143,104 +133,131 @@ func (f *PurlFilter) Apply(objects map[string]spdx.Object) (map[string]spdx.Obje
 		patternPurl.Namespace = "*"
 	}
 	cycler := ObjectCycler{}
-	return cycler.Cycle(objects, func(o spdx.Object) bool {
-		p, ok := o.(*spdx.Package)
-		if !ok {
-			logrus.Info("No package")
-			return false
-		}
-		if p.Purl() == nil {
-			return false
-		}
-		return p.PurlMatches(&patternPurl)
+	return cycler.Cycle(graph, objects, func(node *sbom.Node) bool {
+		return purlMatches(&patternPurl, node)
 	}), nil
 }
 
-type MatcherFunction func(spdx.Object) bool
+// purlMatches reports whether a node's package URL satisfies the
+// pattern. Components set to "*" match anything, and every qualifier
+// named in the pattern must be present on the node with the same
+// value.
+func purlMatches(spec *purl.PackageURL, node *sbom.Node) bool {
+	raw := string(node.Purl())
+	if raw == "" {
+		return false
+	}
+	nodePurl, err := purl.FromString(raw)
+	if err != nil {
+		return false
+	}
+
+	if spec.Type != "*" && spec.Type != nodePurl.Type {
+		return false
+	}
+	if spec.Namespace != "*" && spec.Namespace != nodePurl.Namespace {
+		return false
+	}
+	if spec.Name != "*" && spec.Name != nodePurl.Name {
+		return false
+	}
+	if spec.Version != "*" && spec.Version != nodePurl.Version {
+		return false
+	}
+	if spec.Subpath != "*" && spec.Subpath != nodePurl.Subpath {
+		return false
+	}
+
+	// Compare the qualifiers
+	specQs := spec.Qualifiers.Map()
+	pkgQs := nodePurl.Qualifiers.Map()
+
+	for k := range specQs {
+		if _, ok := pkgQs[k]; !ok {
+			return false
+		}
+		if specQs[k] != pkgQs[k] {
+			return false
+		}
+	}
+	return true
+}
+
+type MatcherFunction func(*sbom.Node) bool
 
 type ObjectCycler struct{}
 
-func (cycler *ObjectCycler) Cycle(objects map[string]spdx.Object, fn MatcherFunction) map[string]spdx.Object {
-	return doRecursion(objects, fn, &map[string]struct{}{})
+func (cycler *ObjectCycler) Cycle(
+	graph *Graph, objects map[string]*sbom.Node, fn MatcherFunction,
+) map[string]*sbom.Node {
+	return doRecursion(graph, objects, fn, map[string]struct{}{})
 }
 
-func (cycler *ObjectCycler) CycleFull(objects map[string]spdx.Object, fn MatcherFunction) map[string]spdx.Object {
-	return doFullRecursion(objects, fn, &map[string]struct{}{})
+func (cycler *ObjectCycler) CycleFull(
+	graph *Graph, objects map[string]*sbom.Node, fn MatcherFunction,
+) map[string]*sbom.Node {
+	return doFullRecursion(graph, objects, fn, map[string]struct{}{})
 }
 
-// Recursion will traverse the SBOM graph and return the element that
+// doRecursion will traverse the SBOM graph and return the element that
 // matches the query without continuing down its relationships.
 func doRecursion(
-	//nolint:gocritic // seen is passed recursively
-	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},
-) map[string]spdx.Object {
-	newSet := map[string]spdx.Object{}
+	graph *Graph, objects map[string]*sbom.Node, fn MatcherFunction, seen map[string]struct{},
+) map[string]*sbom.Node {
+	newSet := map[string]*sbom.Node{}
 	for _, o := range objects {
-		if o.SPDXID() == "" {
+		if o.GetId() == "" {
 			continue
 		}
-		if _, ok := (*seen)[o.SPDXID()]; ok {
+		if _, ok := seen[o.GetId()]; ok {
 			continue
 		}
-		(*seen)[o.SPDXID()] = struct{}{}
+		seen[o.GetId()] = struct{}{}
 
 		if fn(o) {
-			newSet[o.SPDXID()] = o
+			newSet[o.GetId()] = o
 			continue
 		}
 
-		// do a new recursion on the related objects
-		subSet := map[string]spdx.Object{}
-		for _, r := range *o.GetRelationships() {
-			if r.Peer != nil && r.Peer.SPDXID() != "" {
-				// We only recurse on the first match of each object
-				if _, ok := subSet[r.Peer.SPDXID()]; !ok {
-					subSet[r.Peer.SPDXID()] = r.Peer
-				}
-			}
+		// do a new recursion on the related nodes
+		subSet := map[string]*sbom.Node{}
+		for _, peer := range graph.Related(o.GetId()) {
+			subSet[peer.GetId()] = peer
 		}
-		filteredSet := doRecursion(subSet, fn, seen)
-		for _, o := range filteredSet {
-			newSet[o.SPDXID()] = o
+		for id, node := range doRecursion(graph, subSet, fn, seen) {
+			newSet[id] = node
 		}
 	}
 	return newSet
 }
 
-// doFullRecursion will probe all objects in the sbom, when matching an
-// object, it will continue traversing its relationships returning all
-// matching objects in a flat array.
+// doFullRecursion will probe all nodes in the sbom, when matching a
+// node, it will continue traversing its relationships returning all
+// matching nodes in a flat array.
 func doFullRecursion(
-	//nolint:gocritic // seen is passed recursively
-	objects map[string]spdx.Object, fn MatcherFunction, seen *map[string]struct{},
-) map[string]spdx.Object {
-	newSet := map[string]spdx.Object{}
+	graph *Graph, objects map[string]*sbom.Node, fn MatcherFunction, seen map[string]struct{},
+) map[string]*sbom.Node {
+	newSet := map[string]*sbom.Node{}
 	for _, o := range objects {
-		if o.SPDXID() == "" {
+		if o.GetId() == "" {
 			continue
 		}
-		if _, ok := (*seen)[o.SPDXID()]; ok {
+		if _, ok := seen[o.GetId()]; ok {
 			continue
 		}
-		(*seen)[o.SPDXID()] = struct{}{}
+		seen[o.GetId()] = struct{}{}
 
 		if fn(o) {
-			newSet[o.SPDXID()] = o
+			newSet[o.GetId()] = o
 		}
 
-		// do a new recursion on the related objects
-		subSet := map[string]spdx.Object{}
-		for _, r := range *o.GetRelationships() {
-			if r.Peer != nil && r.Peer.SPDXID() != "" {
-				// We only recurse on the first match of each object
-				if _, ok := subSet[r.Peer.SPDXID()]; !ok {
-					subSet[r.Peer.SPDXID()] = r.Peer
-				}
-			}
+		// do a new recursion on the related nodes
+		subSet := map[string]*sbom.Node{}
+		for _, peer := range graph.Related(o.GetId()) {
+			subSet[peer.GetId()] = peer
 		}
-		filteredSet := doFullRecursion(subSet, fn, seen)
-		for _, o := range filteredSet {
-			newSet[o.SPDXID()] = o
+		for id, node := range doFullRecursion(graph, subSet, fn, seen) {
+			newSet[id] = node
 		}
 	}
 	return newSet
