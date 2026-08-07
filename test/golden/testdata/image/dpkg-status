@@ -1,0 +1,24 @@
+Package: base-files
+Status: install ok installed
+Priority: required
+Section: admin
+Installed-Size: 346
+Maintainer: Santiago Vila <sanvila@debian.org>
+Architecture: amd64
+Version: 12.4+deb12u5
+Description: Debian base system miscellaneous files
+ This package contains the basic filesystem hierarchy of a Debian system.
+
+Package: libssl3
+Status: install ok installed
+Priority: optional
+Section: libs
+Installed-Size: 1801
+Maintainer: Debian OpenSSL Team <pkg-openssl-devel@alioth-lists.debian.net>
+Architecture: amd64
+Source: openssl
+Version: 3.0.11-1~deb12u2
+Homepage: https://www.openssl.org/
+Description: Secure Sockets Layer toolkit - shared libraries
+ This package is part of the OpenSSL project's implementation of the SSL
+ and TLS cryptographic protocols.

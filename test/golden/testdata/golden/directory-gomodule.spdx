@@ -1,0 +1,80 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: bom-golden-directory-gomodule
+DocumentNamespace: https://sbom.k8s.io/golden/directory-gomodule
+Creator: Person: Kubernetes Release Managers (release-managers@kubernetes.io)
+Creator: Organization: Kubernetes Release Engineering
+Creator: Tool: bom-golden-fixture
+LicenseListVersion: 3.28
+Created: 2026-01-01T00:00:00Z
+
+FileName: LICENSE
+SPDXID: SPDXRef-File-example.com-bom-golden-fixture-LICENSE
+FileChecksum: SHA1: 92170cdc034b2ff819323ff670d3b7266c8bffcd
+FileChecksum: SHA256: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
+FileChecksum: SHA512: 389080b6132d3eaae780648d6998390d8cc71908561bce09578e27c542aa1a9f3122e01f640c5b01bee73004c23aa4e9f2066fe5ee0ca2072c2420578b28d71f
+FileType: TEXT
+FileType: DOCUMENTATION
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: NOASSERTION
+
+FileName: README.md
+SPDXID: SPDXRef-File-example.com-bom-golden-fixture-README.md
+FileChecksum: SHA1: 9a18d1ff94ff11be650aa9ca8dbb77c314905baf
+FileChecksum: SHA256: d3565dbe88b19a99027e352e148506fda470f862ee8745cc9c890e0362aefe5d
+FileChecksum: SHA512: 1d0e7f01658c5db4b09029de8bdebbbbe005df228e9a1b8838d2c2e98a2b99015213708e6b5a4f655127237081d5f0a2aa520c19dbc76bb6a6277ce0746fb61f
+FileType: TEXT
+FileType: DOCUMENTATION
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: NONE
+FileCopyrightText: NOASSERTION
+
+FileName: go.mod
+SPDXID: SPDXRef-File-example.com-bom-golden-fixture-go.mod
+FileChecksum: SHA1: 44f7944a95608be90920fc541615021068101083
+FileChecksum: SHA256: c61c30124789fc5297541a50c6509609115e094aa15051292278f75f661a5d4e
+FileChecksum: SHA512: 106be9dec33bad585aba44e6c7544efe27d9c8788e75ffd1efc56f7a2fe9850fb3a6f0c5ad0b2b54876e67cff8979c5a6e27622c2ff4e501f71f420b2de3b300
+FileType: OTHER
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: NONE
+FileCopyrightText: NOASSERTION
+
+FileName: main.go
+SPDXID: SPDXRef-File-example.com-bom-golden-fixture-main.go
+FileChecksum: SHA1: 189ec3717c06221ea42f0b905f2a228546f9d3fb
+FileChecksum: SHA256: 1b73bfc07613aefa742bababbf7724da3a214cd476fc5310b3dad1a674896a12
+FileChecksum: SHA512: a7103a5f081a523bd3709b85fda7ab2be3cdf43177d3ffc2238ae7e002dd3e57379f22e4c32945a60952b44a145f6b463ba4519ecbf6c20a89a05efa9be7c8e8
+FileType: SOURCE
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: NONE
+FileCopyrightText: NOASSERTION
+
+PackageName: example.com/bom-golden-fixture
+SPDXID: SPDXRef-Package-example.com-bom-golden-fixture
+PackageDownloadLocation: NONE
+FilesAnalyzed: true
+PackageVerificationCode: 8001993c4615904b9db6a8ee09687e42126c9949
+PackageLicenseConcluded: Apache-2.0
+ExternalRef: PACKAGE-MANAGER purl pkg:golang/example.com/bom-golden-fixture
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: stdlib
+SPDXID: SPDXRef-Package-stdlib-1.21
+PackageDownloadLocation: NONE
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: 1.21
+PrimaryPackagePurpose: LIBRARY
+ExternalRef: PACKAGE-MANAGER purl pkg:golang/stdlib@1.21
+PackageLicenseDeclared: BSD-3-Clause
+PackageCopyrightText: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-example.com-bom-golden-fixture
+Relationship: SPDXRef-Package-example.com-bom-golden-fixture CONTAINS SPDXRef-File-example.com-bom-golden-fixture-LICENSE
+Relationship: SPDXRef-Package-example.com-bom-golden-fixture CONTAINS SPDXRef-File-example.com-bom-golden-fixture-README.md
+Relationship: SPDXRef-Package-example.com-bom-golden-fixture CONTAINS SPDXRef-File-example.com-bom-golden-fixture-go.mod
+Relationship: SPDXRef-Package-example.com-bom-golden-fixture CONTAINS SPDXRef-File-example.com-bom-golden-fixture-main.go
+Relationship: SPDXRef-Package-example.com-bom-golden-fixture DEPENDS_ON SPDXRef-Package-stdlib-1.21

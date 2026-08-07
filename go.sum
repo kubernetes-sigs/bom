@@ -27,8 +27,8 @@ github.com/bradleyjkemp/cupaloy/v2 v2.8.0 h1:any4BmKE+jGIaMpnU8YgH/I2LPiLBufr6oM
 github.com/bradleyjkemp/cupaloy/v2 v2.8.0/go.mod h1:bm7JXdkRd4BHJk9HpwqAI8BoAY1lps46Enkdqw6aRX0=
 github.com/carabiner-dev/hasher v0.2.4 h1:VaI04+FBHaNV/UEy0NmVoRg0pKLFeN76KPOHbTDvvhE=
 github.com/carabiner-dev/hasher v0.2.4/go.mod h1:W83zi1+E3he4Cpldss8yoXNj6GdDUpr3M45dOAzem/w=
-github.com/carabiner-dev/unpack v0.2.2-0.20260806222146-a404a21306bd h1:mAd5JpbOB5rFLTVvZs4OV4D8atiwg12+A/Jr4+yJ5CE=
-github.com/carabiner-dev/unpack v0.2.2-0.20260806222146-a404a21306bd/go.mod h1:ONT63PJqqD4x1MB0NMuZu39Y/7FN4AyUhKtr55wMUpw=
+github.com/carabiner-dev/unpack v0.2.2-0.20260807024945-5dafcbd089d2 h1:m8MoFrVhk6nsH6UHjBhttGHg7Scg6iyBT7JJxP335FE=
+github.com/carabiner-dev/unpack v0.2.2-0.20260807024945-5dafcbd089d2/go.mod h1:ONT63PJqqD4x1MB0NMuZu39Y/7FN4AyUhKtr55wMUpw=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/clipperhouse/displaywidth v0.11.0 h1:lBc6kY44VFw+TDx4I8opi/EtL9m20WSEFgwIwO+UVM8=

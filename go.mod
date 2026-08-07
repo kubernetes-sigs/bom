@@ -4,7 +4,7 @@ go 1.25.12
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	github.com/carabiner-dev/unpack v0.2.2-0.20260806222146-a404a21306bd
+	github.com/carabiner-dev/unpack v0.2.2-0.20260807024945-5dafcbd089d2
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/google/go-containerregistry v0.21.8

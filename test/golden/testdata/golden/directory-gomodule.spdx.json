@@ -1,0 +1,201 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2026-01-01T00:00:00Z",
+    "creators": [
+      "Tool: bom-golden-fixture"
+    ],
+    "licenseListVersion": "3.28"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentDescribes": [
+    "SPDXRef-Package-example.com-bom-golden-fixture"
+  ],
+  "documentNamespace": "https://sbom.k8s.io/golden/directory-gomodule",
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-fixture-LICENSE",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "92170cdc034b2ff819323ff670d3b7266c8bffcd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "389080b6132d3eaae780648d6998390d8cc71908561bce09578e27c542aa1a9f3122e01f640c5b01bee73004c23aa4e9f2066fe5ee0ca2072c2420578b28d71f"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "LICENSE",
+      "fileTypes": [
+        "DOCUMENTATION",
+        "TEXT"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "Apache-2.0"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-fixture-README.md",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "9a18d1ff94ff11be650aa9ca8dbb77c314905baf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d3565dbe88b19a99027e352e148506fda470f862ee8745cc9c890e0362aefe5d"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1d0e7f01658c5db4b09029de8bdebbbbe005df228e9a1b8838d2c2e98a2b99015213708e6b5a4f655127237081d5f0a2aa520c19dbc76bb6a6277ce0746fb61f"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "README.md",
+      "fileTypes": [
+        "DOCUMENTATION",
+        "TEXT"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "NONE"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-fixture-go.mod",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "44f7944a95608be90920fc541615021068101083"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c61c30124789fc5297541a50c6509609115e094aa15051292278f75f661a5d4e"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "106be9dec33bad585aba44e6c7544efe27d9c8788e75ffd1efc56f7a2fe9850fb3a6f0c5ad0b2b54876e67cff8979c5a6e27622c2ff4e501f71f420b2de3b300"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "go.mod",
+      "fileTypes": [
+        "OTHER"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "NONE"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-fixture-main.go",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "189ec3717c06221ea42f0b905f2a228546f9d3fb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1b73bfc07613aefa742bababbf7724da3a214cd476fc5310b3dad1a674896a12"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a7103a5f081a523bd3709b85fda7ab2be3cdf43177d3ffc2238ae7e002dd3e57379f22e4c32945a60952b44a145f6b463ba4519ecbf6c20a89a05efa9be7c8e8"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "main.go",
+      "fileTypes": [
+        "SOURCE"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "NONE"
+      ]
+    }
+  ],
+  "name": "bom-golden-directory-gomodule",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-example.com-bom-golden-fixture",
+      "checksums": [],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NONE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:golang/example.com/bom-golden-fixture",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": true,
+      "hasFiles": [
+        "SPDXRef-File-example.com-bom-golden-fixture-LICENSE",
+        "SPDXRef-File-example.com-bom-golden-fixture-README.md",
+        "SPDXRef-File-example.com-bom-golden-fixture-go.mod",
+        "SPDXRef-File-example.com-bom-golden-fixture-main.go"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoFromFiles": [
+        "Apache-2.0"
+      ],
+      "name": "example.com/bom-golden-fixture",
+      "packageVerificationCode": {
+        "packageVerificationCodeValue": "8001993c4615904b9db6a8ee09687e42126c9949"
+      },
+      "versionInfo": ""
+    },
+    {
+      "SPDXID": "SPDXRef-Package-stdlib-1.21",
+      "checksums": [],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NONE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:golang/stdlib@1.21",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseDeclared": "BSD-3-Clause",
+      "name": "stdlib",
+      "primaryPackagePurpose": "LIBRARY",
+      "versionInfo": "1.21"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-fixture-LICENSE",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-fixture"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-fixture-README.md",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-fixture"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-fixture-go.mod",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-fixture"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-fixture-main.go",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-fixture"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-stdlib-1.21",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-fixture"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}

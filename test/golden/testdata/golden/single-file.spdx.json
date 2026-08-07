@@ -1,0 +1,47 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2026-01-01T00:00:00Z",
+    "creators": [
+      "Tool: bom-golden-fixture"
+    ],
+    "licenseListVersion": "3.28"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentDescribes": [
+    "SPDXRef-File-testdata-files-hello.txt"
+  ],
+  "documentNamespace": "https://sbom.k8s.io/golden/single-file",
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-testdata-files-hello.txt",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "148eeec1ca3bac79881d9fa3b90cecb3a70d4afc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e5f7a7ed445673057c73686cb846e0c33ff0d5701fd43bf6aff16bb39ae14de2"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "03bf82fa9b93dbcb81445a39a625f08c8bd4343fc9facdce2a7f8d09140276ad5fe471156eb1f5bc92c00ecdf44485165c66663e9e798bc24674d383a0e5fa24"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "testdata/files/hello.txt",
+      "fileTypes": [
+        "DOCUMENTATION",
+        "TEXT"
+      ],
+      "licenseInfoInFiles": [
+        ""
+      ]
+    }
+  ],
+  "name": "bom-golden-single-file",
+  "packages": [],
+  "relationships": [],
+  "spdxVersion": "SPDX-2.3"
+}
