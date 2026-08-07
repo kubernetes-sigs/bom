@@ -236,11 +236,16 @@ func namespaceFromID(id string) string {
 	if id == "" {
 		return ""
 	}
+	// The document element is written "SPDXRef-DOCUMENT" but read back
+	// as "DOCUMENT": the SPDX libraries strip the prefix from element
+	// identifiers when parsing, so both spellings reach this function.
 	u, err := url.Parse(id)
-	if err != nil || u.Scheme == "" || (u.Fragment != "" && u.Fragment != "SPDXRef-DOCUMENT") {
+	if err != nil || u.Scheme == "" ||
+		(u.Fragment != "" && u.Fragment != "SPDXRef-DOCUMENT" && u.Fragment != "DOCUMENT") {
 		return "urn:uuid:" + uuid.NewSHA1(uuid.MustParse(sbom.NamespaceUUID), []byte(id)).String()
 	}
-	return strings.Replace(id, "#SPDXRef-DOCUMENT", "", 1)
+	id = strings.Replace(id, "#SPDXRef-DOCUMENT", "", 1)
+	return strings.Replace(id, "#DOCUMENT", "", 1)
 }
 
 // spdxID returns the node identifier in the SPDXRef- form the legacy

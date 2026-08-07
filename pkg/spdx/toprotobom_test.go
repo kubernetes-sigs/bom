@@ -18,7 +18,6 @@ package spdx_test
 
 import (
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -168,15 +167,6 @@ func TestConverterGoldenClosure(t *testing.T) {
 	for _, path := range paths {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			ldoc, err := spdx.OpenDoc(path)
-			if err != nil && strings.Contains(err.Error(), "duplicate SPDXID") &&
-				strings.Contains(err.Error(), "«UUID»") {
-				// The golden scrub collapses the random UUID suffixes
-				// into a single placeholder to keep the fixtures
-				// deterministic; in this fixture that collides two
-				// generated IDs and the tag-value parser rejects the
-				// document before conversion is involved.
-				t.Skipf("fixture not parseable after golden scrubbing: %v", err)
-			}
 			require.NoError(t, err)
 
 			pb1, err := spdx.ToProtobom(ldoc)
