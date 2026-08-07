@@ -29,10 +29,17 @@ import (
 // information to a spdx package based on its content. Each analyzer is
 // written specifically for a layer type. The idea is to be able to enrich
 // common base images with more data to have the most common images covered.
+//
+// Deprecated: deep image layer analysis has no equivalent in the protobom
+// engine, which reads the package inventory from the squashed image
+// filesystem. This will be removed in a future major version.
 type ImageAnalyzer struct {
 	Analyzers map[string]ContainerLayerAnalyzer
 }
 
+// Deprecated: deep image layer analysis has no equivalent in the protobom
+// engine, which reads the package inventory from the squashed image
+// filesystem. This will be removed in a future major version.
 func NewImageAnalyzer() *ImageAnalyzer {
 	// Default options for all analyzers
 	opts := &ContainerLayerAnalyzerOptions{
@@ -77,11 +84,18 @@ func (ia *ImageAnalyzer) AnalyzeLayer(layerPath string, pkg *Package) error {
 
 // ContainerLayerAnalyzer is an interface that knows how to read a
 // known container layer and populate a SPDX package.
+//
+// Deprecated: deep image layer analysis has no equivalent in the protobom
+// engine, which reads the package inventory from the squashed image
+// filesystem. This will be removed in a future major version.
 type ContainerLayerAnalyzer interface {
 	ReadPackageData(layerPath string, pkg *Package) error
 	CanHandle(layerPath string) (bool, error)
 }
 
+// Deprecated: deep image layer analysis has no equivalent in the protobom
+// engine, which reads the package inventory from the squashed image
+// filesystem. This will be removed in a future major version.
 type ContainerLayerAnalyzerOptions struct {
 	LicenseCacheDir string
 }

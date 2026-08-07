@@ -14,6 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package v22 holds the SPDX 2.2 JSON document structures.
+//
+// Deprecated: documents are now parsed and rendered through protobom, which
+// carries its own SPDX 2.2 support. This package has no remaining consumers
+// and will be removed in a future major version.
 package v22
 
 import "sigs.k8s.io/bom/pkg/spdx/json/document"

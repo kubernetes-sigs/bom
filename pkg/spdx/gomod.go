@@ -150,12 +150,19 @@ func extractZip(data []byte, destDir string) error {
 }
 
 // NewGoModule returns a new go module from the specified path.
+//
+// Deprecated: the Go module scanner is superseded by unpack's Go decomposer,
+// which resolves dependencies through the module proxy without requiring a
+// Go toolchain. This will be removed in a future major version.
 func NewGoModuleFromPath(path string) (*GoModule, error) {
 	mod := NewGoModule()
 	mod.opts.Path = path
 	return mod, nil
 }
 
+// Deprecated: the Go module scanner is superseded by unpack's Go decomposer,
+// which resolves dependencies through the module proxy without requiring a
+// Go toolchain. This will be removed in a future major version.
 func NewGoModule() *GoModule {
 	return &GoModule{
 		opts: &GoModuleOptions{},
@@ -164,6 +171,10 @@ func NewGoModule() *GoModule {
 }
 
 // GoModule abstracts the go module data of a project.
+//
+// Deprecated: the Go module scanner is superseded by unpack's Go decomposer,
+// which resolves dependencies through the module proxy without requiring a
+// Go toolchain. This will be removed in a future major version.
 type GoModule struct {
 	impl     GoModImplementation
 	GoMod    *modfile.File
@@ -171,6 +182,9 @@ type GoModule struct {
 	Packages []*GoPackage     // maps of package download locations
 }
 
+// Deprecated: the Go module scanner is superseded by unpack's Go decomposer,
+// which resolves dependencies through the module proxy without requiring a
+// Go toolchain. This will be removed in a future major version.
 type GoModuleOptions struct {
 	Path           string // Path to the dir where go.mod resides
 	OnlyDirectDeps bool   // Only include direct dependencies from go.mod
@@ -246,6 +260,9 @@ func (pkg *GoPackage) PackageURL() string {
 	).ToString()
 }
 
+// Deprecated: the Go module scanner is superseded by unpack's Go decomposer,
+// which resolves dependencies through the module proxy without requiring a
+// Go toolchain. This will be removed in a future major version.
 type GoModImplementation interface {
 	OpenModule(*GoModuleOptions) (*modfile.File, error)
 	BuildPackageList(*modfile.File) ([]*GoPackage, error)
@@ -466,6 +483,9 @@ func (mod *GoModule) BuildFullPackageList(_ *modfile.File) (packageList []*GoPac
 	return packageList, nil
 }
 
+// Deprecated: the Go module scanner is superseded by unpack's Go decomposer,
+// which resolves dependencies through the module proxy without requiring a
+// Go toolchain. This will be removed in a future major version.
 type GoModDefaultImpl struct {
 	licenseReader *license.Reader
 }
