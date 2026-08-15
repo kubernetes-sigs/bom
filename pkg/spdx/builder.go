@@ -105,6 +105,7 @@ func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 type DocGenerateOptions struct {
 	AnalyseLayers       bool                  // A flag that controls if deep layer analysis should be performed
 	NoGitignore         bool                  // Do not read exclusions from gitignore file
+	Offline             bool                  // Do not reach the network while scanning
 	ProcessGoModules    bool                  // Analyze go.mod to include data about packages
 	OnlyDirectDeps      bool                  // Only include direct dependencies from go.mod
 	ScanLicenses        bool                  // Try to look into files to determine their license

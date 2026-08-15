@@ -38,6 +38,7 @@ type generateOptions struct {
 	noGitignore    bool
 	noGoModules    bool
 	noGoTransient  bool
+	offline        bool
 	scanImages     bool
 	name           string // Name to use in the document
 	namespace      string
@@ -239,6 +240,14 @@ completed by a later stage in your CI/CD pipeline. See the
 		"don't include transient go dependencies, only direct deps from go.mod",
 	)
 
+	generateCmd.PersistentFlags().BoolVar(
+		&genOpts.offline,
+		"offline",
+		false,
+		"don't reach the network: dependency data is read from local files only, "+
+			"which leaves dependency licenses and the edges between dependencies unresolved",
+	)
+
 	generateCmd.PersistentFlags().StringVarP(
 		&genOpts.namespace,
 		"namespace",
@@ -370,6 +379,7 @@ func generateBOM(opts *generateOptions) error {
 		AnalyseLayers:      opts.analyze,
 		ProcessGoModules:   !opts.noGoModules,
 		NoGitignore:        opts.noGitignore,
+		Offline:            opts.offline,
 		OnlyDirectDeps:     opts.noGoTransient,
 		ConfigFile:         opts.configFile,
 		License:            opts.license,
