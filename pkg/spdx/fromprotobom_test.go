@@ -299,3 +299,29 @@ func TestToSPDXNilGuards(t *testing.T) {
 	require.Empty(t, doc.Packages)
 	require.Empty(t, doc.Files)
 }
+
+// TestFromProtobomSetsFileName pins that converted files carry a file
+// name. Validation matches files on it, so a document whose files have
+// only a Name validates nothing.
+func TestFromProtobomSetsFileName(t *testing.T) {
+	pdoc := &sbom.Document{
+		Metadata: &sbom.Metadata{Id: "https://sbom.k8s.io/test/filename"},
+		NodeList: &sbom.NodeList{
+			Nodes: []*sbom.Node{
+				{Id: "File-both", Type: sbom.Node_FILE, Name: "a.txt", FileName: "a.txt"},
+				{Id: "File-name-only", Type: sbom.Node_FILE, Name: "b.txt"},
+			},
+			RootElements: []string{"File-both", "File-name-only"},
+		},
+	}
+
+	doc, err := spdx.FromProtobom(pdoc)
+	require.NoError(t, err)
+	require.Len(t, doc.Files, 2)
+
+	for id, file := range doc.Files {
+		require.NotEmpty(t, file.FileName, "file %q has no file name", id)
+		require.Equal(t, file.Name, file.FileName,
+			"a node carrying only a name falls back to it")
+	}
+}

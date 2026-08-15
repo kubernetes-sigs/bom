@@ -303,6 +303,12 @@ func nodeToFile(node *sbom.Node) *File {
 	f := NewFile()
 	f.SetSPDXID(spdxID(node.GetId()))
 	f.Name = node.GetName()
+	// Validation matches files on their file name, so a node that
+	// carries only one of the two still yields a usable file.
+	f.FileName = node.GetFileName()
+	if f.FileName == "" {
+		f.FileName = node.GetName()
+	}
 	f.FileType = node.GetFileTypes()
 	f.LicenseConcluded = node.GetLicenseConcluded()
 	// The legacy model stores the license info found in the file as a
