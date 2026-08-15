@@ -92,6 +92,14 @@ type Options struct {
 	// .gitignore.
 	IgnorePatterns []string
 
+	// NoGitignore stops the directory scan from reading the .gitignore
+	// files it finds. Patterns in IgnorePatterns still apply.
+	NoGitignore bool
+
+	// OnlyDirectDeps keeps just the dependencies a codebase declares
+	// itself, dropping the rest of the resolved dependency graph.
+	OnlyDirectDeps bool
+
 	// Offline disables all network access during decomposition. The
 	// dependency data that needs the network (transitive Go module
 	// graphs, license lookups) degrades to what the local sources

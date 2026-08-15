@@ -158,7 +158,44 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 			merged.Add(nl)
 		}
 	}
+	if merged != nil && opts.OnlyDirectDeps {
+		keepDirectDependencies(merged)
+	}
 	return merged, nil
+}
+
+// keepDirectDependencies drops every node the codebases do not reach in
+// a single step. unpack resolves the whole dependency graph, while the
+// legacy generator could be asked for just what a codebase declares
+// itself; this trims the former to the latter.
+func keepDirectDependencies(nl *sbom.NodeList) {
+	// Expansion is measured from the roots as they were, so a direct
+	// dependency does not go on to pull in its own.
+	roots := map[string]struct{}{}
+	for _, id := range nl.GetRootElements() {
+		roots[id] = struct{}{}
+	}
+
+	keep := map[string]struct{}{}
+	for id := range roots {
+		keep[id] = struct{}{}
+	}
+	for _, edge := range nl.GetEdges() {
+		if _, ok := roots[edge.GetFrom()]; !ok {
+			continue
+		}
+		for _, to := range edge.GetTo() {
+			keep[to] = struct{}{}
+		}
+	}
+
+	var remove []string
+	for _, node := range nl.GetNodes() {
+		if _, ok := keep[node.GetId()]; !ok {
+			remove = append(remove, node.GetId())
+		}
+	}
+	nl.RemoveNodes(remove)
 }
 
 // assignCodebaseIDs replaces the random identifiers unpack assigns to
@@ -184,13 +221,17 @@ func assignCodebaseIDs(nl *sbom.NodeList) {
 // and each file's classified license, identified with legacy-style
 // IDs and sorted for deterministic output.
 func indexFiles(dir, prefix string, opts *Options) (*sbom.NodeList, error) {
-	fsd, err := filesystem.New(
+	fsopts := []fsoptions.Function{
 		fsoptions.WithAlgorithms([]intoto.HashAlgorithm{
 			intoto.AlgorithmSHA1, intoto.AlgorithmSHA256, intoto.AlgorithmSHA512,
 		}),
 		fsoptions.WithIgnorePatterns(opts.IgnorePatterns),
 		fsoptions.WithFileProcessor(licenseProcessorID),
-	)
+	}
+	if opts.NoGitignore {
+		fsopts = append(fsopts, fsoptions.WithNoGitIgnore())
+	}
+	fsd, err := filesystem.New(fsopts...)
 	if err != nil {
 		return nil, fmt.Errorf("creating filesystem indexer: %w", err)
 	}

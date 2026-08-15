@@ -61,6 +61,8 @@ func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptio
 		Archives:       genopts.Archives,
 		Files:          genopts.Files,
 		IgnorePatterns: genopts.IgnorePatterns,
+		NoGitignore:    genopts.NoGitignore,
+		OnlyDirectDeps: genopts.OnlyDirectDeps,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("generating document: %w", err)

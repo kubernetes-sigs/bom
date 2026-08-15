@@ -123,6 +123,8 @@ completed by a later stage in your CI/CD pipeline. See the
 		SilenceErrors:     true,
 		PersistentPreRunE: initLogging,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			warnRetiredFlags(cmd)
+
 			for i, arg := range args {
 				if !helpers.Exists(arg) {
 					continue
@@ -314,7 +316,38 @@ completed by a later stage in your CI/CD pipeline. See the
 		}
 	}
 
+	// Flags describing choices the generation engine no longer offers.
+	// They are still accepted so existing invocations keep working.
+	for _, name := range retiredFlags {
+		if err := generateCmd.PersistentFlags().MarkHidden(name); err != nil {
+			logrus.Debugf("hiding %s: %v", name, err)
+		}
+	}
+
 	parent.AddCommand(generateCmd)
+}
+
+// retiredFlags name options the generation engine no longer honors.
+// Scanning images and resolving a codebase's dependencies are now part
+// of every run, deep image layer analysis has no equivalent, and the
+// document license was never applied. They stay accepted, and hidden,
+// so existing invocations keep working.
+var retiredFlags = []string{"license", "no-gomod", "scan-images", "analyze-images"}
+
+// warnRetiredFlags tells the caller when they asked for something that
+// no longer has an effect, rather than silently ignoring it.
+//
+// analyze-images is left out: the document builder warns about it
+// already, which also reaches callers using the package directly.
+func warnRetiredFlags(cmd *cobra.Command) {
+	for _, name := range retiredFlags {
+		if name == "analyze-images" {
+			continue
+		}
+		if cmd.Flags().Changed(name) {
+			logrus.Warnf("--%s is no longer supported and has no effect", name)
+		}
+	}
 }
 
 func generateBOM(opts *generateOptions) error {
@@ -336,7 +369,8 @@ func generateBOM(opts *generateOptions) error {
 		Namespace:          opts.namespace,
 		AnalyseLayers:      opts.analyze,
 		ProcessGoModules:   !opts.noGoModules,
-		OnlyDirectDeps:     !opts.noGoTransient,
+		NoGitignore:        opts.noGitignore,
+		OnlyDirectDeps:     opts.noGoTransient,
 		ConfigFile:         opts.configFile,
 		License:            opts.license,
 		LicenseListVersion: opts.licenseListVer,

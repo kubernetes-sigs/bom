@@ -172,3 +172,41 @@ func TestDirectoriesConvert(t *testing.T) {
 		}
 	}
 }
+
+func TestDirectoriesNoGitignore(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".gitignore"),
+		[]byte("secret.txt\n"), os.FileMode(0o644)))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "secret.txt"),
+		[]byte("hidden"), os.FileMode(0o644)))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "keep.txt"),
+		[]byte("kept"), os.FileMode(0o644)))
+
+	names := func(doc *sbom.Document) []string {
+		var out []string
+		for _, node := range doc.GetNodeList().GetNodes() {
+			if node.GetType() == sbom.Node_FILE {
+				out = append(out, node.GetName())
+			}
+		}
+		return out
+	}
+
+	// By default the directory's own .gitignore is honored.
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Directories: []string{dir},
+		Offline:     true,
+	})
+	require.NoError(t, err)
+	require.NotContains(t, names(doc), "secret.txt")
+
+	// With NoGitignore it is not read, and the file is indexed.
+	doc, err = generate.Document(t.Context(), &generate.Options{
+		Directories: []string{dir},
+		NoGitignore: true,
+		Offline:     true,
+	})
+	require.NoError(t, err)
+	require.Contains(t, names(doc), "secret.txt")
+	require.Contains(t, names(doc), "keep.txt")
+}

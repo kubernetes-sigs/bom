@@ -81,6 +81,14 @@ type GenerateOptions struct {
 	// .gitignore.
 	IgnorePatterns []string
 
+	// NoGitignore stops the directory scan from reading the .gitignore
+	// files it finds. Patterns in IgnorePatterns still apply.
+	NoGitignore bool
+
+	// OnlyDirectDeps keeps just the dependencies a codebase declares
+	// itself, dropping the rest of the resolved dependency graph.
+	OnlyDirectDeps bool
+
 	// Offline disables all network access during generation. Data
 	// that needs the network, such as transitive Go module graphs
 	// and license lookups, degrades to what the local sources
@@ -104,6 +112,8 @@ func Generate(ctx context.Context, opts *GenerateOptions) (*sbom.Document, error
 		Archives:       opts.Archives,
 		Files:          opts.Files,
 		IgnorePatterns: opts.IgnorePatterns,
+		NoGitignore:    opts.NoGitignore,
+		OnlyDirectDeps: opts.OnlyDirectDeps,
 		Offline:        opts.Offline,
 	})
 }
