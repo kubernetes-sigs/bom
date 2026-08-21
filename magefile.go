@@ -38,7 +38,6 @@ var Default = Verify
 const (
 	binDir    = "bin"
 	scriptDir = "scripts"
-	oldLicErr = "latest SPDX license version not embedded"
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
@@ -213,6 +212,28 @@ func Clean() {
 	}
 
 	fmt.Println("Done.")
+}
+
+// CheckEmbeddedData used to verify that the embedded SPDX license list
+// was the latest version available. The license list is no longer
+// embedded in the binary, so there is nothing to check.
+//
+// Deprecated: this is a no-op kept only so CI configured to run it
+// keeps passing; it will be removed once that configuration is updated.
+func CheckEmbeddedData() error {
+	fmt.Println("The SPDX license list is no longer embedded in the binary, nothing to check.")
+	return nil
+}
+
+// UpdateEmbeddedData used to refresh the SPDX license list embedded in
+// the binary. The license list is no longer embedded, so there is
+// nothing to update.
+//
+// Deprecated: this is a no-op kept only so CI configured to run it
+// keeps passing; it will be removed once that configuration is updated.
+func UpdateEmbeddedData() error {
+	fmt.Println("The SPDX license list is no longer embedded in the binary, nothing to update.")
+	return nil
 }
 
 // getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
