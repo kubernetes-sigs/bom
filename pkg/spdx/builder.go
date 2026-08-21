@@ -95,42 +95,17 @@ func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 		return nil, fmt.Errorf("checking build options: %w", err)
 	}
 
-	spdx, err := db.impl.CreateSPDXClient(genopts, db.options)
+	doc, err := db.impl.GenerateDocument(genopts)
 	if err != nil {
-		return nil, errors.New("generating spdx client")
+		return nil, err
 	}
-
-	doc, err := db.impl.CreateDocument(genopts, spdx)
-	if err != nil {
-		return nil, fmt.Errorf("creating spdx document: %w", err)
-	}
-
-	if err := db.impl.ScanDirectories(genopts, spdx, doc); err != nil {
-		return nil, fmt.Errorf("scanning directories: %w", err)
-	}
-
-	if err := db.impl.ScanImages(genopts, spdx, doc); err != nil {
-		return nil, fmt.Errorf("scanning images: %w", err)
-	}
-
-	if err := db.impl.ScanImageArchives(genopts, spdx, doc); err != nil {
-		return nil, fmt.Errorf("scanning image archives: %w", err)
-	}
-
-	if err := db.impl.ScanArchives(genopts, spdx, doc); err != nil {
-		return nil, fmt.Errorf("scanning archives: %w", err)
-	}
-
-	if err := db.impl.ScanFiles(genopts, spdx, doc); err != nil {
-		return nil, fmt.Errorf("scanning files: %w", err)
-	}
-
 	return doc, nil
 }
 
 type DocGenerateOptions struct {
 	AnalyseLayers       bool                  // A flag that controls if deep layer analysis should be performed
 	NoGitignore         bool                  // Do not read exclusions from gitignore file
+	Offline             bool                  // Do not reach the network while scanning
 	ProcessGoModules    bool                  // Analyze go.mod to include data about packages
 	OnlyDirectDeps      bool                  // Only include direct dependencies from go.mod
 	ScanLicenses        bool                  // Try to look into files to determine their license
@@ -180,13 +155,4 @@ type DocBuilderOptions struct {
 
 var defaultDocBuilderOpts = DocBuilderOptions{
 	WorkDir: filepath.Join(os.TempDir(), "spdx-docbuilder"),
-}
-
-// TODO: Move this to https://github.com/kubernetes-sigs/release-utils/blob/main/util/common.go#L485
-func pathIsOfFile(path string) (bool, error) {
-	fInfo, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-	return !fInfo.IsDir(), nil
 }

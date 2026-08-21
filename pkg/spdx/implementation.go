@@ -47,7 +47,9 @@ import (
 	"sigs.k8s.io/release-utils/helpers"
 
 	"sigs.k8s.io/bom/pkg/license"
-	"sigs.k8s.io/bom/pkg/osinfo"
+	// The image layer scan below is deprecated along with this package;
+	// both are removed together in a future major version.
+	"sigs.k8s.io/bom/pkg/osinfo" //nolint:staticcheck // deprecated caller of a deprecated package
 )
 
 //counterfeiter:generate . spdxImplementation
@@ -369,6 +371,9 @@ func fullDigest(tag name.Tag, hash v1.Hash) (name.Digest, error) {
 	return dig, nil
 }
 
+// Deprecated: superseded by the protobom-native generation engine. Use
+// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
+// protobom document. This will be removed in a future major version.
 func PullImageToArchive(referenceString, path string) error {
 	ref, err := name.ParseReference(referenceString)
 	if err != nil {

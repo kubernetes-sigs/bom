@@ -1,0 +1,61 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: bom-golden-image-archive
+DocumentNamespace: https://sbom.k8s.io/golden/image-archive
+Creator: Person: Kubernetes Release Managers (release-managers@kubernetes.io)
+Creator: Organization: Kubernetes Release Engineering
+Creator: Tool: bom-golden-fixture
+LicenseListVersion: 3.28
+Created: 2026-01-01T00:00:00Z
+
+PackageName: base-files
+SPDXID: SPDXRef-«UUID»
+PackageDownloadLocation: http://ftp.debian.org/debian/pool/main/b/base-files/base-files_12.4+deb12u5_amd64.deb
+FilesAnalyzed: false
+PackageSupplier: Person: Santiago Vila (sanvila@debian.org)
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: 12.4+deb12u5
+PrimaryPackagePurpose: LIBRARY
+ExternalRef: PACKAGE-MANAGER purl pkg:deb/debian/base-files@12.4%2Bdeb12u5?arch=amd64&distro=debian-12
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: libssl3
+SPDXID: SPDXRef-«UUID»
+PackageDownloadLocation: http://ftp.debian.org/debian/pool/main/o/openssl/libssl3_3.0.11-1~deb12u2_amd64.deb
+FilesAnalyzed: false
+PackageSupplier: Organization: Debian OpenSSL Team (pkg-openssl-devel@alioth-lists.debian.net)
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: 3.0.11-1~deb12u2
+PackageHomePage: https://www.openssl.org/
+PrimaryPackagePurpose: LIBRARY
+ExternalRef: PACKAGE-MANAGER purl pkg:deb/debian/libssl3@3.0.11-1~deb12u2?arch=amd64&distro=debian-12&upstream=openssl
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: registry.k8s.io/bom-golden:v1.0.0
+SPDXID: SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0
+PackageChecksum: SHA256: f6af0a1fc8e7037735ac6829e20d7cbce927a369c03da03c214237f7beceecf2
+PackageDownloadLocation: NONE
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: v1.0.0
+PrimaryPackagePurpose: CONTAINER
+ExternalRef: PACKAGE-MANAGER purl pkg:oci/bom-golden@sha256%3Af6af0a1fc8e7037735ac6829e20d7cbce927a369c03da03c214237f7beceecf2?arch=amd64&repository_url=registry.k8s.io%2Fbom-golden&tag=v1.0.0
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: sha256:ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd
+SPDXID: SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0-sha256-ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd
+PackageChecksum: SHA256: ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd
+PackageDownloadLocation: NONE
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0
+Relationship: SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0 CONTAINS SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0-sha256-ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd
+Relationship: SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0 CONTAINS SPDXRef-«UUID»
+Relationship: SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0 CONTAINS SPDXRef-«UUID»

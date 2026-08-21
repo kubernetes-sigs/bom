@@ -22,55 +22,59 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/carabiner-dev/unpack/filesystem/processors"
+	unpacklicense "github.com/carabiner-dev/unpack/license"
 	licenseclassifier "github.com/google/licenseclassifier/v2"
+	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/sirupsen/logrus"
 )
 
-// ReaderDefaultImpl the default license reader imlementation, uses
-// Google's cicense classifier.
-type ReaderDefaultImpl struct {
-	lc      *licenseclassifier.Classifier
-	catalog *Catalog
+// ReaderDefaultImpl is the default license reader implementation. It
+// classifies files with the license scanner from
+// github.com/carabiner-dev/unpack, which carries its own embedded corpus
+// of license texts, so no license list needs to be downloaded or written
+// to disk to recognize a license.
+//
+// Licenses returned by this implementation carry their SPDX identifier
+// but none of the metadata published in the SPDX license list: the
+// classifier reports which license a file holds, not what that license
+// says. Use a Catalog to look up the full record for an identifier.
+type ReaderDefaultImpl struct{}
+
+// classify runs a single file through the license scanner and returns
+// the SPDX identifier of the license it holds, empty when the file
+// matches none.
+func classify(path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("resolving %q: %w", path, err)
+	}
+	// The scanner reads FileName from the filesystem it is handed.
+	node := &sbom.Node{FileName: filepath.Base(abs)}
+	if err := processors.NewLicenseScanner().Process(
+		nil, os.DirFS(filepath.Dir(abs)), node,
+	); err != nil {
+		return "", fmt.Errorf("classifying %q: %w", path, err)
+	}
+	if licenses := node.GetLicenses(); len(licenses) > 0 {
+		return licenses[0], nil
+	}
+	return "", nil
 }
 
 // ClassifyFile takes a file path and returns the most probable license tag.
+//
+// The scanner reports the single best match, so no additional tags are
+// ever returned.
 func (d *ReaderDefaultImpl) ClassifyFile(path string) (licenseTag string, moreTags []string, err error) {
-	file, err := os.Open(path)
+	licenseTag, err = classify(path)
 	if err != nil {
-		return licenseTag, nil, fmt.Errorf("opening file for analysis: %w", err)
+		return "", nil, err
 	}
-	defer file.Close()
-
-	// Get the classsification
-	res, err := d.Classifier().MatchFrom(file)
-	if res.Matches.Len() == 0 {
+	if licenseTag == "" {
 		logrus.Debugf("File does not match a known license: %s", path)
-		return "", moreTags, nil
 	}
-	var highestConf float64
-	moreTags = []string{}
-	allTags := map[string]struct{}{}
-	for _, match := range res.Matches {
-		// As of v2.0.0, the license classifier returns "Copyright"
-		// as one of the license tags. If we let it go the license module
-		// will ignore it but it will write it to the debug output.
-		// So we simply skip it.
-		if match.Name == "Copyright" {
-			continue
-		}
-		if match.Confidence > highestConf {
-			highestConf = match.Confidence
-			licenseTag = match.Name
-		}
-		allTags[match.Name] = struct{}{}
-	}
-
-	for t := range allTags {
-		if t != licenseTag {
-			moreTags = append(moreTags, t)
-		}
-	}
-	return licenseTag, moreTags, nil
+	return licenseTag, []string{}, nil
 }
 
 // ClassifyLicenseFiles takes a list of paths and tries to find return all licenses found in it.
@@ -88,37 +92,38 @@ func (d *ReaderDefaultImpl) ClassifyLicenseFiles(paths []string) (
 			unrecognizedPaths = append(unrecognizedPaths, f)
 			continue
 		}
-		// Get the license corresponding to the ID label
-		license := d.catalog.GetLicense(label)
-		if license == nil {
-			logrus.Debugf("Got an unknown license label from classifier: %s", label)
-			unrecognizedPaths = append(unrecognizedPaths, f)
-			continue
-		}
 		licenseText, err := os.ReadFile(f)
 		if err != nil {
 			return nil, nil, fmt.Errorf("reading license text: %w", err)
 		}
 		// Apend to the return results
-		licenseList = append(licenseList, &ClassifyResult{f, string(licenseText), license})
+		licenseList = append(licenseList, &ClassifyResult{f, string(licenseText), &License{
+			LicenseID: label,
+			Name:      label,
+		}})
 	}
 	if len(paths) != len(licenseList) {
 		logrus.Debugf(
-			"License classifier recognized %d/%d (%d%%) of the license files",
-			len(licenseList), len(paths), (len(licenseList)/len(paths))*100,
+			"License classifier recognized %d/%d of the license files",
+			len(licenseList), len(paths),
 		)
 	}
 	return licenseList, unrecognizedPaths, nil
 }
 
-// LicenseFromLabel return a spdx license from its label.
+// LicenseFromLabel returns a license from its label, normalizing aliases
+// and URLs to their SPDX identifier. Labels that normalize to nothing
+// recognizable are returned as given.
 func (d *ReaderDefaultImpl) LicenseFromLabel(label string) (license *License) {
-	return d.catalog.GetLicense(label)
+	if label == "" {
+		return nil
+	}
+	id := unpacklicense.Normalize(label, "")
+	return &License{LicenseID: id, Name: id}
 }
 
 // LicenseFromFile a file path and returns its license.
 func (d *ReaderDefaultImpl) LicenseFromFile(path string) (license *License, err error) {
-	// Run the files through the clasifier
 	label, _, err := d.ClassifyFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("classifying file: %w", err)
@@ -129,14 +134,7 @@ func (d *ReaderDefaultImpl) LicenseFromFile(path string) (license *License, err 
 		return nil, nil
 	}
 
-	// Get the license corresponding to the ID label
-	license = d.catalog.GetLicense(label)
-	if license == nil {
-		logrus.Debugf("ID returned by classifier does not correspond to a valid license tag: %s", label)
-		return nil, nil
-	}
-
-	return license, nil
+	return &License{LicenseID: label, Name: label}, nil
 }
 
 // FindLicenseFiles will scan a directory and return files that may be licenses.
@@ -171,49 +169,31 @@ func (d *ReaderDefaultImpl) FindLicenseFiles(path string) ([]string, error) {
 	return licenseList, nil
 }
 
-// Initialize checks the options and creates the needed objects.
+// Initialize checks the options. The scanner needs no setup: its license
+// corpus is embedded, so nothing is downloaded or written to disk.
 func (d *ReaderDefaultImpl) Initialize(opts *ReaderOptions) error {
-	// Validate our options before startin
 	if err := opts.Validate(); err != nil {
 		return fmt.Errorf("validating the license reader options: %w", err)
-	}
-
-	// Create the implementation's SPDX object
-	catalogOpts := DefaultCatalogOpts
-	catalogOpts.CacheDir = opts.CachePath()
-	catalogOpts.Version = opts.LicenseListVersion
-
-	catalog, err := NewCatalogWithOptions(catalogOpts)
-	if err != nil {
-		return fmt.Errorf("creating SPDX object: %w", err)
-	}
-	d.catalog = catalog
-
-	if err := d.catalog.LoadLicenses(); err != nil {
-		return fmt.Errorf("loading licenses: %w", err)
-	}
-
-	logrus.Infof("Writing license data to %s", opts.CachePath())
-
-	// Write the licenses to disk as the classifier will need them
-	if err := catalog.WriteLicensesAsText(opts.LicensesPath()); err != nil {
-		return fmt.Errorf("writing license data to disk: %w", err)
-	}
-
-	// Create the implementation's classifier
-	d.lc = licenseclassifier.NewClassifier(opts.ConfidenceThreshold)
-	if err := d.lc.LoadLicenses(opts.LicensesPath()); err != nil {
-		return fmt.Errorf("loading licenses at init: %w", err)
 	}
 	return nil
 }
 
 // Classifier returns the license classifier.
+//
+// Deprecated: classification is performed by the license scanner in
+// github.com/carabiner-dev/unpack, which does not expose its classifier.
+// This method always returns nil and will be removed in a future major
+// version.
 func (d *ReaderDefaultImpl) Classifier() *licenseclassifier.Classifier {
-	return d.lc
+	return nil
 }
 
-// SPDX returns the reader's SPDX object.
+// Catalog returns the reader's SPDX object.
+//
+// Deprecated: the reader no longer builds a catalog to classify files.
+// Build one with NewCatalogWithOptions if you need the SPDX license list.
+// This method always returns nil and will be removed in a future major
+// version.
 func (d *ReaderDefaultImpl) Catalog() *Catalog {
-	return d.catalog
+	return nil
 }

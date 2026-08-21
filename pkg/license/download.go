@@ -20,7 +20,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/sha256"
-	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,11 +40,15 @@ const (
 	LicenseListFilename = "licenses.json"
 	BaseReleaseURL      = "https://github.com/spdx/license-list-data/archive/refs/tags/"
 	LatestReleaseURL    = "https://api.github.com/repos/spdx/license-list-data/releases/latest"
-	EmbeddedDataDir     = "pkg/license/data/"
-)
 
-//go:embed data
-var f embed.FS
+	// EmbeddedDataDir was the location of the license list bundled into
+	// the binary.
+	//
+	// Deprecated: the license list is no longer embedded; licenses are
+	// recognized with the scanner's own corpus and the list is fetched
+	// on demand. This will be removed in a future major version.
+	EmbeddedDataDir = "pkg/license/data/"
+)
 
 // NewDownloader returns a downloader with the default options.
 func NewDownloader() (*Downloader, error) {
@@ -246,11 +249,6 @@ func (d *Downloader) DownloadLicenseListToFile(tag, path string) (err error) {
 }
 
 func (ddi *DefaultDownloaderImpl) DownloadLicenseArchive(tag string) (zipData []byte, err error) {
-	if tag == DefaultCatalogOpts.Version {
-		logrus.Infof("Using embedded %s license list", DefaultCatalogOpts.Version)
-		return f.ReadFile(fmt.Sprintf("data/license-list-%s.zip", tag))
-	}
-
 	link := BaseReleaseURL + tag + ".zip"
 	if ddi.Options.EnableCache {
 		zipData, err = ddi.getCachedData(link)

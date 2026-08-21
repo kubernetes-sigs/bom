@@ -17,34 +17,25 @@ limitations under the License.
 package spdx
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/blang/semver/v4"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/yaml"
 
+	"sigs.k8s.io/bom/internal/generate"
 	"sigs.k8s.io/bom/pkg/license"
 )
 
 type DocBuilderImplementation interface {
 	WriteDoc(*Document, string) error
 	ReadYamlConfiguration(string, *DocGenerateOptions) error
-	CreateSPDXClient(*DocGenerateOptions, *DocBuilderOptions) (*SPDX, error)
 	ValidateOptions(*DocGenerateOptions) error
-
-	// Document generation functions
-	CreateDocument(*DocGenerateOptions, *SPDX) (*Document, error)
-	ScanDirectories(*DocGenerateOptions, *SPDX, *Document) error
-	ScanImages(*DocGenerateOptions, *SPDX, *Document) error
-	ScanImageArchives(*DocGenerateOptions, *SPDX, *Document) error
-	ScanArchives(*DocGenerateOptions, *SPDX, *Document) error
-	ScanFiles(*DocGenerateOptions, *SPDX, *Document) error
+	GenerateDocument(*DocGenerateOptions) (*Document, error)
 }
 
 // defaultDocBuilderImpl is the default implementation for the
@@ -53,164 +44,53 @@ type defaultDocBuilderImpl struct {
 	format Format
 }
 
-func (builder *defaultDocBuilderImpl) CreateDocument(genopts *DocGenerateOptions, _ *SPDX) (*Document, error) {
-	// Create the new document
-	doc := NewDocument()
-	doc.Name = genopts.Name
-	// Use the license list from the embedded catalog
+// GenerateDocument runs the protobom-native generation engine over the
+// requested artifacts and converts the result to the legacy model.
+func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptions) (*Document, error) {
+	if genopts.AnalyseLayers {
+		logrus.Warn("Deep image layer analysis is no longer supported, ignoring AnalyseLayers")
+	}
+
+	pdoc, err := generate.Document(context.Background(), &generate.Options{
+		Name:           genopts.Name,
+		Namespace:      genopts.Namespace,
+		CreatorPerson:  genopts.CreatorPerson,
+		Directories:    genopts.Directories,
+		Images:         genopts.Images,
+		ImageArchives:  genopts.Tarballs,
+		Archives:       genopts.Archives,
+		Files:          genopts.Files,
+		IgnorePatterns: genopts.IgnorePatterns,
+		NoGitignore:    genopts.NoGitignore,
+		OnlyDirectDeps: genopts.OnlyDirectDeps,
+		Offline:        genopts.Offline,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("generating document: %w", err)
+	}
+
+	doc, err := FromProtobom(pdoc)
+	if err != nil {
+		return nil, fmt.Errorf("converting to the legacy model: %w", err)
+	}
+
+	// Fill in the document fields the protobom metadata does not
+	// carry. The license list version comes from the embedded catalog
+	// unless one was specified, trimmed to major.minor.
 	ver := strings.TrimPrefix(license.DefaultCatalogOpts.Version, "v")
-	// ... unless there was one sepcified in the options
 	if genopts.LicenseListVersion != "" {
 		ver = strings.TrimPrefix(genopts.LicenseListVersion, "v")
 	}
-
-	// Trim the patch part of the license version
 	v, err := semver.New(ver)
 	if err != nil {
 		return nil, fmt.Errorf("parsing license list semver string %q: %w", ver, err)
 	}
 	doc.LicenseListVersion = fmt.Sprintf("%d.%d", v.Major, v.Minor)
-
-	// If we do not have a namespace, we generate one under the public SPDX
-	// URL as defined in the spec.
-	// (ref https://spdx.github.io/spdx-spec/document-creation-information/#65-spdx-document-namespace-field)
-	doc.Namespace = genopts.Namespace
-	if genopts.Namespace == "" {
-		doc.Namespace = "https://spdx.org/spdxdocs/k8s-releng-bom-" + uuid.NewString()
-	}
-
-	doc.Creator.Person = genopts.CreatorPerson
 	doc.ExternalDocRefs = genopts.ExternalDocumentRef
+	// The organization credit is fixed in the legacy model; the engine
+	// records only the creator person and the tool.
+	doc.Creator.Organization = "Kubernetes Release Engineering"
 	return doc, nil
-}
-
-func (builder *defaultDocBuilderImpl) CreateSPDXClient(genopts *DocGenerateOptions, opts *DocBuilderOptions) (*SPDX, error) {
-	spdx := NewSPDX()
-	if len(genopts.IgnorePatterns) > 0 {
-		spdx.Options().IgnorePatterns = genopts.IgnorePatterns
-	}
-	spdx.Options().AnalyzeLayers = genopts.AnalyseLayers
-	spdx.Options().ProcessGoModules = genopts.ProcessGoModules
-	spdx.Options().ScanImages = genopts.ScanImages
-	spdx.Options().LicenseListVersion = genopts.LicenseListVersion
-
-	if !helpers.Exists(opts.WorkDir) {
-		if err := os.MkdirAll(opts.WorkDir, os.FileMode(0o755)); err != nil {
-			return nil, fmt.Errorf("creating builder worskpace dir: %w", err)
-		}
-	}
-	return spdx, nil
-}
-
-func (builder *defaultDocBuilderImpl) ScanDirectories(genopts *DocGenerateOptions, spdx *SPDX, doc *Document) error {
-	for _, dirPattern := range genopts.Directories {
-		matches, err := filepath.Glob(dirPattern)
-		if err != nil {
-			return fmt.Errorf("globbing directory pattern: %w", err)
-		}
-		for _, dirMatch := range matches {
-			isFile, err := pathIsOfFile(dirMatch)
-			if err != nil {
-				return fmt.Errorf("stat dir: %w", err)
-			}
-			if isFile {
-				logrus.Debugf("Skipping %s because it's a file", dirMatch)
-				continue
-			}
-			logrus.Infof("Processing directory %s", dirMatch)
-			pkg, err := spdx.PackageFromDirectory(dirMatch)
-			if err != nil {
-				return fmt.Errorf("generating package from directory: %w", err)
-			}
-			doc.ensureUniqueElementID(pkg)
-			if err := doc.AddPackage(pkg); err != nil {
-				return fmt.Errorf("adding directory package to document: %w", err)
-			}
-		}
-	}
-	return nil
-}
-
-func (builder *defaultDocBuilderImpl) ScanImages(genopts *DocGenerateOptions, spdx *SPDX, doc *Document) error {
-	// Process all image references from registries
-	for _, i := range genopts.Images {
-		logrus.Infof("Processing image reference: %s", i)
-		p, err := spdx.ImageRefToPackage(i)
-		if err != nil {
-			return fmt.Errorf("generating SPDX package from image ref %s: %w", i, err)
-		}
-		doc.ensureUniqueElementID(p)
-		doc.ensureUniquePeerIDs(p.GetRelationships())
-		if err := doc.AddPackage(p); err != nil {
-			return fmt.Errorf("adding package to document: %w", err)
-		}
-	}
-	return nil
-}
-
-func (builder *defaultDocBuilderImpl) ScanImageArchives(genopts *DocGenerateOptions, spdx *SPDX, doc *Document) error {
-	// Process OCI image archives
-	for _, tb := range genopts.Tarballs {
-		logrus.Infof("Processing image archive %s", tb)
-		p, err := spdx.PackageFromImageTarball(tb)
-		if err != nil {
-			return fmt.Errorf("generating tarball package: %w", err)
-		}
-		doc.ensureUniqueElementID(p)
-		doc.ensureUniquePeerIDs(p.GetRelationships())
-		if err := doc.AddPackage(p); err != nil {
-			return fmt.Errorf("adding package to document: %w", err)
-		}
-	}
-	return nil
-}
-
-func (builder *defaultDocBuilderImpl) ScanArchives(genopts *DocGenerateOptions, spdx *SPDX, doc *Document) error {
-	// Add archive files as packages
-	for _, tf := range genopts.Archives {
-		logrus.Infof("Adding archive file as package: %s", tf)
-		p, err := spdx.PackageFromArchive(tf)
-		if err != nil {
-			return fmt.Errorf("creating spdx package from archive: %w", err)
-		}
-		doc.ensureUniqueElementID(p)
-		doc.ensureUniquePeerIDs(p.GetRelationships())
-		if err := doc.AddPackage(p); err != nil {
-			return fmt.Errorf("adding package to document: %w", err)
-		}
-	}
-	return nil
-}
-
-func (builder *defaultDocBuilderImpl) ScanFiles(genopts *DocGenerateOptions, spdx *SPDX, doc *Document) error {
-	// Process single files, not part of a package
-	for _, filePattern := range genopts.Files {
-		matches, err := filepath.Glob(filePattern)
-		if err != nil {
-			return fmt.Errorf("globing files from expression: %w", err)
-		}
-		if len(matches) == 0 {
-			logrus.Warnf("%s pattern didn't match any file", filePattern)
-		}
-		for _, filePath := range matches {
-			isFile, err := pathIsOfFile(filePath)
-			if err != nil {
-				return fmt.Errorf("stat file: %w", err)
-			}
-			if !isFile {
-				continue
-			}
-			f, err := spdx.FileFromPath(filePath)
-			if err != nil {
-				return fmt.Errorf("creating SPDX file: %w", err)
-			}
-			doc.ensureUniqueElementID(f)
-			if err := doc.AddFile(f); err != nil {
-				return fmt.Errorf("adding file to document: %w", err)
-			}
-		}
-	}
-	return nil
 }
 
 // ReadYamlConfiguration reads a yaml configuration and

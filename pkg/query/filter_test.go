@@ -20,70 +20,54 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/stretchr/testify/require"
-
-	"sigs.k8s.io/bom/pkg/spdx"
 )
 
-func testPackages() map[string]*spdx.Package {
-	pks := map[string]*spdx.Package{}
+// testDocument builds a small document: two image packages and two
+// files at the top level, with one of the packages containing a file
+// one level down.
+func testDocument() *sbom.Document {
+	nl := &sbom.NodeList{}
+
 	for i, s := range []string{"packageOne", "packageTwo"} {
-		p := spdx.NewPackage()
-		p.ID = s
-		p.Name = fmt.Sprintf("gcr.io/puerco-chainguard/images/%s:v9.0.2-buster", s)
 		dg := "sha256:4ed64c2e0857ad21c38b98345ebb5edb01791a0a10b0e9e3d9ddde185cdbd31a"
 		repo := "index.docker.io%2Flibrary"
 		if i == 1 {
 			dg = "sha256:c0d8e30ad4f13b5f26794264fe057c488c72a5112978b1c24f3940dfaf69368a"
 			repo = "gcr.io%2Fproject"
 		}
-		p.ExternalRefs = []spdx.ExternalRef{
-			{
-				Category: spdx.CatPackageManager,
-				Type:     "purl",
-				Locator: fmt.Sprintf(
+		nl.AddRootNode(&sbom.Node{
+			Id:   s,
+			Type: sbom.Node_PACKAGE,
+			Name: fmt.Sprintf("gcr.io/puerco-chainguard/images/%s:v9.0.2-buster", s),
+			Identifiers: map[int32]string{
+				int32(sbom.SoftwareIdentifierType_PURL): fmt.Sprintf(
 					"pkg:oci/%s@%s?repository_url=%s&tag=nginx", s, dg, repo,
 				),
 			},
-		}
-		pks[s] = p
+		})
 	}
-	subFile := spdx.NewFile()
-	subFile.ID = "subfile1"
-	subFile.Name = "subfile1.txt"
-	subFile.FileName = "subfile1.txt"
-	pks["packageTwo"].AddRelationship(&spdx.Relationship{
-		Type: "",
-		Peer: subFile,
-	})
-	return pks
-}
 
-func testFiles() map[string]*spdx.File {
-	files := map[string]*spdx.File{}
 	for _, s := range []string{"file1.txt", "file2.txt"} {
-		f := spdx.NewFile()
-		f.ID = s
-		f.Name = s
-		f.FileName = s
-		files[s] = f
+		nl.AddRootNode(&sbom.Node{
+			Id: s, Type: sbom.Node_FILE, Name: s, FileName: s,
+		})
 	}
-	return files
+
+	nl.Nodes = append(nl.Nodes, &sbom.Node{
+		Id: "subfile1", Type: sbom.Node_FILE,
+		Name: "subfile1.txt", FileName: "subfile1.txt",
+	})
+	nl.Edges = append(nl.Edges, &sbom.Edge{
+		Type: sbom.Edge_contains, From: "packageTwo", To: []string{"subfile1"},
+	})
+
+	return &sbom.Document{Metadata: &sbom.Metadata{}, NodeList: nl}
 }
 
 func testFilterResults() FilterResults {
-	fr := FilterResults{
-		Objects: map[string]spdx.Object{},
-	}
-
-	for _, o := range testFiles() {
-		fr.Objects[o.SPDXID()] = o
-	}
-
-	for _, o := range testPackages() {
-		fr.Objects[o.SPDXID()] = o
-	}
-	return fr
+	return (&defaultEngineImplementation{}).resultsFromDocument(testDocument())
 }
 
 func TestDepth(t *testing.T) {
@@ -92,7 +76,7 @@ func TestDepth(t *testing.T) {
 	require.NotNil(t, newResults)
 	require.Len(t, newResults.Objects, 1)
 	for id, o := range newResults.Objects {
-		require.Equal(t, o.SPDXID(), id)
+		require.Equal(t, o.GetId(), id)
 		require.Equal(t, "subfile1", id)
 	}
 
@@ -103,7 +87,7 @@ func TestDepth(t *testing.T) {
 	require.NoError(t, fr2.Error)
 	require.Len(t, fr2.Objects, 4)
 
-	// Beyond, we should not find more elemtns
+	// Beyond, we should not find more elements
 	fr3 := testFilterResults()
 	fr3.Apply(&DepthFilter{TargetDepth: 2})
 	require.NotNil(t, fr3.Objects)
@@ -139,10 +123,10 @@ func TestPurl(t *testing.T) {
 		fr := testFilterResults()
 		newResults := fr.Apply(&PurlFilter{Pattern: tc.pattern})
 		if tc.mustErr {
-			require.Error(t, newResults.Error)
+			require.Error(t, newResults.Error, tc.descr)
 		} else {
-			require.NoError(t, newResults.Error)
+			require.NoError(t, newResults.Error, tc.descr)
 		}
-		require.Len(t, newResults.Objects, tc.num)
+		require.Len(t, newResults.Objects, tc.num, tc.descr)
 	}
 }

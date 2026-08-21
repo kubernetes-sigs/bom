@@ -20,21 +20,14 @@ limitations under the License.
 package main
 
 import (
-	"archive/zip"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/magefile/mage/sh"
-	"github.com/sirupsen/logrus"
 	"github.com/uwu-tools/magex/pkg"
 
-	"sigs.k8s.io/bom/pkg/license"
-	"sigs.k8s.io/release-utils/helpers"
 	"sigs.k8s.io/release-utils/mage"
 )
 
@@ -45,7 +38,6 @@ var Default = Verify
 const (
 	binDir    = "bin"
 	scriptDir = "scripts"
-	oldLicErr = "latest SPDX license version not embedded"
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
@@ -222,6 +214,28 @@ func Clean() {
 	fmt.Println("Done.")
 }
 
+// CheckEmbeddedData used to verify that the embedded SPDX license list
+// was the latest version available. The license list is no longer
+// embedded in the binary, so there is nothing to check.
+//
+// Deprecated: this is a no-op kept only so CI configured to run it
+// keeps passing; it will be removed once that configuration is updated.
+func CheckEmbeddedData() error {
+	fmt.Println("The SPDX license list is no longer embedded in the binary, nothing to check.")
+	return nil
+}
+
+// UpdateEmbeddedData used to refresh the SPDX license list embedded in
+// the binary. The license list is no longer embedded, so there is
+// nothing to update.
+//
+// Deprecated: this is a no-op kept only so CI configured to run it
+// keeps passing; it will be removed once that configuration is updated.
+func UpdateEmbeddedData() error {
+	fmt.Println("The SPDX license list is no longer embedded in the binary, nothing to update.")
+	return nil
+}
+
 // getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
 func getVersion() string {
 	version, _ := sh.Output("git", "describe", "--tags", "--match=v*")
@@ -260,175 +274,4 @@ func getBuildDateTime() string {
 
 	date, _ := sh.Output("date", "+%Y-%m-%dT%H:%M:%SZ")
 	return date
-}
-
-// CheckEmbeddedData is a magefile-exposed function that checks that the
-// licensedata is the latest version available. If not returns oldLicErr
-func CheckEmbeddedData() error {
-	if err := checkEmbeddedDataWithTag(""); err != nil {
-		if !strings.HasPrefix(err.Error(), oldLicErr) {
-			logrus.Error("")
-			logrus.Error("Your local fork does not have the embedded data for the latest")
-			logrus.Error("version of the SPDX license list. To fix this, please run")
-			logrus.Error("the following command from a clean fork:")
-			logrus.Error("")
-			logrus.Error("  mage UpdateEmbeddedData")
-			logrus.Error("")
-			logrus.Error("and commit the results under pkg/license/data")
-		}
-		return err
-	}
-	logrus.Info("Embedded license data seems to be up to date 👍")
-	return nil
-}
-
-// checkEmbeddedDataWithTag gets a tag and ensures that the current version
-// of the SPDX license data is that version. If the tag is an empty string it
-// will check GitHub foir the latest version available
-func checkEmbeddedDataWithTag(tag string) (err error) {
-	catalog, err := license.NewCatalogWithOptions(license.DefaultCatalogOpts)
-	if err != nil {
-		return fmt.Errorf("generating license catalog")
-	}
-
-	// Get the latest SPDX license version
-	if tag == "" {
-		tag, err = catalog.Downloader.GetLatestTag()
-		if err != nil {
-			return fmt.Errorf("fetching last license list version: %w", err)
-		}
-	}
-
-	if !helpers.Exists(
-		filepath.Join(license.EmbeddedDataDir, fmt.Sprintf("license-list-%s.zip", tag)),
-	) {
-		return fmt.Errorf("%s (%s)", oldLicErr, tag)
-	}
-	return nil
-}
-
-// UpdateEmbeddedData updates the data in the license package to the
-// latest version if the SPDX license list
-func UpdateEmbeddedData() error {
-	catalog, err := license.NewCatalogWithOptions(license.DefaultCatalogOpts)
-	if err != nil {
-		return fmt.Errorf("generating license catalog")
-	}
-
-	tag, err := catalog.Downloader.GetLatestTag()
-	if err != nil {
-		return fmt.Errorf("fetching last license list version: %w", err)
-	}
-
-	if checkError := checkEmbeddedDataWithTag(tag); checkError != nil {
-		if !strings.HasPrefix(checkError.Error(), oldLicErr) {
-			return fmt.Errorf("checking latest spdx version: %w", checkError)
-		}
-	}
-
-	if helpers.Exists(license.EmbeddedDataDir) {
-		if err := os.RemoveAll(license.EmbeddedDataDir); err != nil {
-			return fmt.Errorf("removing embedded data: %w", err)
-		}
-	}
-
-	if err := os.MkdirAll(
-		filepath.Join(license.EmbeddedDataDir), os.FileMode(0o755),
-	); err != nil {
-		return fmt.Errorf("creating cached license path: %w", err)
-	}
-
-	tmpPath, err := os.CreateTemp("", "license-download-")
-	if err != nil {
-		return fmt.Errorf("creating tmp file: %w", err)
-	}
-	defer os.Remove(tmpPath.Name())
-
-	if err := catalog.Downloader.DownloadLicenseListToFile(tag, tmpPath.Name()); err != nil {
-		return fmt.Errorf("downloading licenses: %w", err)
-	}
-	// Extract the license data, to just embed the bits we care about
-	if _, err := tmpPath.Seek(0, 0); err != nil {
-		return fmt.Errorf("rewqinding file: %w", err)
-	}
-
-	i, err := os.Stat(tmpPath.Name())
-	if err != nil {
-		return fmt.Errorf("getting license zip data: %w", err)
-	}
-
-	reader, err := zip.NewReader(tmpPath, i.Size())
-	if err != nil {
-		return fmt.Errorf("creating zip reader: %w", err)
-	}
-
-	tmpdir, err := os.MkdirTemp("", "license-pack-")
-	if err != nil {
-		return fmt.Errorf("creating temp dir: %w", err)
-	}
-	if err := os.MkdirAll(
-		filepath.Join(tmpdir, "/json/details/"), fs.FileMode(0o755),
-	); err != nil {
-		return fmt.Errorf("creating license data dir: %w", err)
-	}
-	defer os.RemoveAll(tmpdir)
-
-	zipFilePath := filepath.Join(license.EmbeddedDataDir, fmt.Sprintf("license-list-%s.zip", tag))
-	zipFile, err := os.Create(zipFilePath)
-	if err != nil {
-		return fmt.Errorf("create zip file %q: %w", zipFilePath, err)
-	}
-	defer zipFile.Close()
-
-	zipWriter := zip.NewWriter(zipFile)
-
-	dirName := fmt.Sprintf("license-list-data-%s", strings.TrimPrefix(tag, "v"))
-	if err := fs.WalkDir(reader, dirName, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return fmt.Errorf("walker got error: %w", err)
-		}
-		if d.IsDir() {
-			return nil
-		}
-
-		if !strings.HasSuffix(path, "json/licenses.json") &&
-			!strings.HasPrefix(path, filepath.Join(dirName, "json/details")) {
-			return nil
-		}
-
-		logrus.Infof("writing %s", path)
-		zipFileWriter, err := zipWriter.Create(path)
-		if err != nil {
-			return fmt.Errorf("creating file in zipfile: %w", err)
-		}
-
-		bs, err := fs.ReadFile(reader, path)
-		if err != nil {
-			return fmt.Errorf("reading filelicendse file from zip: %w", err)
-		}
-
-		if _, err := zipFileWriter.Write(bs); err != nil {
-			return fmt.Errorf("error writing file %s: %w", path, err)
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("walking license filesystem: %w", err)
-	}
-	zipWriter.Close()
-
-	// patch the source to the new version
-	data, err := os.ReadFile("pkg/license/catalog.go")
-	if err != nil {
-		return fmt.Errorf("reading catalog source: %w", err)
-	}
-
-	// Here, wee patch the catalog source to hardcode the version we
-	// are embedding in the binary
-	re := regexp.MustCompile(`Version: "v\d+\.\d+\.\d+"`)
-	data = re.ReplaceAll(data, []byte(fmt.Sprintf(`Version: "%s"`, tag)))
-	if err := os.WriteFile("pkg/license/catalog.go", data, os.FileMode(0o644)); err != nil {
-		return fmt.Errorf("unable to write catalog file: %w", err)
-	}
-
-	return nil
 }

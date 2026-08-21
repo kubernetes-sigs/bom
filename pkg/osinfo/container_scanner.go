@@ -14,6 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package osinfo reads the installed-package databases of container image
+// layers.
+//
+// Deprecated: superseded by the system decomposers in
+// github.com/carabiner-dev/unpack, which read the same databases from an
+// image's squashed filesystem. bom no longer uses this package and it will
+// be removed in a future major version.
 package osinfo
 
 import (

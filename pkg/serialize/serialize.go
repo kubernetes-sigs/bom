@@ -24,7 +24,6 @@ import (
 
 	"sigs.k8s.io/release-utils/version"
 
-	"sigs.k8s.io/bom/pkg/query"
 	"sigs.k8s.io/bom/pkg/spdx"
 	spdxJSON "sigs.k8s.io/bom/pkg/spdx/json/v2.3"
 )
@@ -79,14 +78,7 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 		jsonDoc.DocumentDescribes = append(jsonDoc.DocumentDescribes, p.SPDXID())
 	}
 
-	q := query.New()
-	q.Document = doc
-	fp, err := q.Query("all")
-	if err != nil {
-		return "", fmt.Errorf("querying document: %w", err)
-	}
-
-	for _, o := range fp.Objects {
+	for _, o := range allObjects(doc) {
 		if p, ok := o.(*spdx.Package); ok {
 			jsonPackage, err := json.buildJSONPackage(p)
 			if err != nil {
@@ -127,6 +119,36 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 		return "", fmt.Errorf("marshaling document json: %w", err)
 	}
 	return string(output), nil
+}
+
+// allObjects returns every element of the document keyed by its SPDX
+// identifier: the top-level packages and files plus everything
+// reachable from them through relationships.
+func allObjects(doc *spdx.Document) map[string]spdx.Object {
+	objects := map[string]spdx.Object{}
+	var walk func(spdx.Object)
+	walk = func(o spdx.Object) {
+		id := o.SPDXID()
+		if id == "" {
+			return
+		}
+		if _, seen := objects[id]; seen {
+			return
+		}
+		objects[id] = o
+		for _, r := range *o.GetRelationships() {
+			if r.Peer != nil {
+				walk(r.Peer)
+			}
+		}
+	}
+	for _, p := range doc.Packages {
+		walk(p)
+	}
+	for _, f := range doc.Files {
+		walk(f)
+	}
+	return objects
 }
 
 // buildJSONPackage converts a SPDX package struct to a json package

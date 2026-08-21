@@ -23,18 +23,20 @@ import (
 	"io"
 	"strings"
 
+	"github.com/protobom/protobom/pkg/sbom"
+
 	"sigs.k8s.io/bom/pkg/spdx"
 )
 
 // Printer is an interface that takes a list of SPDX objects and
 // prints to a writer a representation of it.
 type Printer interface {
-	PrintObjectList(queryOptions, map[string]spdx.Object, io.Writer) error
+	PrintObjectList(queryOptions, map[string]*sbom.Node, io.Writer) error
 }
 
 type LinePrinter struct{}
 
-func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
+func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]*sbom.Node, w io.Writer) error {
 	for _, o := range objects {
 		fields := []string{}
 		for _, field := range opts.fields {
@@ -54,7 +56,7 @@ func (p *LinePrinter) PrintObjectList(opts queryOptions, objects map[string]spdx
 
 type CSVPrinter struct{}
 
-func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
+func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]*sbom.Node, w io.Writer) error {
 	csvw := csv.NewWriter(w)
 	for _, o := range objects {
 		fields := []string{}
@@ -75,7 +77,7 @@ func (p *CSVPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.
 
 type JSONPrinter struct{}
 
-func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx.Object, w io.Writer) error {
+func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]*sbom.Node, w io.Writer) error {
 	type resultEntry struct {
 		Name       string `json:"name,omitempty"`
 		Version    string `json:"version,omitempty"`
@@ -123,61 +125,63 @@ func (p *JSONPrinter) PrintObjectList(opts queryOptions, objects map[string]spdx
 	return nil
 }
 
-func displayQueryResult(opts queryOptions, o spdx.Object) string {
-	s := fmt.Sprintf("[NO NAME; ID=%s]", o.SPDXID())
-	switch no := o.(type) {
-	case *spdx.File:
-		s = no.FileName
-	case *spdx.Package:
-		s = no.Name
-		if opts.purl {
-			for _, er := range o.(*spdx.Package).ExternalRefs { //nolint: errcheck
-				if er.Type == "purl" {
-					s = er.Locator
-				}
-			}
+// displayQueryResult renders the identity of a node: its name, or its
+// package URL when the caller asked for purls.
+func displayQueryResult(opts queryOptions, node *sbom.Node) string {
+	if opts.purl && node.GetType() == sbom.Node_PACKAGE {
+		if p := string(node.Purl()); p != "" {
+			return p
 		}
 	}
-	return s
+	if name := node.GetName(); name != "" {
+		return name
+	}
+	return fmt.Sprintf("[NO NAME; ID=%s]", node.GetId())
 }
 
-func getObjectField(opts queryOptions, o spdx.Object, field string) (string, error) {
+// actorName renders the first entry of a list of people or
+// organizations the way SPDX names them.
+func actorName(actors []*sbom.Person) string {
+	if len(actors) == 0 {
+		return ""
+	}
+	return actors[0].ToSPDX2ClientString()
+}
+
+func getObjectField(opts queryOptions, node *sbom.Node, field string) (string, error) {
+	isPackage := node.GetType() == sbom.Node_PACKAGE
 	switch field {
 	case "name":
-		return displayQueryResult(opts, o), nil
+		return displayQueryResult(opts, node), nil
 	case "version":
-		if _, ok := o.(*spdx.Package); ok {
-			return o.(*spdx.Package).Version, nil //nolint: errcheck
+		if isPackage {
+			return node.GetVersion(), nil
 		}
 	case "license":
-		switch c := o.(type) {
-		case *spdx.Package:
-			if c.LicenseDeclared != "" && c.LicenseDeclared != spdx.NOASSERTION {
-				return c.LicenseDeclared, nil
-			} else if c.LicenseConcluded == spdx.NOASSERTION {
-				return "", nil
-			}
-			return c.LicenseConcluded, nil
-		case *spdx.File:
-			return c.LicenseInfoInFile, nil
+		// Packages declare their license and may conclude a different
+		// one; files carry the licenses found in them.
+		declared := strings.Join(node.GetLicenses(), " OR ")
+		if !isPackage {
+			return strings.Join(node.GetLicenses(), " AND "), nil
 		}
+		if declared != "" && declared != spdx.NOASSERTION {
+			return declared, nil
+		}
+		if node.GetLicenseConcluded() == spdx.NOASSERTION {
+			return "", nil
+		}
+		return node.GetLicenseConcluded(), nil
 	case "supplier":
-		if _, ok := o.(*spdx.Package); ok {
-			if o.(*spdx.Package).Supplier.Organization != "" { //nolint: errcheck
-				return o.(*spdx.Package).Supplier.Organization, nil //nolint: errcheck
-			}
-			return o.(*spdx.Package).Supplier.Person, nil //nolint: errcheck
+		if isPackage {
+			return actorName(node.GetSuppliers()), nil
 		}
 	case "originator":
-		if _, ok := o.(*spdx.Package); ok {
-			if o.(*spdx.Package).Originator.Organization != "" { //nolint: errcheck
-				return o.(*spdx.Package).Originator.Organization, nil //nolint: errcheck
-			}
-			return o.(*spdx.Package).Originator.Person, nil //nolint: errcheck
+		if isPackage {
+			return actorName(node.GetOriginators()), nil
 		}
 	case "url":
-		if _, ok := o.(*spdx.Package); ok {
-			return o.(*spdx.Package).DownloadLocation, nil //nolint: errcheck
+		if isPackage {
+			return node.GetUrlDownload(), nil
 		}
 	default:
 		return "", fmt.Errorf("unknown or not supported field: %s", field)

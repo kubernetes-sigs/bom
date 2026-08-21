@@ -1,0 +1,23 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: bom-golden-single-file
+DocumentNamespace: https://sbom.k8s.io/golden/single-file
+Creator: Person: Kubernetes Release Managers (release-managers@kubernetes.io)
+Creator: Organization: Kubernetes Release Engineering
+Creator: Tool: bom-golden-fixture
+LicenseListVersion: 3.28
+Created: 2026-01-01T00:00:00Z
+
+FileName: testdata/files/hello.txt
+SPDXID: SPDXRef-File-testdata-files-hello.txt
+FileChecksum: SHA1: 148eeec1ca3bac79881d9fa3b90cecb3a70d4afc
+FileChecksum: SHA256: e5f7a7ed445673057c73686cb846e0c33ff0d5701fd43bf6aff16bb39ae14de2
+FileChecksum: SHA512: 03bf82fa9b93dbcb81445a39a625f08c8bd4343fc9facdce2a7f8d09140276ad5fe471156eb1f5bc92c00ecdf44485165c66663e9e798bc24674d383a0e5fa24
+FileType: TEXT
+FileType: DOCUMENTATION
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-File-testdata-files-hello.txt

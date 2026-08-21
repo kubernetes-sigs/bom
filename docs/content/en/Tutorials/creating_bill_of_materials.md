@@ -68,8 +68,9 @@ For simpler use cases, all of our SBOM automation is also available in
 a general-purpose tool called `bom`. You can find all the options that
 `bom` supports in its README.md.
 
-`bom` supports generating Bills of Materials in SPDX compliant tag-value
-format. It can process directories, single files, read the contents of
+`bom` generates SPDX compliant Bills of Materials, as JSON by default and
+as tag-value with `--format tag-value`. It can process directories,
+single files, read the contents of
 container images (both from container tar archives and directly from registries),
 and tarred sources.
 
