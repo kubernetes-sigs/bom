@@ -65,6 +65,22 @@ func TestExtractTarballSkipsSpecialFiles(t *testing.T) {
 		"symlinks are dropped, not materialized")
 }
 
+func TestExtractTarballCapsTotalSize(t *testing.T) {
+	// The header is written eagerly, so the 11 GiB body can be left
+	// out: extraction must refuse the claimed size before reading it.
+	path := filepath.Join(t.TempDir(), "bomb.tar")
+	f, err := os.Create(path)
+	require.NoError(t, err)
+	tw := tar.NewWriter(f)
+	require.NoError(t, tw.WriteHeader(&tar.Header{
+		Name: "huge.bin", Mode: 0o644, Size: 11 << 30, Typeflag: tar.TypeReg,
+	}))
+	require.NoError(t, f.Close())
+
+	err = extractTarball(path, t.TempDir())
+	require.ErrorContains(t, err, "extraction cap")
+}
+
 func TestIsTarball(t *testing.T) {
 	for path, expected := range map[string]bool{
 		"src.tar":     true,

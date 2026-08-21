@@ -109,6 +109,11 @@ func isTarball(path string) bool {
 		strings.HasSuffix(name, ".tgz")
 }
 
+// maxExtractedBytes caps how much data extractTarball writes out in
+// total, so a crafted or compression-bombed archive cannot fill the
+// disk. Generous for source archives, which is what bom scans.
+const maxExtractedBytes = 10 << 30 // 10 GiB
+
 // extractTarball unpacks a tarball into dir. Only regular files are
 // extracted: directory entries are recreated as needed, and symlinks
 // and special files are dropped, matching what the file indexer
@@ -134,6 +139,7 @@ func extractTarball(tarPath, dir string) error {
 	}
 
 	tr := tar.NewReader(stream)
+	var extracted int64
 	for {
 		hdr, err := tr.Next()
 		if errors.Is(err, io.EOF) {
@@ -144,6 +150,10 @@ func extractTarball(tarPath, dir string) error {
 		}
 		if hdr.Typeflag != tar.TypeReg {
 			continue
+		}
+		extracted += hdr.Size
+		if extracted > maxExtractedBytes {
+			return fmt.Errorf("tarball %q expands past the %d byte extraction cap", tarPath, int64(maxExtractedBytes))
 		}
 		name := filepath.Clean(hdr.Name)
 		if !filepath.IsLocal(name) {
