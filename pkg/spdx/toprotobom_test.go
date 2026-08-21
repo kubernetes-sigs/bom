@@ -59,6 +59,7 @@ func legacyDocument(t *testing.T) *spdx.Document {
 	file := spdx.NewFile()
 	file.SetSPDXID("SPDXRef-File-kubectl-bin")
 	file.Name = "bin/kubectl"
+	file.FileName = "./bin/kubectl"
 	file.LicenseInfoInFile = "Apache-2.0"
 	file.Checksum = map[string]string{
 		"SHA1": "f572d396fae9206628714fb2ce00f72e94f2258f",
@@ -123,6 +124,8 @@ func TestFromSPDXGraph(t *testing.T) {
 	require.NotNil(t, fileNode)
 	require.Equal(t, sbom.Node_FILE, fileNode.GetType())
 	require.Equal(t, "bin/kubectl", fileNode.GetName())
+	require.Equal(t, "./bin/kubectl", fileNode.GetFileName(),
+		"FileName must survive even when it differs from Name")
 	require.Equal(t, []string{"Apache-2.0"}, fileNode.GetLicenses())
 
 	require.Len(t, nl.GetEdges(), 1)

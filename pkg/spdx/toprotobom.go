@@ -199,6 +199,7 @@ func fileToNode(f *File) *sbom.Node {
 		Id:               protobomID(f.SPDXID()),
 		Type:             sbom.Node_FILE,
 		Name:             f.Name,
+		FileName:         f.FileName,
 		FileTypes:        f.FileType,
 		LicenseConcluded: licenseValue(f.LicenseConcluded),
 		LicenseComments:  f.LicenseComments,
