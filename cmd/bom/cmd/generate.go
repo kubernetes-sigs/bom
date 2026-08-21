@@ -237,15 +237,14 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.noGoTransient,
 		"no-transient",
 		false,
-		"don't include transient go dependencies, only direct deps from go.mod",
+		"don't resolve dependencies beyond those a codebase requires in its go.mod",
 	)
 
 	generateCmd.PersistentFlags().BoolVar(
 		&genOpts.offline,
 		"offline",
 		false,
-		"don't reach the network: dependency data is read from local files only, "+
-			"which leaves dependency licenses and the edges between dependencies unresolved",
+		"don't reach the network: dependency data is read from local files only",
 	)
 
 	generateCmd.PersistentFlags().StringVarP(
@@ -259,9 +258,9 @@ completed by a later stage in your CI/CD pipeline. See the
 	generateCmd.PersistentFlags().StringVar(
 		&genOpts.format,
 		"format",
-		spdx.FormatTagValue,
+		spdx.FormatJSON,
 		fmt.Sprintf("format of the document (supports %s, %s)",
-			spdx.FormatTagValue, spdx.FormatJSON),
+			spdx.FormatJSON, spdx.FormatTagValue),
 	)
 
 	generateCmd.PersistentFlags().StringVarP(
@@ -313,7 +312,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.licenseListVer,
 		"license-list-version",
 		license.DefaultCatalogOpts.Version,
-		"version of the SPDX list to use, use 'latest' to download the latest",
+		"version of the SPDX list to use (or 'latest')",
 	)
 
 	if err := generateCmd.MarkPersistentFlagDirname("dirs"); err != nil {
