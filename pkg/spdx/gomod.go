@@ -227,7 +227,7 @@ func (pkg *GoPackage) ToSPDXPackage() (*Package, error) {
 	if packageurl := pkg.PackageURL(); packageurl != "" {
 		spdxPackage.ExternalRefs = append(spdxPackage.ExternalRefs, ExternalRef{
 			Category: CatPackageManager,
-			Type:     "purl",
+			Type:     ExtRefTypePurl,
 			Locator:  packageurl,
 		})
 	}
