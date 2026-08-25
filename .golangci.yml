@@ -30,7 +30,7 @@ linters:
     - godox
     - goheader
     - gomoddirectives
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - gosmopolitan
@@ -164,6 +164,9 @@ linters:
           - gocritic
           - golint
         path: fake_.*\.go
+      - linters:
+          - goconst
+        path: _test\.go
     paths:
       - third_party$
       - builtin$

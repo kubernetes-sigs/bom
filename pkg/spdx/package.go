@@ -123,8 +123,8 @@ var PackagePurposes = []string{
 
 var ExternalRefCategories = map[string][]string{
 	"SECURITY":        {"cpe22Type", "cpe23Type", "advisory", "fix", "url", "swid"},
-	"PACKAGE_MANAGER": {"maven-central", "npm", "nuget", "bower", "purl"},
-	"PACKAGE-MANAGER": {"maven-central", "npm", "nuget", "bower", "purl"},
+	"PACKAGE_MANAGER": {"maven-central", "npm", "nuget", "bower", ExtRefTypePurl},
+	"PACKAGE-MANAGER": {"maven-central", "npm", "nuget", "bower", ExtRefTypePurl},
 	"PERSISTENT-ID":   {"swh", "gitoid"},
 	"PERSISTENT_ID":   {"swh", "gitoid"},
 	"OTHER":           {},
@@ -517,7 +517,7 @@ func (p *Package) Purl() *purl.PackageURL {
 	}
 	purlString := ""
 	for _, er := range p.ExternalRefs {
-		if (er.Category == "PACKAGE-MANAGER" || er.Category == "PACKAGE_MANAGER") && er.Type == "purl" {
+		if (er.Category == "PACKAGE-MANAGER" || er.Category == "PACKAGE_MANAGER") && er.Type == ExtRefTypePurl {
 			purlString = er.Locator
 		}
 	}
