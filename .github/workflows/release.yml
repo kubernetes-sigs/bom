@@ -72,7 +72,7 @@ jobs:
           tejolote attest --artifacts github://kubernetes-sigs/bom/${{ steps.tag.outputs.tag_name }} github://kubernetes-sigs/bom/"${GITHUB_RUN_ID}" --output bom.intoto.json --sign
 
       - name: Release
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: bom.intoto.json
           tag_name: "${{ steps.tag.outputs.tag_name }}"
