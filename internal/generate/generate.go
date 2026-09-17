@@ -29,16 +29,20 @@ package generate
 
 import (
 	"context"
+	"crypto/sha1" //nolint:gosec // SPDX file checksum, not a security use
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
+	"hash"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	fsoptions "github.com/carabiner-dev/unpack/filesystem/options"
-	"github.com/carabiner-dev/unpack/filesystem/processors"
 	"github.com/google/uuid"
-	intoto "github.com/in-toto/attestation/go/v1"
 	protospdx "github.com/protobom/protobom/pkg/formats/spdx"
 	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/sirupsen/logrus"
@@ -64,7 +68,8 @@ type Options struct {
 	CreatorPerson string
 
 	// Files lists paths, or glob patterns, of plain files to add to
-	// the document as top-level elements.
+	// the document as top-level elements. Go binaries among them
+	// contain packages for the modules they were built from.
 	Files []string
 
 	// Directories lists paths, or glob patterns, of source
@@ -72,10 +77,11 @@ type Options struct {
 	Directories []string
 
 	// Images lists OCI references of container images to scan into
-	// top-level packages: the package inventory is read from the
-	// image's squashed filesystem, and each layer is recorded as a
-	// node carrying its digest. Multi-arch references expand into one
-	// node per platform image under the index node.
+	// top-level packages: the package inventory (OS packages and Go
+	// binaries) is read from the image's squashed filesystem, and each
+	// layer is recorded as a node carrying its digest. Multi-arch
+	// references expand into one node per platform image under the
+	// index node.
 	Images []string
 
 	// ImageArchives lists paths, or glob patterns, of docker-archive
@@ -179,13 +185,25 @@ func addFiles(doc *sbom.Document, patterns []string) error {
 				return err
 			}
 			doc.GetNodeList().AddRootNode(node)
+
+			// Go binaries contain the modules they were built from.
+			bin, err := goBinaryNodeList(path, node.GetFileName())
+			if err != nil {
+				return err
+			}
+			if bin == nil {
+				continue
+			}
+			if err := doc.GetNodeList().RelateNodeListAtID(bin, node.GetId(), sbom.Edge_contains); err != nil {
+				return fmt.Errorf("relating go modules to %q: %w", path, err)
+			}
 		}
 	}
 	return nil
 }
 
 // fileNode builds a file node carrying the checksums bom has always
-// recorded for plain files, computed with unpack's file hasher.
+// recorded for plain files.
 func fileNode(path string) (*sbom.Node, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -206,28 +224,47 @@ func fileNode(path string) (*sbom.Node, error) {
 }
 
 // hashFileInto records the checksums bom has always recorded for
-// artifacts (SHA1, SHA256 and SHA512) on the node, computed with
-// unpack's file hasher.
+// artifacts (SHA1, SHA256 and SHA512) on the node.
 func hashFileInto(node *sbom.Node, path string) error {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return fmt.Errorf("resolving %q: %w", path, err)
 	}
-	hashOpts := &fsoptions.Options{
-		Algorithms: []intoto.HashAlgorithm{
-			intoto.AlgorithmSHA1, intoto.AlgorithmSHA256, intoto.AlgorithmSHA512,
-		},
-	}
-	// The hasher opens FileName relative to the filesystem it is
-	// handed; the display value is restored afterwards.
-	saved := node.GetFileName()
-	node.FileName = filepath.Base(abs)
-	err = processors.NewHasher().Process(hashOpts, os.DirFS(filepath.Dir(abs)), node)
-	node.FileName = saved
+	hashes, err := hashFSFile(os.DirFS(filepath.Dir(abs)), filepath.Base(abs))
 	if err != nil {
 		return fmt.Errorf("hashing %q: %w", path, err)
 	}
+	node.Hashes = hashes
 	return nil
+}
+
+// hashFSFile returns the artifact checksums (SHA1, SHA256 and SHA512)
+// of a file of fsys, computed in a single sequential read. Unlike
+// unpack's hasher (carabiner-dev/hasher v0.2.4), which blocks forever
+// when a read fails, it returns read errors.
+func hashFSFile(fsys fs.FS, name string) (map[int32]string, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	sums := map[sbom.HashAlgorithm]hash.Hash{
+		sbom.HashAlgorithm_SHA1:   sha1.New(), //nolint:gosec // SPDX file checksum, not a security use
+		sbom.HashAlgorithm_SHA256: sha256.New(),
+		sbom.HashAlgorithm_SHA512: sha512.New(),
+	}
+	writers := make([]io.Writer, 0, len(sums))
+	for _, h := range sums {
+		writers = append(writers, h)
+	}
+	if _, err := io.Copy(io.MultiWriter(writers...), f); err != nil {
+		return nil, fmt.Errorf("reading %q: %w", name, err)
+	}
+	hashes := make(map[int32]string, len(sums))
+	for algo, h := range sums {
+		hashes[int32(algo)] = hex.EncodeToString(h.Sum(nil))
+	}
+	return hashes, nil
 }
 
 // elementID builds a node identifier following the legacy SPDX ID

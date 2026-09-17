@@ -22,6 +22,10 @@ remote registries for analysis.
 bom can take a deeper look into images using a growing number
 of analyzers designed to add more sense to common base images.
 
+Go binaries found in images and in files passed with --file are
+listed with the Go modules they were built from, as recorded in
+their embedded build information.
+
 The SBOM data can also be exported to an in-toto provenance
 attestation. The output will produce a provenance statement listing all
 the SPDX data as in-toto subjects, but otherwise ready to be

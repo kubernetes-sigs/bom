@@ -84,6 +84,7 @@ func addImageArchives(ctx context.Context, doc *sbom.Document, opts *Options) er
 // imageNodeList runs unpack's image unpacker on the subject and gives
 // the resulting structural nodes deterministic identifiers.
 func imageNodeList(ctx context.Context, subject *image.Reference) (*sbom.NodeList, error) {
+	registerGoBinaryDecomposer()
 	unpacker := image.NewUnpacker()
 	// Squash plus structural layer nodes is bom's image SBOM shape:
 	// the package inventory reads from the squashed filesystem, and

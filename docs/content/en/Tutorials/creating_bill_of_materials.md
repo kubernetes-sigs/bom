@@ -202,6 +202,8 @@ Generally, an SPDX bill of materials will include more than one package. You can
 more sources to add to the document. These can be container images, other directories, container
 archives, etc. When you add other sources, bom will add them as top-level packages in the
 document. Some of these will include sub-packages: layers of images, dependencies, etc.
+Go binaries, both inside images and passed as files, are listed with the Go modules
+recorded in their build information.
 
 Here is a sample of other command line flags you can pass to `bom generate` to add more elements
 to your bill of materials:
