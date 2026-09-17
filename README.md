@@ -69,6 +69,10 @@ remote registries for analysis.
 bom can take a deeper look into images using a growing number
 of analyzers designed to add more sense to common base images.
 
+Go binaries found in images and in files passed with --file are
+listed with the Go modules they were built from, as recorded in
+their embedded build information.
+
 The SBOM data can also be exported to an in-toto provenance
 attestation. The output will produce a provenance statement listing all
 the SPDX data as in-toto subjects, but otherwise ready to be
@@ -190,15 +194,17 @@ bom generate .
 
 This example pulls the `kube-apiserver` image, analyzes it, and describes in the
 SBOM. Each of its layers are then expressed as a subpackage in the resulting
-document:
+document, and the Go binaries in the image (`kube-apiserver` and `go-runner`)
+are listed with the Go modules they depend on:
 
 ```console
-bom generate -n http://example.com/ --image registry.k8s.io/kube-apiserver:v1.21.0
+bom generate -n http://example.com/ --image registry.k8s.io/kube-apiserver:v1.34.0
 ```
 
 ### Generate a SBOM to describe files
 
-You can create an SBOM with just files in the manifest. For that, use `-f`:
+You can create an SBOM with just files in the manifest. For that, use `-f`.
+Files that are Go binaries are listed with the Go modules they were built from:
 
 ```console
 bom generate -n http://example.com/ \

@@ -151,6 +151,7 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 			continue
 		}
 		stripGoDirhashes(nl)
+		stripPackageNameFileNames(nl)
 		assignCodebaseIDs(nl)
 		if merged == nil {
 			merged = nl
@@ -266,6 +267,18 @@ func stripGoDirhashes(nl *sbom.NodeList) {
 		}
 		if strings.HasPrefix(string(node.Purl()), "pkg:golang/") {
 			delete(node.GetHashes(), int32(sbom.HashAlgorithm_SHA256))
+		}
+	}
+}
+
+// stripPackageNameFileNames clears the file names unpack's npm and
+// Cargo decomposers copy from the package name onto their package
+// nodes. They name no file, so rendered as the SPDX package file name
+// they would mislead.
+func stripPackageNameFileNames(nl *sbom.NodeList) {
+	for _, node := range nl.GetNodes() {
+		if node.GetType() == sbom.Node_PACKAGE && node.GetFileName() == node.GetName() {
+			node.FileName = ""
 		}
 	}
 }

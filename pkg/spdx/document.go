@@ -31,8 +31,10 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -244,31 +246,35 @@ func (d *Document) Render() (doc string, err error) {
 
 	doc = buf.String()
 
-	// List files in the document. Files listed directly on the
-	// document do not contain relationships yet.
-	filesDescribed := ""
-	if len(d.Files) > 0 {
-		doc += "\n##### Files independent of packages\n\n"
-		filesDescribed = "\n"
-	}
-
-	var docSb255 strings.Builder
-	var filesDescribedSb255 strings.Builder
-	for _, file := range d.Files {
+	// List the files independent of packages first and the objects
+	// related to them after the section: in tag-value, a file listed
+	// after a package belongs to that package. Both files and packages
+	// render sorted by ID to keep the output stable.
+	var files, relationships, described strings.Builder
+	for _, id := range slices.Sorted(maps.Keys(d.Files)) {
+		file := d.Files[id]
 		fileDoc, err := file.Render()
 		if err != nil {
 			return "", fmt.Errorf("rendering file "+file.Name+" :%w", err)
 		}
-		docSb255.WriteString(fileDoc)
-		fmt.Fprintf(&filesDescribedSb255, "Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID)
+		files.WriteString(fileDoc)
+		fmt.Fprintf(&described, "Relationship: %s DESCRIBES %s\n\n", d.ID, file.ID)
+
+		relDoc, err := file.RenderRelationships()
+		if err != nil {
+			return "", fmt.Errorf("rendering relationships of file "+file.Name+" :%w", err)
+		}
+		relationships.WriteString(relDoc)
 	}
-	doc += docSb255.String()
-	filesDescribed += filesDescribedSb255.String()
-	doc += filesDescribed
+	if len(d.Files) > 0 {
+		doc += "\n##### Files independent of packages\n\n"
+		doc += files.String() + "\n" + described.String() + relationships.String()
+	}
 
 	// Cycle all packages and get their data
 	var docSb266 strings.Builder
-	for _, pkg := range d.Packages {
+	for _, id := range slices.Sorted(maps.Keys(d.Packages)) {
+		pkg := d.Packages[id]
 		pkgDoc, err := pkg.Render()
 		if err != nil {
 			return "", fmt.Errorf("rendering pkg "+pkg.Name+" :%w", err)

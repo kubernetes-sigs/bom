@@ -91,6 +91,7 @@ type Package struct {
 	ID                   string                   `json:"SPDXID"`
 	Name                 string                   `json:"name"`
 	Version              string                   `json:"versionInfo"`
+	FileName             string                   `json:"packageFileName,omitempty"`
 	FilesAnalyzed        bool                     `json:"filesAnalyzed"`
 	LicenseDeclared      string                   `json:"licenseDeclared,omitempty"`
 	LicenseConcluded     string                   `json:"licenseConcluded,omitempty"`

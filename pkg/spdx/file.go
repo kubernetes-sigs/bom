@@ -92,8 +92,43 @@ func (f *File) Render() (docFragment string, err error) {
 		return "", fmt.Errorf("executing spdx file template: %w", err)
 	}
 
-	docFragment = buf.String()
-	return docFragment, nil
+	return buf.String(), nil
+}
+
+// RenderRelationships renders the relationships of a file, including
+// the full fragments of the related objects flagged to render with
+// them, such as the modules a Go binary contains. Render leaves them
+// out: in tag-value, every file listed after a package belongs to it,
+// so the caller has to place these fragments after the files that
+// stand on their own.
+func (f *File) RenderRelationships() (string, error) {
+	if len(f.Relationships) == 0 {
+		return "", nil
+	}
+	if err := f.CheckRelationships(); err != nil {
+		return "", fmt.Errorf("checking file relationships: %w", err)
+	}
+	var docFragment strings.Builder
+	for _, rel := range f.Relationships {
+		fragment, err := rel.Render(f)
+		if err != nil {
+			return "", fmt.Errorf("rendering relationship: %w", err)
+		}
+		docFragment.WriteString(fragment)
+	}
+	docFragment.WriteString("\n")
+	return docFragment.String(), nil
+}
+
+// CheckRelationships ensures all linked relationships are complete
+// before rendering.
+func (f *File) CheckRelationships() error {
+	for _, related := range f.Relationships {
+		if related.Peer != nil && related.Peer.SPDXID() == "" {
+			related.Peer.BuildID()
+		}
+	}
+	return nil
 }
 
 // BuildID sets the file ID, optionally from a series of strings.

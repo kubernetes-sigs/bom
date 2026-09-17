@@ -59,6 +59,18 @@ func TestStripGoDirhashes(t *testing.T) {
 	require.Equal(t, "real-file-digest", file.GetHashes()[sha256Key], "files keep hashes")
 }
 
+func TestStripPackageNameFileNames(t *testing.T) {
+	npmDep := &sbom.Node{Id: "npm-dep", Type: sbom.Node_PACKAGE, Name: "leftpad", FileName: "leftpad"}
+	tarball := &sbom.Node{Id: "tarball", Type: sbom.Node_PACKAGE, Name: "app", FileName: "app-1.0.0.tgz"}
+	file := &sbom.Node{Id: "a-file", Type: sbom.Node_FILE, Name: "main.go", FileName: "main.go"}
+
+	stripPackageNameFileNames(&sbom.NodeList{Nodes: []*sbom.Node{npmDep, tarball, file}})
+
+	require.Empty(t, npmDep.GetFileName(), "a package name is no file name")
+	require.Equal(t, "app-1.0.0.tgz", tarball.GetFileName())
+	require.Equal(t, "main.go", file.GetFileName(), "files keep their names")
+}
+
 // Node identifiers shared by the pruning tests.
 const (
 	rootID   = "root"

@@ -174,6 +174,7 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 		ID:                   p.SPDXID(),
 		Name:                 p.Name,
 		Version:              p.Version,
+		FileName:             p.FileName,
 		FilesAnalyzed:        p.FilesAnalyzed,
 		LicenseConcluded:     p.LicenseConcluded,
 		LicenseDeclared:      p.LicenseDeclared,
