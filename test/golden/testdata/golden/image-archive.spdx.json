@@ -12,46 +12,22 @@
     "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0"
   ],
   "documentNamespace": "https://sbom.k8s.io/golden/image-archive",
+  "hasExtractedLicensingInfos": [
+    {
+      "extractedText": "The license declared as \"GPL-3+ with Autoconf-data exception\" is not on the SPDX license list; its text was not collected.",
+      "licenseId": "LicenseRef-GPL-3-or-later-with-Autoconf-data-exception",
+      "name": "GPL-3+ with Autoconf-data exception"
+    },
+    {
+      "extractedText": "The license declared as \"public-domain\" is not on the SPDX license list; its text was not collected.",
+      "licenseId": "LicenseRef-public-domain",
+      "name": "public-domain"
+    }
+  ],
   "name": "bom-golden-image-archive",
   "packages": [
     {
-      "SPDXID": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "f6af0a1fc8e7037735ac6829e20d7cbce927a369c03da03c214237f7beceecf2"
-        }
-      ],
-      "copyrightText": "NOASSERTION",
-      "downloadLocation": "NONE",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceLocator": "pkg:oci/bom-golden@sha256%3Af6af0a1fc8e7037735ac6829e20d7cbce927a369c03da03c214237f7beceecf2?arch=amd64\u0026repository_url=registry.k8s.io%2Fbom-golden\u0026tag=v1.0.0",
-          "referenceType": "purl"
-        }
-      ],
-      "filesAnalyzed": false,
-      "name": "registry.k8s.io/bom-golden:v1.0.0",
-      "primaryPackagePurpose": "CONTAINER",
-      "versionInfo": "v1.0.0"
-    },
-    {
-      "SPDXID": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0-sha256-ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd"
-        }
-      ],
-      "copyrightText": "NOASSERTION",
-      "downloadLocation": "NONE",
-      "filesAnalyzed": false,
-      "name": "sha256:ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd",
-      "versionInfo": ""
-    },
-    {
-      "SPDXID": "SPDXRef-«UUID»",
+      "SPDXID": "SPDXRef-Package-base-files-12.4C43deb12u5-amd64-debian-12",
       "checksums": [],
       "copyrightText": "NOASSERTION",
       "downloadLocation": "http://ftp.debian.org/debian/pool/main/b/base-files/base-files_12.4+deb12u5_amd64.deb",
@@ -63,13 +39,15 @@
         }
       ],
       "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-or-later",
+      "licenseDeclared": "GPL-2.0-or-later AND LicenseRef-GPL-3-or-later-with-Autoconf-data-exception AND LicenseRef-public-domain",
       "name": "base-files",
       "primaryPackagePurpose": "LIBRARY",
       "supplier": "Person: Santiago Vila (sanvila@debian.org)",
       "versionInfo": "12.4+deb12u5"
     },
     {
-      "SPDXID": "SPDXRef-«UUID»",
+      "SPDXID": "SPDXRef-Package-libssl3-3.0.11-1C126deb12u2-amd64-debian-12",
       "checksums": [],
       "copyrightText": "NOASSERTION",
       "downloadLocation": "http://ftp.debian.org/debian/pool/main/o/openssl/libssl3_3.0.11-1~deb12u2_amd64.deb",
@@ -85,21 +63,57 @@
       "primaryPackagePurpose": "LIBRARY",
       "supplier": "Organization: Debian OpenSSL Team (pkg-openssl-devel@alioth-lists.debian.net)",
       "versionInfo": "3.0.11-1~deb12u2"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "542b16532cd3dd2e2e3b93aac1d08f5a6744675b06a1b35f9b05596ab71e0791"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NONE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:oci/bom-golden@sha256%3A542b16532cd3dd2e2e3b93aac1d08f5a6744675b06a1b35f9b05596ab71e0791?arch=amd64\u0026repository_url=registry.k8s.io%2Fbom-golden\u0026tag=v1.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "name": "registry.k8s.io/bom-golden:v1.0.0",
+      "primaryPackagePurpose": "CONTAINER",
+      "versionInfo": "v1.0.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0-sha256-91c5cd27a952e9746534d552337dcbf3ad68b719cc8a2403989b090f477eca2d",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "91c5cd27a952e9746534d552337dcbf3ad68b719cc8a2403989b090f477eca2d"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NONE",
+      "filesAnalyzed": false,
+      "name": "sha256:91c5cd27a952e9746534d552337dcbf3ad68b719cc8a2403989b090f477eca2d",
+      "versionInfo": ""
     }
   ],
   "relationships": [
     {
-      "relatedSpdxElement": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0-sha256-ba58b28fca04b2964287fc50990ed3c62a4262edf5b6d5914da200a96b9bcffd",
+      "relatedSpdxElement": "SPDXRef-Package-base-files-12.4C43deb12u5-amd64-debian-12",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0"
     },
     {
-      "relatedSpdxElement": "SPDXRef-«UUID»",
+      "relatedSpdxElement": "SPDXRef-Package-libssl3-3.0.11-1C126deb12u2-amd64-debian-12",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0"
     },
     {
-      "relatedSpdxElement": "SPDXRef-«UUID»",
+      "relatedSpdxElement": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0-sha256-91c5cd27a952e9746534d552337dcbf3ad68b719cc8a2403989b090f477eca2d",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0"
     }

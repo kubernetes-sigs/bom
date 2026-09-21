@@ -66,3 +66,15 @@ func TestGenerateNilOptions(t *testing.T) {
 	require.NotNil(t, doc.GetMetadata())
 	require.Empty(t, doc.GetNodeList().GetNodes())
 }
+
+func TestGenerateNoDependencies(t *testing.T) {
+	doc, err := bom.Generate(t.Context(), &bom.GenerateOptions{
+		Directories:    []string{"../../test/golden/testdata/gomodule"},
+		NoDependencies: true,
+		Offline:        true,
+	})
+	require.NoError(t, err)
+	roots := doc.GetNodeList().GetRootNodes()
+	require.Len(t, roots, 1)
+	require.Equal(t, "gomodule", roots[0].GetName(), "the codebase is not extracted")
+}

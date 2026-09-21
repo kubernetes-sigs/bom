@@ -23,8 +23,11 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/carabiner-dev/unpack/image"
+	"github.com/google/uuid"
+	purl "github.com/package-url/packageurl-go"
 	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/sirupsen/logrus"
 )
@@ -46,7 +49,7 @@ func addImages(ctx context.Context, doc *sbom.Document, opts *Options) error {
 		if err != nil {
 			return fmt.Errorf("scanning image %q: %w", ref, err)
 		}
-		doc.GetNodeList().Add(nl)
+		addSourceNodeList(doc, nl)
 	}
 	return nil
 }
@@ -75,7 +78,7 @@ func addImageArchives(ctx context.Context, doc *sbom.Document, opts *Options) er
 			if err != nil {
 				return fmt.Errorf("scanning image archive %q: %w", path, err)
 			}
-			doc.GetNodeList().Add(nl)
+			addSourceNodeList(doc, nl)
 		}
 	}
 	return nil
@@ -112,10 +115,11 @@ func imageNodeList(ctx context.Context, subject *image.Reference) (*sbom.NodeLis
 }
 
 // assignImageIDs replaces the random identifiers unpack assigns to
-// image and layer nodes with deterministic legacy-style element ids:
-// image nodes seed on their name, layer nodes on their image's name
-// and their own. Package nodes keep their identifiers; the legacy
-// generator identified OS packages randomly too.
+// image, layer and OS package nodes with deterministic legacy-style
+// element ids: image nodes seed on their name, layer nodes on their
+// image's name and their own, and OS packages on their name, version,
+// architecture and distribution. The Go binary packages have
+// deterministic identifiers already.
 func assignImageIDs(nl *sbom.NodeList) {
 	parents := map[string]*sbom.Node{}
 	for _, edge := range nl.GetEdges() {
@@ -142,9 +146,51 @@ func assignImageIDs(nl *sbom.NodeList) {
 				seed = parent.GetName() + "-" + seed
 			}
 			renames[node.GetId()] = elementID("Package", seed)
+		case node.GetType() == sbom.Node_PACKAGE && uuid.Validate(node.GetId()) == nil:
+			renames[node.GetId()] = elementID("Package", osPackageSeed(node))
+		}
+	}
+	// Distinct packages seeding the same identifier are numbered in
+	// node order, which the unpacker keeps stable.
+	taken := map[string]struct{}{}
+	for _, node := range nl.GetNodes() {
+		id, ok := renames[node.GetId()]
+		if !ok {
+			id = node.GetId()
+		}
+		unique := id
+		for i := 1; ; i++ {
+			if _, dup := taken[unique]; !dup {
+				break
+			}
+			unique = fmt.Sprintf("%s-%04d", id, i)
+		}
+		taken[unique] = struct{}{}
+		if unique != node.GetId() {
+			renames[node.GetId()] = unique
 		}
 	}
 	renameNodes(nl, renames)
+}
+
+// osPackageSeed returns the element id seed of an OS package node: its
+// name and version, and the architecture and distribution its purl
+// qualifies it with, which tell apart the packages of the platform
+// images of a multi-arch index.
+func osPackageSeed(node *sbom.Node) string {
+	parts := []string{node.GetName()}
+	if node.GetVersion() != "" {
+		parts = append(parts, node.GetVersion())
+	}
+	if p, err := purl.FromString(string(node.Purl())); err == nil {
+		qualifiers := p.Qualifiers.Map()
+		for _, key := range []string{"arch", "distro"} {
+			if value := qualifiers[key]; value != "" {
+				parts = append(parts, value)
+			}
+		}
+	}
+	return strings.Join(parts, "-")
 }
 
 // renameNodes rewrites node identifiers in place, updating the edges

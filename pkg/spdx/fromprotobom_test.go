@@ -17,8 +17,10 @@ limitations under the License.
 package spdx_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -324,4 +326,188 @@ func TestFromProtobomSetsFileName(t *testing.T) {
 		require.Equal(t, file.Name, file.FileName,
 			"a node carrying only a name falls back to it")
 	}
+}
+
+// TestToSPDXFilesRenderBeforeDependencies checks the tag-value element
+// order of a package holding files and depending on packages. A file
+// belongs to the package listed last before it, so the files have to
+// render right under their package, ahead of its dependencies, whatever
+// the order of the edges.
+func TestToSPDXFilesRenderBeforeDependencies(t *testing.T) {
+	pdoc := sbom.NewDocument()
+	pdoc.Metadata.Id = "https://sbom.k8s.io/test/order"
+	pdoc.Metadata.Name = "order-doc"
+	nl := pdoc.GetNodeList()
+	nl.AddRootNode(&sbom.Node{Id: "Package-app", Type: sbom.Node_PACKAGE, Name: "app"})
+	nl.AddNode(&sbom.Node{Id: "Package-dep", Type: sbom.Node_PACKAGE, Name: "dep"})
+	nl.AddNode(&sbom.Node{Id: "Package-old", Type: sbom.Node_PACKAGE, Name: "old"})
+	nl.AddNode(&sbom.Node{
+		Id: "File-main.go", Type: sbom.Node_FILE, Name: "main.go",
+		Hashes: map[int32]string{int32(sbom.HashAlgorithm_SHA1): "f572d396fae9206628714fb2ce00f72e94f2258f"},
+	})
+	// The relationships of a node are ordered by type: ANCESTOR_OF comes
+	// before CONTAINS, and DEPENDS_ON after it.
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_ancestor, From: "Package-app", To: []string{"Package-old"}})
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_dependsOn, From: "Package-app", To: []string{"Package-dep"}})
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_contains, From: "Package-app", To: []string{"File-main.go"}})
+
+	doc, err := spdx.FromProtobom(pdoc)
+	require.NoError(t, err)
+	tv, err := (&serialize.TagValue{}).Serialize(doc)
+	require.NoError(t, err)
+
+	app := strings.Index(tv, "SPDXID: SPDXRef-Package-app\n")
+	file := strings.Index(tv, "SPDXID: SPDXRef-File-main.go\n")
+	dep := strings.Index(tv, "SPDXID: SPDXRef-Package-dep\n")
+	old := strings.Index(tv, "SPDXID: SPDXRef-Package-old\n")
+	require.Positive(t, app)
+	require.Greater(t, file, app, "the file renders after its package")
+	require.Greater(t, dep, file, "related packages render after the files of the package")
+	require.Greater(t, old, file, "related packages render after the files of the package")
+}
+
+// TestToSPDXLicenseNormalization checks that the licenses package
+// managers declare turn into valid SPDX expressions, with extracted
+// licensing information for the ones not on the SPDX license list, in
+// both serializations.
+func TestToSPDXLicenseNormalization(t *testing.T) {
+	pdoc := sbom.NewDocument()
+	pdoc.Metadata.Id = "https://sbom.k8s.io/test/licenses"
+	pdoc.Metadata.Name = "licenses-doc"
+	pdoc.GetNodeList().AddRootNode(&sbom.Node{
+		Id:               "Package-coreutils",
+		Type:             sbom.Node_PACKAGE,
+		Name:             "coreutils",
+		LicenseConcluded: "GPL-3+",
+		Licenses:         []string{"GPL-3.0-or-later", "public-domain", "GPL-3+ with Autoconf-data exception"},
+		Identifiers: map[int32]string{
+			int32(sbom.SoftwareIdentifierType_PURL): "pkg:deb/debian/coreutils@9.1-1?arch=amd64",
+		},
+	})
+	// A composer license list is a choice.
+	pdoc.GetNodeList().AddRootNode(&sbom.Node{
+		Id:       "Package-composer",
+		Type:     sbom.Node_PACKAGE,
+		Name:     "vendor/lib",
+		Licenses: []string{"LGPL-2.1-only", "GPL-3.0-or-later"},
+		Identifiers: map[int32]string{
+			int32(sbom.SoftwareIdentifierType_PURL): "pkg:composer/vendor/lib@1.0.0",
+		},
+	})
+	pdoc.GetNodeList().AddRootNode(&sbom.Node{Id: "File-readme", Type: sbom.Node_FILE, Name: "README"})
+	// The licenses found in a file are listed one by one.
+	pdoc.GetNodeList().AddRootNode(&sbom.Node{
+		Id: "File-src", Type: sbom.Node_FILE, Name: "src.c",
+		Licenses: []string{"MIT OR Apache-2.0", "custom"},
+	})
+
+	doc, err := spdx.FromProtobom(pdoc)
+	require.NoError(t, err)
+	pkg := doc.Packages["SPDXRef-Package-coreutils"]
+	require.NotNil(t, pkg)
+	require.Equal(t,
+		"GPL-3.0-or-later AND LicenseRef-public-domain AND LicenseRef-GPL-3-or-later-with-Autoconf-data-exception",
+		pkg.LicenseDeclared,
+	)
+	require.Equal(t, "LicenseRef-GPL-3-or-later", pkg.LicenseConcluded)
+	require.Equal(t, "LGPL-2.1-only OR GPL-3.0-or-later", doc.Packages["SPDXRef-Package-composer"].LicenseDeclared)
+	require.Equal(t, "(MIT OR Apache-2.0) AND LicenseRef-custom", doc.Files["SPDXRef-File-src"].LicenseInfoInFile)
+	ids := make([]string, 0, len(doc.ExtractedLicenses))
+	for _, lic := range doc.ExtractedLicenses {
+		ids = append(ids, lic.ID)
+	}
+	require.Equal(t, []string{
+		"LicenseRef-GPL-3-or-later", "LicenseRef-GPL-3-or-later-with-Autoconf-data-exception",
+		"LicenseRef-custom", "LicenseRef-public-domain",
+	}, ids)
+
+	tv, err := (&serialize.TagValue{}).Serialize(doc)
+	require.NoError(t, err)
+	require.Contains(t, tv, "LicenseID: LicenseRef-public-domain\nExtractedText: <text>")
+	require.Contains(t, tv, "LicenseName: public-domain\n")
+	require.Contains(t, tv, "LicenseInfoInFile: Apache-2.0\nLicenseInfoInFile: LicenseRef-custom\nLicenseInfoInFile: MIT\n")
+	require.Greater(t, strings.Index(tv, "LicenseID:"), strings.LastIndex(tv, "PackageName:"),
+		"tag-value lists the extracted licenses after the elements")
+
+	jsonDoc, err := (&serialize.JSON{}).Serialize(doc)
+	require.NoError(t, err)
+	var parsed struct {
+		Extracted []struct {
+			ID   string `json:"licenseId"`
+			Text string `json:"extractedText"`
+			Name string `json:"name"`
+		} `json:"hasExtractedLicensingInfos"`
+		Files []struct {
+			LicenseInfoInFiles []string `json:"licenseInfoInFiles"`
+		} `json:"files"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(jsonDoc), &parsed))
+	require.Len(t, parsed.Extracted, 4)
+	require.Equal(t, "LicenseRef-GPL-3-or-later", parsed.Extracted[0].ID)
+	require.Equal(t, "GPL-3+", parsed.Extracted[0].Name)
+	require.NotEmpty(t, parsed.Extracted[0].Text)
+
+	// A file with no license data asserts nothing rather than listing
+	// an empty license.
+	require.Len(t, parsed.Files, 2)
+	require.Equal(t, []string{"NOASSERTION"}, parsed.Files[0].LicenseInfoInFiles)
+	require.Equal(t, []string{"Apache-2.0", "LicenseRef-custom", "MIT"}, parsed.Files[1].LicenseInfoInFiles)
+
+	// Reading the document back keeps its license expressions and
+	// fabricates no extracted licensing information: protobom does not
+	// carry the original texts.
+	path := filepath.Join(t.TempDir(), "licenses.spdx")
+	require.NoError(t, os.WriteFile(path, []byte(tv), os.FileMode(0o644)))
+	reparsed, err := spdx.OpenDoc(path)
+	require.NoError(t, err)
+	require.Empty(t, reparsed.ExtractedLicenses)
+	require.Equal(t, pkg.LicenseDeclared, reparsed.Packages["SPDXRef-Package-coreutils"].LicenseDeclared)
+}
+
+// TestToSPDXExtractedLicenseTagValue checks that license names which
+// would break the tag-value syntax are defused.
+func TestToSPDXExtractedLicenseTagValue(t *testing.T) {
+	doc := spdx.NewDocument()
+	doc.ExtractedLicenses = []spdx.ExtractedLicense{{
+		ID:   "LicenseRef-evil",
+		Name: "line one\nline two </text>",
+		Text: "text with </text> inside <TEXT>",
+	}}
+	tv, err := doc.Render()
+	require.NoError(t, err)
+	require.Contains(t, tv, "LicenseName: line one line two </text>\n")
+	require.Contains(t, tv, "ExtractedText: <text>text with  inside </text>\n")
+}
+
+// TestToSPDXExternalReferenceTypes checks that external references of
+// types SPDX does not define keep their type name.
+func TestToSPDXExternalReferenceTypes(t *testing.T) {
+	pdoc := sbom.NewDocument()
+	pdoc.Metadata.Name = "extref-doc"
+	pdoc.GetNodeList().AddRootNode(&sbom.Node{
+		Id:   "Package-yaml",
+		Type: sbom.Node_PACKAGE,
+		Name: "go.yaml.in/yaml/v3",
+		ExternalReferences: []*sbom.ExternalReference{
+			{Type: sbom.ExternalReference_VCS, Url: "https://github.com/yaml/go-yaml"},
+			{Type: sbom.ExternalReference_OTHER, Url: "https://example.com/other"},
+			{Type: sbom.ExternalReference_SECURITY_SWID, Url: "swid:2df9de35-0aff-4a86-ace6-f7dddd1ade4c"},
+		},
+	})
+
+	doc, err := spdx.FromProtobom(pdoc)
+	require.NoError(t, err)
+	require.Equal(t, []spdx.ExternalRef{
+		{Category: "OTHER", Type: "vcs", Locator: "https://github.com/yaml/go-yaml"},
+		{Category: "OTHER", Type: "OTHER", Locator: "https://example.com/other"},
+		{Category: "SECURITY", Type: "swid", Locator: "swid:2df9de35-0aff-4a86-ace6-f7dddd1ade4c"},
+	}, doc.Packages["SPDXRef-Package-yaml"].ExternalRefs)
+
+	// The type survives the way back to protobom.
+	back, err := spdx.ToProtobom(doc)
+	require.NoError(t, err)
+	node := back.GetNodeList().GetNodeByID("Package-yaml")
+	require.NotNil(t, node)
+	require.Equal(t, sbom.ExternalReference_VCS, node.GetExternalReferences()[0].GetType())
+	require.Equal(t, sbom.ExternalReference_SECURITY_SWID, node.GetExternalReferences()[2].GetType())
 }

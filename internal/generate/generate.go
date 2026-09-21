@@ -33,6 +33,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -41,6 +42,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	protospdx "github.com/protobom/protobom/pkg/formats/spdx"
@@ -106,6 +108,11 @@ type Options struct {
 	// itself, dropping the rest of the resolved dependency graph.
 	OnlyDirectDeps bool
 
+	// NoDependencies skips the dependency extraction of the codebases
+	// found in directories and archives: their packages list only the
+	// files they hold.
+	NoDependencies bool
+
 	// Offline disables all network access during decomposition. The
 	// dependency data that needs the network (transitive Go module
 	// graphs, license lookups) degrades to what the local sources
@@ -135,7 +142,91 @@ func Document(ctx context.Context, opts *Options) (*sbom.Document, error) {
 	if err := addFiles(doc, opts.Files); err != nil {
 		return nil, err
 	}
+	encodePurls(doc.GetNodeList())
 	return doc, nil
+}
+
+// addSourceNodeList adds the node list of one scanned source to the
+// document. Sources are identified by their names, so two sources can
+// claim the same identifiers (two directories named alike, say): the
+// root of the later source, and the files indexed under it, are then
+// renamed with the first free numeric suffix, as the legacy generator
+// did, instead of merging into the earlier ones. Files collide even
+// when the roots do not, like those of two codebases sharing a name but
+// not a version. Other shared nodes, such as a dependency both sources
+// use, still merge.
+func addSourceNodeList(doc *sbom.Document, nl *sbom.NodeList) {
+	existing := map[string]struct{}{}
+	for _, node := range doc.GetNodeList().GetNodes() {
+		existing[node.GetId()] = struct{}{}
+	}
+	roots := map[string]struct{}{}
+	for _, id := range nl.GetRootElements() {
+		roots[id] = struct{}{}
+	}
+
+	incoming := map[string]struct{}{}
+	var ids []string
+	for _, node := range nl.GetNodes() {
+		incoming[node.GetId()] = struct{}{}
+		_, isRoot := roots[node.GetId()]
+		if _, ok := existing[node.GetId()]; ok && (isRoot || node.GetType() == sbom.Node_FILE) {
+			ids = append(ids, node.GetId())
+		}
+	}
+	if len(ids) == 0 {
+		doc.GetNodeList().Add(nl)
+		return
+	}
+
+	// A suffixed identifier must be free in the document and in the
+	// source itself, which may hold files named like one (x-0001).
+	for i := 1; ; i++ {
+		suffix := fmt.Sprintf("-%04d", i)
+		free := true
+		for _, id := range ids {
+			_, inDoc := existing[id+suffix]
+			_, inSource := incoming[id+suffix]
+			if inDoc || inSource {
+				free = false
+				break
+			}
+		}
+		if !free {
+			continue
+		}
+		renames := make(map[string]string, len(ids))
+		for _, id := range ids {
+			renames[id] = id + suffix
+		}
+		logrus.Infof(
+			"Renaming %d elements of source %v with suffix %s to keep their identifiers unique",
+			len(renames), nl.GetRootElements(), suffix,
+		)
+		logrus.Debugf("Renamed elements: %v", renames)
+		renameNodes(nl, renames)
+		break
+	}
+	doc.GetNodeList().Add(nl)
+}
+
+// encodePurls percent-encodes the plus signs some decomposers leave
+// verbatim in purls (in Go pseudo versions and build metadata, for
+// example). The purl specification reserves the character, so it has
+// to be written %2B everywhere past the package type.
+func encodePurls(nl *sbom.NodeList) {
+	for _, node := range nl.GetNodes() {
+		id := int32(sbom.SoftwareIdentifierType_PURL)
+		p, ok := node.GetIdentifiers()[id]
+		if !ok {
+			continue
+		}
+		typ, rest, ok := strings.Cut(p, "/")
+		if !ok || !strings.Contains(rest, "+") {
+			continue
+		}
+		node.Identifiers[id] = typ + "/" + strings.ReplaceAll(rest, "+", "%2B")
+	}
 }
 
 // newDocument assembles the document and its metadata from the
@@ -149,13 +240,33 @@ func newDocument(opts *Options) *sbom.Document {
 		namespace = "https://spdx.org/spdxdocs/k8s-releng-bom-" + uuid.NewString()
 	}
 	md.Id = namespace
-	md.Date = timestamppb.Now()
+	md.Date = timestamppb.New(creationTime())
 	if opts.CreatorPerson != "" {
 		_, name, email := protospdx.ParseActorString(opts.CreatorPerson)
 		md.Authors = []*sbom.Person{{Name: name, Email: email}}
 	}
 	md.Tools = []*sbom.Tool{{Name: "bom", Version: version.GetVersionInfo().GitVersion}}
 	return doc
+}
+
+// creationTime returns the document creation time: the time set in
+// SOURCE_DATE_EPOCH when it holds a valid Unix timestamp, so builds can
+// produce reproducible documents, and the current time otherwise.
+func creationTime() time.Time {
+	if epoch := os.Getenv("SOURCE_DATE_EPOCH"); epoch != "" {
+		secs, err := strconv.ParseInt(epoch, 10, 64)
+		if err == nil && secs < 0 {
+			err = errors.New("negative timestamp")
+		}
+		if err == nil {
+			t := time.Unix(secs, 0).UTC()
+			if err = timestamppb.New(t).CheckValid(); err == nil {
+				return t
+			}
+		}
+		logrus.Warnf("Ignoring invalid SOURCE_DATE_EPOCH %q: %v", epoch, err)
+	}
+	return time.Now()
 }
 
 // addFiles resolves the file patterns and adds each match to the

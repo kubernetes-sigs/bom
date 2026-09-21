@@ -17,7 +17,9 @@ limitations under the License.
 package generate
 
 import (
+	"crypto/sha256"
 	"debug/buildinfo"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -30,7 +32,6 @@ import (
 
 	api "github.com/carabiner-dev/unpack/api/v1"
 	"github.com/carabiner-dev/unpack/system"
-	"github.com/google/uuid"
 	purl "github.com/package-url/packageurl-go"
 	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/sirupsen/logrus"
@@ -109,7 +110,7 @@ func (d *goBinaryDecomposer) ExtractFromFS(source fs.FS, _ *api.DecomposerOption
 			logrus.Warnf("skipping go binary %q: %v", name, err)
 			return nil
 		}
-		main := addGoBinary(nl, modules, bin, "/"+name)
+		main := addGoBinary(nl, modules, bin, "/"+name, hashes[int32(sbom.HashAlgorithm_SHA256)])
 		main.Hashes = hashes
 		nl.RootElements = append(nl.RootElements, main.GetId())
 		return nil
@@ -192,7 +193,7 @@ func goBinaryNodeList(filePath, fileName string) (*sbom.NodeList, error) {
 		return nil, nil
 	}
 	nl := sbom.NewNodeList()
-	main := addGoBinary(nl, map[string]*sbom.Node{}, bin, fileName)
+	main := addGoBinary(nl, map[string]*sbom.Node{}, bin, fileName, "")
 	nl.RootElements = append(nl.RootElements, main.GetId())
 	return nl, nil
 }
@@ -204,9 +205,21 @@ func goBinaryNodeList(filePath, fileName string) (*sbom.NodeList, error) {
 // nodes are shared by the binaries of one node list through the
 // modules map. The build information lists modules without their own
 // dependency edges, so all of them hang off the main module.
-func addGoBinary(nl *sbom.NodeList, modules map[string]*sbom.Node, bin *debug.BuildInfo, binPath string) *sbom.Node {
+//
+// The SHA256 digest of the binary, when given, has a prefix of it become part of the
+// identifier of the main module package, so the binaries found at the
+// same path in the platform images of an index, or in different images,
+// stay apart unless they are identical.
+func addGoBinary(nl *sbom.NodeList, modules map[string]*sbom.Node, bin *debug.BuildInfo, binPath, digest string) *sbom.Node {
 	main := goMainModuleNode(bin, binPath)
-	main.Id = uuid.NewString()
+	// The main module package stands for the binary: its identifier
+	// is seeded on the binary path, which tells apart binaries built
+	// from the same module and the module used as a dependency.
+	seed := strings.TrimPrefix(binPath, "/") + "-" + moduleSeed(main)
+	if len(digest) >= 12 {
+		seed += "-" + digest[:12]
+	}
+	main.Id = uniqueNodeID(nl, elementID("Package", seed))
 	main.FileName = binPath
 	main.PrimaryPurpose = []sbom.Purpose{sbom.Purpose_APPLICATION}
 	nl.AddNode(main)
@@ -235,10 +248,39 @@ func sharedNode(nl *sbom.NodeList, modules map[string]*sbom.Node, node *sbom.Nod
 	if existing, ok := modules[key]; ok {
 		return existing
 	}
-	node.Id = uuid.NewString()
+	node.Id = uniqueNodeID(nl, elementID("Package", moduleSeed(node)))
 	modules[key] = node
 	nl.AddNode(node)
 	return node
+}
+
+// moduleSeed returns the element id seed of a module node: its name
+// and version, plus a digest of its comment when it has one, which
+// tells a replacement apart from the module used directly.
+func moduleSeed(node *sbom.Node) string {
+	seed := node.GetName()
+	if node.GetVersion() != "" {
+		seed += "-" + node.GetVersion()
+	}
+	if node.GetComment() != "" {
+		sum := sha256.Sum256([]byte(node.GetComment()))
+		seed += "-" + hex.EncodeToString(sum[:4])
+	}
+	return seed
+}
+
+// uniqueNodeID returns id, or id with the first free numeric suffix
+// when the node list holds a node with that identifier already.
+func uniqueNodeID(nl *sbom.NodeList, id string) string {
+	if nl.GetNodeByID(id) == nil {
+		return id
+	}
+	for i := 1; ; i++ {
+		candidate := fmt.Sprintf("%s-%04d", id, i)
+		if nl.GetNodeByID(candidate) == nil {
+			return candidate
+		}
+	}
 }
 
 // goMainModuleNode builds the package node of a binary's main module.

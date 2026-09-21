@@ -1,0 +1,20 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: base-files
+
+Files: *
+Copyright: 1995-2023 Santiago Vila
+License: GPL-2+
+
+Files: debian/motd
+Copyright: none
+License: public-domain
+
+Files: debian/m4/*
+Copyright: 2012 Free Software Foundation, Inc.
+License: GPL-3+ with Autoconf-data exception
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2, or (at your option)
+ any later version.

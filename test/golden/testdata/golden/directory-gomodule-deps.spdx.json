@@ -1,0 +1,245 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2026-01-01T00:00:00Z",
+    "creators": [
+      "Tool: bom-golden-fixture"
+    ],
+    "licenseListVersion": "3.28"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentDescribes": [
+    "SPDXRef-Package-example.com-bom-golden-deps"
+  ],
+  "documentNamespace": "https://sbom.k8s.io/golden/directory-gomodule-deps",
+  "files": [
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-deps-LICENSE",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "92170cdc034b2ff819323ff670d3b7266c8bffcd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "389080b6132d3eaae780648d6998390d8cc71908561bce09578e27c542aa1a9f3122e01f640c5b01bee73004c23aa4e9f2066fe5ee0ca2072c2420578b28d71f"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "LICENSE",
+      "fileTypes": [
+        "DOCUMENTATION",
+        "TEXT"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "Apache-2.0"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-deps-README.md",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "163ee9f6d4730023a2e204201a1edf34bf65f23d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "737c1e5df94af0b00b3f1dba73708e2c627c1cf5eab45b624d0a7a268b572b81"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3bd2baf74a620af66e6918c7b48a2ccf15885a16a94b2103c15ad6a6740c6740e63fe23661bde6514b64a2802be2abd24d14ed64256d2d07a33f75b5e9658ce2"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "README.md",
+      "fileTypes": [
+        "DOCUMENTATION",
+        "TEXT"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "NONE"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-deps-go.mod",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "17bc91e10f7cc8d75b80e68d496fec3f600d6b47"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "096489088f3feef624da7449b2cf3621d3b5d79771510057c489af4e2c31b42b"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "cc9f577afb43b56b905920bd97664cf3059f01849564584ab0de558b43e47eef474117848ef4e0e4c6fafbd3c7f6798a6fcb8c27c6eff5e2650fc6fb872f9f65"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "go.mod",
+      "fileTypes": [
+        "OTHER"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "NONE"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-File-example.com-bom-golden-deps-main.go",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "189ec3717c06221ea42f0b905f2a228546f9d3fb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1b73bfc07613aefa742bababbf7724da3a214cd476fc5310b3dad1a674896a12"
+        },
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a7103a5f081a523bd3709b85fda7ab2be3cdf43177d3ffc2238ae7e002dd3e57379f22e4c32945a60952b44a145f6b463ba4519ecbf6c20a89a05efa9be7c8e8"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "fileName": "main.go",
+      "fileTypes": [
+        "SOURCE"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoInFiles": [
+        "NONE"
+      ]
+    }
+  ],
+  "name": "bom-golden-directory-gomodule-deps",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-example.com-bom-golden-deps",
+      "checksums": [],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NONE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:golang/example.com/bom-golden-deps",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": true,
+      "hasFiles": [
+        "SPDXRef-File-example.com-bom-golden-deps-LICENSE",
+        "SPDXRef-File-example.com-bom-golden-deps-README.md",
+        "SPDXRef-File-example.com-bom-golden-deps-go.mod",
+        "SPDXRef-File-example.com-bom-golden-deps-main.go"
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseInfoFromFiles": [
+        "Apache-2.0"
+      ],
+      "name": "example.com/bom-golden-deps",
+      "packageVerificationCode": {
+        "packageVerificationCodeValue": "7e511d301b600e5901084c22590c34e92af5b3b5"
+      },
+      "versionInfo": ""
+    },
+    {
+      "SPDXID": "SPDXRef-Package-github.com-google-uuid-v1.6.0",
+      "checksums": [],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://proxy.golang.org/github.com/google/uuid/@v/v1.6.0.zip",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:golang/github.com/google/uuid@v1.6.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "name": "github.com/google/uuid",
+      "primaryPackagePurpose": "LIBRARY",
+      "versionInfo": "v1.6.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-golang.org-x-mod-v0.17.0",
+      "checksums": [],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://proxy.golang.org/golang.org/x/mod/@v/v0.17.0.zip",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:golang/golang.org/x/mod@v0.17.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "name": "golang.org/x/mod",
+      "primaryPackagePurpose": "LIBRARY",
+      "versionInfo": "v0.17.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-stdlib-1.21",
+      "checksums": [],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "NONE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:golang/stdlib@1.21",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseDeclared": "BSD-3-Clause",
+      "name": "stdlib",
+      "primaryPackagePurpose": "LIBRARY",
+      "versionInfo": "1.21"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-deps-LICENSE",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-deps-README.md",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-deps-go.mod",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-File-example.com-bom-golden-deps-main.go",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-github.com-google-uuid-v1.6.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-golang.org-x-mod-v0.17.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-stdlib-1.21",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-example.com-bom-golden-deps"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}

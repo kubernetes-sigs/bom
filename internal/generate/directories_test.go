@@ -19,6 +19,7 @@ package generate_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -209,4 +210,123 @@ func TestDirectoriesNoGitignore(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, names(doc), "secret.txt")
 	require.Contains(t, names(doc), "keep.txt")
+}
+
+// TestDirectoriesNoGitignoreCodebases checks that NoGitignore also
+// reaches the codebase discovery: a manifest the .gitignore excludes is
+// found only when the file is not read.
+func TestDirectoriesNoGitignoreCodebases(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".gitignore"),
+		[]byte("go.mod\n"), os.FileMode(0o644)))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "go.mod"),
+		[]byte("module example.com/ignored\n\ngo 1.22\n"), os.FileMode(0o644)))
+
+	for noGitignore, hasCodebase := range map[bool]bool{false: false, true: true} {
+		doc, err := generate.Document(t.Context(), &generate.Options{
+			Directories: []string{dir},
+			NoGitignore: noGitignore,
+			Offline:     true,
+		})
+		require.NoError(t, err)
+		root := doc.GetNodeList().GetNodeByID(doc.GetNodeList().GetRootElements()[0])
+		require.NotNil(t, root)
+		require.Equal(t, hasCodebase, root.Purl() != "", "NoGitignore %v", noGitignore)
+	}
+}
+
+// TestDirectoriesSameBasename checks that directories sharing a base
+// name become distinct packages, with distinct files, instead of
+// merging into one.
+func TestDirectoriesSameBasename(t *testing.T) {
+	base := t.TempDir()
+	dirs := make([]string, 0, 2)
+	for _, parent := range []string{"a", "b"} {
+		dir := filepath.Join(base, parent, "foo")
+		require.NoError(t, os.MkdirAll(dir, os.FileMode(0o755)))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "x.txt"), []byte(parent), os.FileMode(0o644)))
+		dirs = append(dirs, dir)
+	}
+
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Directories: dirs,
+		Offline:     true,
+	})
+	require.NoError(t, err)
+
+	nl := doc.GetNodeList()
+	require.Equal(t, []string{"Package-foo", "Package-foo-0001"}, nl.GetRootElements())
+	files := map[string]string{}
+	for _, root := range nl.GetRootElements() {
+		edge := nl.GetEdgeByType(root, sbom.Edge_contains)
+		require.NotNil(t, edge)
+		require.Len(t, edge.GetTo(), 1)
+		files[root] = edge.GetTo()[0]
+	}
+	require.Equal(t, "File-foo-x.txt", files["Package-foo"])
+	require.Equal(t, "File-foo-x.txt-0001", files["Package-foo-0001"])
+	require.NotEqual(t,
+		nl.GetNodeByID(files["Package-foo"]).GetHashes(),
+		nl.GetNodeByID(files["Package-foo-0001"]).GetHashes(),
+		"each package keeps its own file",
+	)
+}
+
+// TestDirectoriesSameCodebaseName checks that codebases sharing a name
+// but not a version keep their files apart, although their packages do
+// not collide.
+func TestDirectoriesSameCodebaseName(t *testing.T) {
+	base := t.TempDir()
+	dirs := make([]string, 0, 2)
+	for parent, version := range map[string]string{"a": "1.0.0", "b": "2.0.0"} {
+		dir := filepath.Join(base, parent, "foo")
+		require.NoError(t, os.MkdirAll(dir, os.FileMode(0o755)))
+		manifest := `{"name": "foo", "version": "` + version + `", "lockfileVersion": 3, "packages": {"": {"name": "foo", "version": "` + version + `"}}}`
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "package.json"), []byte(manifest), os.FileMode(0o644)))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte(manifest), os.FileMode(0o644)))
+		dirs = append(dirs, dir)
+	}
+	slices.Sort(dirs)
+
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Directories: dirs,
+		Offline:     true,
+	})
+	require.NoError(t, err)
+
+	nl := doc.GetNodeList()
+	require.Len(t, nl.GetRootElements(), 2)
+	seen := map[string]struct{}{}
+	for _, root := range nl.GetRootElements() {
+		edge := nl.GetEdgeByType(root, sbom.Edge_contains)
+		require.NotNil(t, edge, root)
+		require.Len(t, edge.GetTo(), 2, root)
+		for _, id := range edge.GetTo() {
+			require.NotContains(t, seen, id, "files of %s are shared", root)
+			seen[id] = struct{}{}
+		}
+	}
+}
+
+// TestDirectoriesNoDependencies checks that NoDependencies skips the
+// codebase extraction: the Go module directory becomes a plain package
+// named after the directory.
+func TestDirectoriesNoDependencies(t *testing.T) {
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Directories:    []string{gomoduleFixture},
+		NoDependencies: true,
+		Offline:        true,
+	})
+	require.NoError(t, err)
+
+	nl := doc.GetNodeList()
+	require.Equal(t, []string{"Package-gomodule"}, nl.GetRootElements())
+	root := nl.GetNodeByID("Package-gomodule")
+	require.NotNil(t, root)
+	require.Empty(t, root.Purl(), "no codebase was extracted")
+	for _, node := range nl.GetNodes() {
+		if node.GetId() != root.GetId() {
+			require.Equal(t, sbom.Node_FILE, node.GetType(), "only files hang off the package")
+		}
+	}
 }

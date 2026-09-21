@@ -59,7 +59,7 @@ func addArchives(ctx context.Context, doc *sbom.Document, opts *Options) error {
 			if err != nil {
 				return fmt.Errorf("scanning archive %q: %w", path, err)
 			}
-			doc.GetNodeList().Add(nl)
+			addSourceNodeList(doc, nl)
 		}
 	}
 	return nil
@@ -85,9 +85,10 @@ func archiveNodeList(ctx context.Context, tarPath string, opts *Options) (*sbom.
 		return nil, err
 	}
 
-	// The package node represents the archive: it records the file it
-	// was generated from and the checksums of the artifact itself, as
-	// the legacy generator did.
+	// The package node represents the archive: it records the name of
+	// the file it was generated from and the checksums of the artifact
+	// itself, as the legacy generator did. The path it was read from
+	// is local to the machine running bom and stays out.
 	root := nl.GetNodeByID(nl.GetRootElements()[0])
 	if root == nil {
 		return nil, fmt.Errorf("no root node after scanning %q", tarPath)
@@ -95,7 +96,7 @@ func archiveNodeList(ctx context.Context, tarPath string, opts *Options) (*sbom.
 	if err := hashFileInto(root, tarPath); err != nil {
 		return nil, err
 	}
-	root.FileName = tarPath
+	root.FileName = filepath.Base(tarPath)
 	return nl, nil
 }
 

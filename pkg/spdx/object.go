@@ -187,17 +187,20 @@ func (e *Entity) ToProvenanceSubject() *intoto.ResourceDescriptor {
 		location = e.FileName
 	}
 
+	// Subjects are the artifacts the document can vouch for by
+	// digest. Plenty of elements carry no digest or location, like the
+	// modules a Go binary lists or the packages of a codebase, so
+	// skipping them is expected and logged at debug level only.
 	if location == "" {
-		logrus.Warnf("%+v", e)
-		logrus.Warnf(
-			"Unable to convert element %s to provenance subject, no location found",
+		logrus.Debugf(
+			"Not converting element %s to provenance subject, no location found",
 			e.SPDXID(),
 		)
 		return nil
 	}
 	if len(e.Checksum) == 0 {
-		logrus.Warnf(
-			"Unable to convert element %s to provenance subject, no checksums found",
+		logrus.Debugf(
+			"Not converting element %s to provenance subject, no checksums found",
 			e.SPDXID(),
 		)
 		return nil

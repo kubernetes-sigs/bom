@@ -30,6 +30,16 @@ name: bom-test
 creator:
     person: Kubernetes Release Managers (release-managers@kubernetes.io)
     tool: bom
+external-docs:
+    - id: source-bom
+      uri: https://example.com/source.spdx
+      checksums:
+        SHA1: 0123456789abcdef0123456789abcdef01234567
+externalDocRefs:
+    - id: legacy-bom
+      uri: https://example.com/legacy.spdx
+      checksums:
+        SHA1: "1234567890123456789012345678901234567890"
 artifacts:
     - type: directory
       source: .
@@ -67,4 +77,32 @@ func TestYAMLParse(t *testing.T) {
 	require.Equal(t, "http://www.example.com/", opts.Namespace)
 	require.Equal(t, "bom-test", opts.Name)
 	require.Equal(t, "Apache-2.0", opts.License)
+	require.Equal(t, []ExternalDocumentRef{{
+		ID:        "source-bom",
+		URI:       "https://example.com/source.spdx",
+		Checksums: map[string]string{"SHA1": "0123456789abcdef0123456789abcdef01234567"},
+	}, {
+		ID:        "legacy-bom",
+		URI:       "https://example.com/legacy.spdx",
+		Checksums: map[string]string{"SHA1": "1234567890123456789012345678901234567890"},
+	}}, opts.ExternalDocumentRef)
+}
+
+func TestValidateLicenseListVersion(t *testing.T) {
+	opts := &DocGenerateOptions{Files: []string{"file"}}
+	for ver, expected := range map[string]string{"": "3.28", "v3.28.0": "3.28", "3.21": "3.21", "v3.20": "3.20"} {
+		opts.LicenseListVersion = ver
+		require.NoError(t, opts.Validate(), "version %q", ver)
+		got, err := licenseListVersion(ver)
+		require.NoError(t, err)
+		require.Equal(t, expected, got)
+	}
+	for _, ver := range []string{"latest", "LATEST"} {
+		opts.LicenseListVersion = ver
+		require.ErrorContains(t, opts.Validate(), "must name a release", "version %q", ver)
+	}
+	for _, ver := range []string{"foo", "v3.x"} {
+		opts.LicenseListVersion = ver
+		require.ErrorContains(t, opts.Validate(), "parsing license list version", "version %q", ver)
+	}
 }

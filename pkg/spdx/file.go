@@ -48,7 +48,8 @@ LicenseConcluded: {{ if .LicenseConcluded }}{{ .LicenseConcluded }}{{ else }}NOA
 {{ if .LicenseComments }}LicenseComments: <text>{{ .LicenseComments }}
 </text>
 {{ end -}}
-LicenseInfoInFile: {{ if .LicenseInfoInFile }}{{ .LicenseInfoInFile }}{{ else }}NOASSERTION{{ end }}
+{{ range .LicenseInfoInFiles }}LicenseInfoInFile: {{ . }}
+{{ end -}}
 FileCopyrightText: {{ if .CopyrightText }}<text>{{ .CopyrightText }}
 </text>{{ else }}NOASSERTION{{ end }}
 
@@ -59,6 +60,14 @@ type File struct {
 	Entity
 	FileType          []string
 	LicenseInfoInFile string // GPL-3.0-or-later
+}
+
+// LicenseInfoInFiles lists the individual licenses of the
+// LicenseInfoInFile expression, as SPDX lists the licenses found in a
+// file: one license per entry. A file with no license data asserts
+// nothing.
+func (f *File) LicenseInfoInFiles() []string {
+	return licenseList(f.LicenseInfoInFile)
 }
 
 func NewFile() (f *File) {

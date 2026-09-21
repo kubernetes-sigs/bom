@@ -18,10 +18,13 @@ package golden
 
 import (
 	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -71,9 +74,27 @@ func TestGoldenGenerate(t *testing.T) {
 			},
 		},
 		{
+			// A directory holding a Go module with dependencies,
+			// scanned offline so only the requirements its go.mod
+			// declares are listed. The root package both holds files
+			// and depends on packages; checkFileOwnership verifies that
+			// every file lands under its package, while the ordering
+			// fix itself is pinned by a unit test in pkg/spdx.
+			name: "directory-gomodule-deps",
+			slow: true,
+			genopts: func(*testing.T) *spdx.DocGenerateOptions {
+				return &spdx.DocGenerateOptions{
+					Directories:      []string{filepath.Join("testdata", "gomodule-deps")},
+					ProcessGoModules: true,
+					Offline:          true,
+				}
+			},
+		},
+		{
 			// A synthetic docker archive with a single Debian layer.
-			// Exercises the image tarball scanner and the dpkg OS
-			// package scanner.
+			// Exercises the image tarball scanner, the dpkg OS package
+			// scanner and the normalization of the licenses Debian
+			// copyright files declare.
 			name: "image-archive",
 			genopts: func(t *testing.T) *spdx.DocGenerateOptions {
 				return &spdx.DocGenerateOptions{
@@ -112,6 +133,7 @@ func TestGoldenGenerate(t *testing.T) {
 
 			tagValue, err := (&serialize.TagValue{}).Serialize(doc)
 			require.NoError(t, err)
+			checkFileOwnership(t, tagValue)
 			checkGolden(t, tc.name+".spdx", canonicalTagValue(scrub(tagValue)))
 
 			jsonDoc, err := (&serialize.JSON{}).Serialize(doc)
@@ -137,10 +159,45 @@ func checkGolden(t *testing.T, name, got string) {
 		"generated SBOM differs from %s — if the change is intentional, regenerate with `go test ./test/golden -update`", path)
 }
 
+// checkFileOwnership checks the element order of a raw tag-value
+// document, which canonicalTagValue discards: in tag-value, a file
+// belongs to the package listed last before it, so every file listed
+// after a package must be one that package CONTAINS.
+func checkFileOwnership(t *testing.T, tagValue string) {
+	t.Helper()
+	contains := map[string]struct{}{}
+	for line := range strings.SplitSeq(tagValue, "\n") {
+		if fields := strings.Fields(line); len(fields) == 4 && fields[0] == "Relationship:" && fields[2] == "CONTAINS" {
+			contains[fields[1]+" "+fields[3]] = struct{}{}
+		}
+	}
+	pkg, file := "", ""
+	lastTag := ""
+	for line := range strings.SplitSeq(tagValue, "\n") {
+		tag, value, _ := strings.Cut(line, ": ")
+		if tag == "SPDXID" {
+			switch lastTag {
+			case "PackageName":
+				pkg = value
+			case "FileName":
+				file = value
+				if pkg != "" {
+					_, ok := contains[pkg+" "+file]
+					require.True(t, ok, "file %s is listed after package %s, which does not contain it", file, pkg)
+				}
+			}
+		}
+		if tag != "" {
+			lastTag = tag
+		}
+	}
+}
+
 // canonicalTagValue rewrites a tag-value document into a stable form:
 // comment lines are dropped, blank-line-separated blocks after the
-// document header are sorted, and all Relationship: lines are pulled
-// into a single sorted section at the end. Parts of the generation
+// document header are sorted, with the extracted licenses kept after
+// the elements as tag-value requires, and all Relationship: lines are
+// pulled into a single sorted section at the end. Parts of the generation
 // pipeline emit elements and relationships in nondeterministic order
 // (concurrent scans append as they finish), so the raw rendering is not
 // directly comparable between runs.
@@ -175,8 +232,18 @@ func canonicalTagValue(in string) string {
 		return ""
 	}
 	// The first block is the document header; keep it first and sort
-	// the element blocks after it.
-	sort.Strings(blocks[1:])
+	// the element blocks after it, then the extracted licenses.
+	elements, licenses := []string{}, []string{}
+	for _, block := range blocks[1:] {
+		if strings.HasPrefix(block, "LicenseID:") {
+			licenses = append(licenses, block)
+		} else {
+			elements = append(elements, block)
+		}
+	}
+	sort.Strings(elements)
+	sort.Strings(licenses)
+	blocks = append(append(blocks[:1], elements...), licenses...)
 	sort.Strings(rels)
 	if len(rels) > 0 {
 		blocks = append(blocks, strings.Join(rels, "\n"))
@@ -188,8 +255,7 @@ func canonicalTagValue(in string) string {
 // the serialized form of their elements, for the same reason as
 // canonicalTagValue: element order in the output is not stable. It also
 // pins creationInfo: unlike the tag-value renderer, the JSON serializer
-// ignores the document's creation data and stamps time.Now() and its
-// own tool version.
+// ignores the document's creator data and stamps its own tool version.
 func canonicalJSON(t *testing.T, in string) string {
 	t.Helper()
 	var doc any
@@ -246,9 +312,8 @@ var (
 
 // scrub replaces unstable output fragments with fixed placeholders:
 // paths under the system temp directory (the generators reference
-// per-run temp locations) and UUIDs (buildIDString appends a random
-// UUID to SPDX IDs when it gets no usable seed, as happens for the OS
-// packages scanned from image layers).
+// per-run temp locations) and UUIDs (legacy code paths append a random
+// UUID to SPDX IDs when they get no usable seed).
 func scrub(in string) string {
 	in = tempPathRe.ReplaceAllString(in, "«TMPPATH»")
 	return uuidRe.ReplaceAllString(in, "«UUID»")
@@ -282,33 +347,87 @@ func writeTar(t *testing.T, path string, entries []tarEntry) {
 	require.NoError(t, tw.Close())
 }
 
-// buildImageArchive assembles a minimal docker-save style archive with a
-// single Debian layer from the text fixtures in testdata/image.
-func buildImageArchive(t *testing.T) string {
+// layerFixture is the gzipped layer of the image archive fixture. It is
+// committed rather than compressed at test time: the image digest
+// covers the compressed layer, and compress/gzip output changes between
+// Go releases. Running the tests with -update rebuilds it from the text
+// fixtures in testdata/image.
+var layerFixture = filepath.Join("testdata", "image", "layer.tar.gz")
+
+// layerEntries returns the files of the image layer, read from the
+// text fixtures in testdata/image.
+func layerEntries(t *testing.T) []tarEntry {
 	t.Helper()
 	osRelease, err := os.ReadFile(filepath.Join("testdata", "image", "os-release"))
 	require.NoError(t, err)
 	dpkgStatus, err := os.ReadFile(filepath.Join("testdata", "image", "dpkg-status"))
 	require.NoError(t, err)
-
-	dir := t.TempDir()
-	layerPath := filepath.Join(dir, "layer.tar")
-	writeTar(t, layerPath, []tarEntry{
+	copyright, err := os.ReadFile(filepath.Join("testdata", "image", "base-files-copyright"))
+	require.NoError(t, err)
+	return []tarEntry{
 		{name: "etc/os-release", data: osRelease},
+		{name: "usr/share/doc/base-files/copyright", data: copyright},
 		{name: "var/lib/dpkg/status", data: dpkgStatus},
-	})
+	}
+}
+
+// readLayerFixture returns the compressed layer fixture and its
+// uncompressed tarball. It fails when the fixture no longer holds the
+// text fixtures, and under -update rebuilds it in that case only, so
+// updating the golden files with another Go release leaves it alone.
+func readLayerFixture(t *testing.T) (compressed, uncompressed []byte) {
+	t.Helper()
+	layerPath := filepath.Join(t.TempDir(), "layer.tar")
+	writeTar(t, layerPath, layerEntries(t))
 	layerData, err := os.ReadFile(layerPath)
 	require.NoError(t, err)
+
+	// A missing or unreadable fixture reads as empty, failing the
+	// comparison below (or getting rebuilt under -update).
+	read := func() (compressed, uncompressed []byte) {
+		compressed, err := os.ReadFile(layerFixture)
+		if err != nil {
+			return nil, nil
+		}
+		gz, err := gzip.NewReader(bytes.NewReader(compressed))
+		if err != nil {
+			return compressed, nil
+		}
+		if uncompressed, err = io.ReadAll(gz); err != nil {
+			return compressed, nil
+		}
+		return compressed, uncompressed
+	}
+	compressed, uncompressed = read()
+	if *update && !bytes.Equal(layerData, uncompressed) {
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		_, err := gz.Write(layerData)
+		require.NoError(t, err)
+		require.NoError(t, gz.Close())
+		require.NoError(t, os.WriteFile(layerFixture, buf.Bytes(), os.FileMode(0o644)))
+		compressed, uncompressed = read()
+	}
+	require.Equal(t, layerData, uncompressed,
+		"%s is missing or out of date with the text fixtures, regenerate it with `go test ./test/golden -update`", layerFixture)
+	return compressed, uncompressed
+}
+
+// buildImageArchive assembles a minimal docker-save style archive with a
+// single Debian layer from the committed layer fixture.
+func buildImageArchive(t *testing.T) string {
+	t.Helper()
+	compressed, uncompressed := readLayerFixture(t)
 
 	// The config must declare the layer diff ids: without them the
 	// go-containerregistry loader the engine reads archives with
 	// treats the image as having no layers.
 	config := fmt.Sprintf(
 		`{"architecture":"amd64","os":"linux","config":{},"rootfs":{"type":"layers","diff_ids":["sha256:%x"]}}`,
-		sha256.Sum256(layerData),
+		sha256.Sum256(uncompressed),
 	)
 
-	archivePath := filepath.Join(dir, "bom-golden-image.tar")
+	archivePath := filepath.Join(t.TempDir(), "bom-golden-image.tar")
 	writeTar(t, archivePath, []tarEntry{
 		{
 			name: "config.json",
@@ -316,9 +435,9 @@ func buildImageArchive(t *testing.T) string {
 		},
 		{
 			name: "manifest.json",
-			data: []byte(`[{"Config":"config.json","RepoTags":["registry.k8s.io/bom-golden:v1.0.0"],"Layers":["layer.tar"]}]`),
+			data: []byte(`[{"Config":"config.json","RepoTags":["registry.k8s.io/bom-golden:v1.0.0"],"Layers":["layer.tar.gz"]}]`),
 		},
-		{name: "layer.tar", data: layerData},
+		{name: "layer.tar.gz", data: compressed},
 	})
 	return archivePath
 }

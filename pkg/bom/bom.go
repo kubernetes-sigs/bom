@@ -89,6 +89,11 @@ type GenerateOptions struct {
 	// itself, dropping the rest of the resolved dependency graph.
 	OnlyDirectDeps bool
 
+	// NoDependencies skips the dependency extraction of the codebases
+	// found in directories and archives: their packages list only the
+	// files they hold.
+	NoDependencies bool
+
 	// Offline disables all network access during generation. Data
 	// that needs the network, such as transitive Go module graphs
 	// and license lookups, degrades to what the local sources
@@ -114,6 +119,7 @@ func Generate(ctx context.Context, opts *GenerateOptions) (*sbom.Document, error
 		IgnorePatterns: opts.IgnorePatterns,
 		NoGitignore:    opts.NoGitignore,
 		OnlyDirectDeps: opts.OnlyDirectDeps,
+		NoDependencies: opts.NoDependencies,
 		Offline:        opts.Offline,
 	})
 }

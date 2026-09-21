@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	intoto "github.com/in-toto/attestation/go/v1"
@@ -325,4 +326,21 @@ func TestGetPackagesByPurl(t *testing.T) {
 		}
 		require.Len(t, packages, tc.len, tc.purl)
 	}
+}
+
+func TestRenderSkipsInvalidExternalDocRefs(t *testing.T) {
+	doc := NewDocument()
+	doc.Name = "a & b"
+	doc.Namespace = "https://example.com/ns?a=1&b=2"
+	doc.ExternalDocRefs = []ExternalDocumentRef{
+		{ID: "bad", URI: "https://example.com/b", Checksums: map[string]string{"SHA256": "ff"}},
+		{ID: "good", URI: "https://example.com/g", Checksums: map[string]string{"SHA1": "5f341d31f6b6a8b15bc4e6704830bf37f99511d1"}},
+	}
+	out, err := doc.Render()
+	require.NoError(t, err)
+	require.Contains(t, out, "DocumentName: a & b\n")
+	require.Contains(t, out, "DocumentNamespace: https://example.com/ns?a=1&b=2\n")
+	require.Contains(t, out, "ExternalDocumentRef: DocumentRef-good https://example.com/g SHA1: 5f341d31f6b6a8b15bc4e6704830bf37f99511d1\n")
+	require.NotContains(t, out, "ExternalDocumentRef: \n")
+	require.Equal(t, 1, strings.Count(out, "ExternalDocumentRef:"))
 }

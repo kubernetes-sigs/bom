@@ -90,8 +90,8 @@ func TestArchivesGoModule(t *testing.T) {
 	require.Equal(t, sbom.Node_PACKAGE, root.GetType())
 	require.Equal(t, "example.com/bom-golden-fixture", root.GetName(),
 		"the extracted codebase keeps its module identity")
-	require.Equal(t, archive, root.GetFileName(),
-		"the package records the archive it was generated from")
+	require.Equal(t, filepath.Base(archive), root.GetFileName(),
+		"the package records the name of the archive it was generated from")
 	require.Equal(t, "Apache-2.0", root.GetLicenseConcluded())
 	for _, algo := range []sbom.HashAlgorithm{
 		sbom.HashAlgorithm_SHA1, sbom.HashAlgorithm_SHA256, sbom.HashAlgorithm_SHA512,
@@ -137,7 +137,8 @@ func TestArchivesPlain(t *testing.T) {
 	require.Equal(t, "data.tar", root.GetName(),
 		"packages of unrecognized trees take the archive name")
 	require.Equal(t, "Package-data.tar", root.GetId())
-	require.Equal(t, archive, root.GetFileName())
+	require.Equal(t, "data.tar", root.GetFileName(),
+		"the package records the archive name, not the local path")
 	require.Empty(t, root.GetLicenseConcluded())
 
 	var names []string
@@ -159,4 +160,30 @@ func TestArchivesUnsupported(t *testing.T) {
 		Offline:  true,
 	})
 	require.ErrorContains(t, err, "only tar archives")
+}
+
+// TestArchivesSameBasename checks that archives sharing a file name
+// become distinct packages.
+func TestArchivesSameBasename(t *testing.T) {
+	base := t.TempDir()
+	archives := make([]string, 0, 2)
+	for _, parent := range []string{"a", "b"} {
+		require.NoError(t, os.MkdirAll(filepath.Join(base, parent), os.FileMode(0o755)))
+		archive := filepath.Join(base, parent, "data.tar")
+		writeTarball(t, archive, map[string][]byte{"data.txt": []byte(parent)})
+		archives = append(archives, archive)
+	}
+
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Archives: archives,
+		Offline:  true,
+	})
+	require.NoError(t, err)
+
+	nl := doc.GetNodeList()
+	require.Equal(t, []string{"Package-data.tar", "Package-data.tar-0001"}, nl.GetRootElements())
+	require.NotEqual(t,
+		nl.GetNodeByID("Package-data.tar").GetHashes(),
+		nl.GetNodeByID("Package-data.tar-0001").GetHashes(),
+	)
 }
