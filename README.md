@@ -119,6 +119,7 @@ Usage:
   bom document [command]
 
 Available Commands:
+  dot         bom document dot → Export the SBOM graph in Graphviz DOT format
   outline     bom document outline → Draw structure of a SPDX document
   query       bom document query → Search for information in an SBOM
 ```
@@ -174,6 +175,22 @@ bom document outline debian.spdx
 [trimmed]
 
 ```
+
+### `bom document dot`
+
+`bom document dot` writes the relationship graph of an SBOM in the
+[DOT language](https://graphviz.org/doc/info/lang.html), which Graphviz and
+other tools can render. Unlike the outline, each element appears only once,
+even when several others relate to it, and every edge is labelled with its
+SPDX relationship types:
+
+```
+bom document dot debian.spdx | dot -Tsvg > debian.svg
+```
+
+Use `--root` to render only the graph reachable from one element, `--depth` to
+limit how many relationship steps are followed and `--no-files` to leave file
+elements out.
 
 ## Examples
 
