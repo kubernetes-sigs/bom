@@ -453,6 +453,14 @@ func primaryPurpose(node *sbom.Node) string {
 	}
 }
 
+// RelationshipTypeForEdge returns the SPDX relationship type a
+// protobom edge type is written as, and false for edge types SPDX
+// has no relationship for.
+func RelationshipTypeForEdge(edgeType sbom.Edge_Type) (RelationshipType, bool) {
+	relType, ok := edgeTypeRelationships[edgeType]
+	return relType, ok
+}
+
 // edgeTypeRelationships maps protobom edge types to legacy SPDX
 // relationship types, matching protobom's serializer table
 // (edgeTypeToSPDXRel, unexported there). Edge_UNKNOWN is absent on
