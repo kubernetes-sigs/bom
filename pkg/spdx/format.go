@@ -24,3 +24,7 @@ const FormatTagValue = "tag-value"
 
 // FormatJSON is the JSON format for an SPDX document.
 const FormatJSON = "json"
+
+// FormatSPDX3JSON is the SPDX 3.0.1 JSON-LD format, written from the
+// protobom document with WriteSPDX3.
+const FormatSPDX3JSON = "spdx3-json"

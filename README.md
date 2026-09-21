@@ -46,6 +46,7 @@ other sources to your SBOM.
   - [Generate a SBOM from the Current Directory](#generate-a-sbom-from-the-current-directory)
   - [Process a Container Image](#process-a-container-image)
   - [Generate a SBOM to describe files](#generate-a-sbom-to-describe-files)
+  - [Write SPDX 3 (experimental)](#write-spdx-3-experimental)
 - [Using bom as a library](#using-bom-as-a-library)
 - [Code of conduct](#code-of-conduct)
 
@@ -84,6 +85,12 @@ Go binaries found in images and in files passed with --file are
 listed with the Go modules they were built from, as recorded in
 their embedded build information.
 
+Documents are written as SPDX 2.3 JSON by default, or as SPDX 2.3
+tag-value. SPDX 3.0.1 JSON-LD output (--format spdx3-json) is
+experimental: it is written by protobom, which does not yet keep
+the order of the hashes and identifiers of an element stable between
+runs.
+
 The SBOM data can also be exported to an in-toto provenance
 attestation. The output will produce a provenance statement listing all
 the SPDX data as in-toto subjects, but otherwise ready to be
@@ -99,7 +106,7 @@ Flags:
   -c, --config string                 path to yaml SBOM configuration file
   -d, --dirs strings                  list of directories to include in the manifest as packages
   -f, --file strings                  list of files to include
-      --format string                 format of the document (supports json, tag-value) (default "json")
+      --format string                 format of the document (supports json, tag-value, and spdx3-json, which is experimental) (default "json")
   -h, --help                          help for generate
       --ignore strings                list of gitignore-style patterns to ignore when scanning directories
   -i, --image strings                 list of images
@@ -108,6 +115,7 @@ Flags:
       --name string                   name for the document, in contrast to URLs, intended for humans
   -n, --namespace string              an URI that serves as namespace for the SPDX doc
       --no-gitignore                  don't use exclusions from .gitignore files
+      --no-gomod                      don't extract the dependencies of the codebases found in directories and archives
       --no-transient                  don't resolve dependencies beyond those a codebase requires in its go.mod
       --offline                       don't reach the network: dependency data is read from local files only
   -o, --output string                 path to the file where the document will be written (defaults to STDOUT)
@@ -287,6 +295,31 @@ bom generate -n http://example.com/ --output files.spdx.json \
   -f document.md \
   -f other/file.txt
 ```
+
+### Write SPDX 3 (experimental)
+
+`--format spdx3-json` writes the SBOM as an SPDX 3.0.1 JSON-LD document
+instead of SPDX 2.3:
+
+```console
+bom generate --format spdx3-json -o sbom.spdx3.json .
+```
+
+The document is written by [protobom](https://github.com/protobom/protobom).
+bom sorts the elements before they are written, so the same input
+produces the same document (apart from the creation time). File types
+are carried over as the file purposes they suggest, where they suggest
+one.
+
+Some SPDX 2.3 details are not carried over yet:
+
+- `LicenseRef-` licenses are referenced in license expressions, but not
+  declared with their text (there are no `CustomLicense` elements, the
+  SPDX 3 counterpart of `hasExtractedLicensingInfos`).
+- The license list version and the external document references from
+  `--config` files are ignored with a warning.
+- Package file names are not recorded, and copyright texts and download
+  locations that are `NOASSERTION` in SPDX 2.3 are left out.
 
 ## Using bom as a library
 

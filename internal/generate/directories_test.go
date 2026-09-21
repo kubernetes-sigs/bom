@@ -121,6 +121,46 @@ func TestDirectoriesPlain(t *testing.T) {
 	require.Len(t, edge.GetTo(), 2)
 }
 
+// TestDirectoriesFilePurposes checks the purposes of indexed files:
+// derived from their file types where these say what a file is for,
+// and unset otherwise instead of the SOURCE unpack assigns every file.
+func TestDirectoriesFilePurposes(t *testing.T) {
+	dir := t.TempDir()
+	for name, content := range map[string]string{
+		"main.go":     "package main\n",
+		"README.md":   "# readme\n",
+		"logo.png":    "png",
+		"vendor.tar":  "tar",
+		"config.yaml": "a: b\n",
+		"lib.o":       "object",
+	} {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), os.FileMode(0o644)))
+	}
+
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Directories: []string{dir},
+		Offline:     true,
+	})
+	require.NoError(t, err)
+	require.Len(t, doc.GetMetadata().GetDocumentTypes(), 1)
+	require.Equal(t, sbom.DocumentType_SOURCE, doc.GetMetadata().GetDocumentTypes()[0].GetType())
+
+	purposes := map[string][]sbom.Purpose{}
+	for _, node := range doc.GetNodeList().GetNodes() {
+		if node.GetType() == sbom.Node_FILE {
+			purposes[node.GetName()] = node.GetPrimaryPurpose()
+		}
+	}
+	require.Equal(t, map[string][]sbom.Purpose{
+		"main.go":     {sbom.Purpose_SOURCE},
+		"README.md":   {sbom.Purpose_DOCUMENTATION},
+		"logo.png":    {sbom.Purpose_DATA},
+		"vendor.tar":  {sbom.Purpose_ARCHIVE},
+		"config.yaml": nil,
+		"lib.o":       nil,
+	}, purposes)
+}
+
 func TestDirectoriesIgnorePatterns(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "keep.txt"), []byte("keep"), os.FileMode(0o644)))

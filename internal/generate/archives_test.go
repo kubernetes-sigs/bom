@@ -140,6 +140,9 @@ func TestArchivesPlain(t *testing.T) {
 	require.Equal(t, "data.tar", root.GetFileName(),
 		"the package records the archive name, not the local path")
 	require.Empty(t, root.GetLicenseConcluded())
+	require.Len(t, doc.GetMetadata().GetDocumentTypes(), 1)
+	require.Equal(t, sbom.DocumentType_SOURCE, doc.GetMetadata().GetDocumentTypes()[0].GetType(),
+		"extracted archives are scanned as source")
 
 	var names []string
 	for _, node := range nl.GetNodes() {

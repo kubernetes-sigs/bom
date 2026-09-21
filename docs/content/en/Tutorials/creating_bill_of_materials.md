@@ -69,8 +69,10 @@ For simpler use cases, all of our SBOM automation is also available in
 a general-purpose tool called `bom`. You can find all the options that
 `bom` supports in its README.md.
 
-`bom` generates SPDX compliant Bills of Materials, as JSON by default and
-as tag-value with `--format tag-value`. It can process directories,
+`bom` generates SPDX compliant Bills of Materials, as SPDX 2.3 JSON by
+default and as SPDX 2.3 tag-value with `--format tag-value`. SPDX 3.0.1
+JSON-LD output is available as an experimental feature with
+`--format spdx3-json`. It can process directories,
 single files, read the contents of
 container images (both from container tar archives and directly from registries),
 and tarred sources.

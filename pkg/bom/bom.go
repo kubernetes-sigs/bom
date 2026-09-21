@@ -35,8 +35,8 @@ import (
 // GenerateOptions configures a generation run. The zero value
 // produces an empty document with default metadata.
 type GenerateOptions struct {
-	// Name is the document name. Left empty, downstream serializers
-	// generate one.
+	// Name is the document name. Left empty, a unique name is
+	// generated.
 	Name string
 
 	// Namespace is the document namespace URI. Left empty, a unique

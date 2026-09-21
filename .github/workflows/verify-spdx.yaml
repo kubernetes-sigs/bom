@@ -41,6 +41,13 @@ jobs:
           "${RUNNER_TEMP}/bom" generate --format=json -i registry.k8s.io/pause -o "${out}/example-image-pause.spdx.json"
           "${RUNNER_TEMP}/bom" generate --format=json -f "${RUNNER_TEMP}/bom" -o "${out}/example-file.spdx.json"
 
+      - name: Generate example SPDX 3 SBOMs
+        run: |
+          out="${RUNNER_TEMP}/sboms"
+          "${RUNNER_TEMP}/bom" generate --format=spdx3-json -d . -o "${out}/example-directory.spdx3.json"
+          "${RUNNER_TEMP}/bom" generate --format=spdx3-json -i registry.k8s.io/pause -o "${out}/example-image-pause.spdx3.json"
+          "${RUNNER_TEMP}/bom" generate --format=spdx3-json -f "${RUNNER_TEMP}/bom" -o "${out}/example-file.spdx3.json"
+
       - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
         with:
           spdx-tools-version: 2.0.7
@@ -82,3 +89,25 @@ jobs:
             ${{ runner.temp }}/sboms/example-directory.spdx.json
             ${{ runner.temp }}/sboms/example-directory.spdx
             ${{ runner.temp }}/sboms/example-file.spdx.json
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Validate example SPDX 3 SBOMs
+        run: |
+          # Regenerate the pinned requirements with:
+          # pip-compile --generate-hashes --strip-extras spdx3-validate.in
+          pip install --require-hashes -r .github/workflows/requirements/spdx3-validate.txt
+          spdx3-validate -s 3.0.1 --json "${RUNNER_TEMP}/sboms/example-image-pause.spdx3.json"
+          spdx3-validate -s 3.0.1 --json "${RUNNER_TEMP}/sboms/example-directory.spdx3.json"
+          spdx3-validate -s 3.0.1 --json "${RUNNER_TEMP}/sboms/example-file.spdx3.json"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: ${{ always() }}
+        with:
+          name: Example SPDX 3 SBOMs
+          path: |
+            ${{ runner.temp }}/sboms/example-image-pause.spdx3.json
+            ${{ runner.temp }}/sboms/example-directory.spdx3.json
+            ${{ runner.temp }}/sboms/example-file.spdx3.json
