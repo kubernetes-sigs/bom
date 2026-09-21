@@ -23,6 +23,7 @@ description: bom document → Work with SPDX documents
 ### SEE ALSO
 
 * [bom](bom.md)	 - A tool for working with SPDX manifests
+* [bom document dot](bom_document_dot.md)	 - bom document dot → Export the SBOM graph in Graphviz DOT format
 * [bom document outline](bom_document_outline.md)	 - bom document outline → Draw structure of a SPDX document
 * [bom document query](bom_document_query.md)	 - bom document query → Search for information in an SBOM
 

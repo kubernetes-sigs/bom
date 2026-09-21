@@ -29,6 +29,7 @@ func AddDocument(parent *cobra.Command) {
 		PersistentPreRunE: initLogging,
 	}
 
+	AddDot(documentCmd)
 	AddOutline(documentCmd)
 	AddQuery(documentCmd)
 	parent.AddCommand(documentCmd)
