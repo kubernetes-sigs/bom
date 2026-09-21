@@ -22,27 +22,35 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/blang/semver/v4"
 
 	"sigs.k8s.io/release-utils/helpers"
+
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 type YamlBuildArtifact struct {
-	Type      string `yaml:"type"` //  directory
-	Source    string `yaml:"source"`
-	License   string `yaml:"license"`   // SPDX license ID Apache-2.0
-	GoModules *bool  `yaml:"gomodules"` // Shoud we scan go modules
+	Type      string `json:"type"      yaml:"type"` //  directory
+	Source    string `json:"source"    yaml:"source"`
+	License   string `json:"license"   yaml:"license"`   // SPDX license ID Apache-2.0
+	GoModules *bool  `json:"gomodules" yaml:"gomodules"` // Shoud we scan go modules
 }
 
 type YamlBOMConfiguration struct {
-	Namespace string `yaml:"namespace"`
-	License   string `yaml:"license"` // Document wide license
-	Name      string `yaml:"name"`
+	Namespace string `json:"namespace" yaml:"namespace"`
+	License   string `json:"license"   yaml:"license"` // Document wide license
+	Name      string `json:"name"      yaml:"name"`
 	Creator   struct {
-		Person string `yaml:"person"`
-		Tool   string `yaml:"tool"`
-	} `yaml:"creator"`
-	ExternalDocRefs []ExternalDocumentRef `yaml:"external-docs"`
-	Artifacts       []*YamlBuildArtifact  `yaml:"artifacts"`
+		Person string `json:"person" yaml:"person"`
+		Tool   string `json:"tool"   yaml:"tool"`
+	} `json:"creator" yaml:"creator"`
+	ExternalDocRefs []ExternalDocumentRef `json:"external-docs" yaml:"external-docs"`
+	// LegacyExternalDocRefs reads the Go field name bom v0.7 accepted
+	// by accident instead of the documented external-docs key.
+	LegacyExternalDocRefs []ExternalDocumentRef `json:"externalDocRefs" yaml:"-"`
+	Artifacts             []*YamlBuildArtifact  `json:"artifacts"       yaml:"artifacts"`
 }
 
 // NewDocBuilderOption is a function with operates on a newDocBuilderSettings object.
@@ -106,24 +114,24 @@ type DocGenerateOptions struct {
 	AnalyseLayers       bool                  // A flag that controls if deep layer analysis should be performed
 	NoGitignore         bool                  // Do not read exclusions from gitignore file
 	Offline             bool                  // Do not reach the network while scanning
-	ProcessGoModules    bool                  // Analyze go.mod to include data about packages
+	ProcessGoModules    bool                  // Extract the dependencies of the codebases found in directories and archives
 	OnlyDirectDeps      bool                  // Only include direct dependencies from go.mod
-	ScanLicenses        bool                  // Try to look into files to determine their license
-	ScanImages          bool                  // When true, scan images for OS information
+	ScanLicenses        bool                  // Deprecated: files are always classified, this has no effect
+	ScanImages          bool                  // Deprecated: images are always scanned, this has no effect
 	ConfigFile          string                // Path to SBOM configuration file
 	Format              string                // Output format
 	OutputFile          string                // Output location
 	Name                string                // Name to use in the resulting document
 	Namespace           string                // Namespace for the document (a unique URI)
 	CreatorPerson       string                // Document creator information
-	License             string                // Main license of the document
-	LicenseListVersion  string                // Version of the SPDX list to use
+	License             string                // Deprecated: a document license was never applied, this has no effect
+	LicenseListVersion  string                // Version of the SPDX license list recorded in the document (eg v3.28.0)
 	Tarballs            []string              // A slice of docker archives (tar)
 	Archives            []string              // A list of archive files to add as packages
 	Files               []string              // A slice of naked files to include in the bom
 	Images              []string              // A slice of docker images
 	Directories         []string              // A slice of directories to convert into packages
-	IgnorePatterns      []string              // A slice of regexp patterns to ignore when scanning dirs
+	IgnorePatterns      []string              // A slice of gitignore-style patterns to ignore when scanning dirs
 	ExternalDocumentRef []ExternalDocumentRef // List of external documents related to the bom
 }
 
@@ -146,7 +154,34 @@ func (o *DocGenerateOptions) Validate() error {
 	if _, err := url.Parse(o.Namespace); err != nil {
 		return fmt.Errorf("parsing the namespace URL: %w", err)
 	}
+
+	// Licenses are matched against the SPDX license list embedded in
+	// bom, and the version only labels the document: it has to name a
+	// release.
+	if strings.EqualFold(o.LicenseListVersion, "latest") {
+		return errors.New(
+			"the license list version must name a release (eg " + license.DefaultCatalogOpts.Version +
+				"), fetching the latest SPDX license list is no longer supported",
+		)
+	}
+	if _, err := licenseListVersion(o.LicenseListVersion); err != nil {
+		return err
+	}
 	return nil
+}
+
+// licenseListVersion returns the SPDX license list version a document
+// records (major.minor) for the version given, as in v3.28.0 or 3.21,
+// defaulting to the version of the embedded catalog.
+func licenseListVersion(ver string) (string, error) {
+	if ver == "" {
+		ver = license.DefaultCatalogOpts.Version
+	}
+	v, err := semver.ParseTolerant(ver)
+	if err != nil {
+		return "", fmt.Errorf("parsing license list version %q: %w", ver, err)
+	}
+	return fmt.Sprintf("%d.%d", v.Major, v.Minor), nil
 }
 
 type DocBuilderOptions struct {

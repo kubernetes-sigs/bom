@@ -29,8 +29,17 @@ jobs:
           check-latest: true
           cache: false
 
-      - run: |
-          go run ./cmd/bom/main.go generate --format=json -i registry.k8s.io/pause > example-image-pause.spdx.json
+      - name: Generate example SBOMs
+        run: |
+          # Everything is written outside the checkout to keep it out of
+          # the directory SBOMs
+          out="${RUNNER_TEMP}/sboms"
+          mkdir -p "${out}"
+          go build -o "${RUNNER_TEMP}/bom" ./cmd/bom
+          "${RUNNER_TEMP}/bom" generate --format=json -d . -o "${out}/example-directory.spdx.json"
+          "${RUNNER_TEMP}/bom" generate --format=tag-value -d . -o "${out}/example-directory.spdx"
+          "${RUNNER_TEMP}/bom" generate --format=json -i registry.k8s.io/pause -o "${out}/example-image-pause.spdx.json"
+          "${RUNNER_TEMP}/bom" generate --format=json -f "${RUNNER_TEMP}/bom" -o "${out}/example-file.spdx.json"
 
       - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
         with:
@@ -40,7 +49,28 @@ jobs:
         with:
           download: false
           spdx-tools-version: 2.0.7
-          sbom-path: example-image-pause.spdx.json
+          sbom-path: ${{ runner.temp }}/sboms/example-image-pause.spdx.json
+          sbom-format: JSON
+
+      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+        with:
+          download: false
+          spdx-tools-version: 2.0.7
+          sbom-path: ${{ runner.temp }}/sboms/example-directory.spdx.json
+          sbom-format: JSON
+
+      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+        with:
+          download: false
+          spdx-tools-version: 2.0.7
+          sbom-path: ${{ runner.temp }}/sboms/example-directory.spdx
+          sbom-format: TAG
+
+      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+        with:
+          download: false
+          spdx-tools-version: 2.0.7
+          sbom-path: ${{ runner.temp }}/sboms/example-file.spdx.json
           sbom-format: JSON
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -48,4 +78,7 @@ jobs:
         with:
           name: Example SBOMs
           path: |
-            example-image-pause.spdx.json
+            ${{ runner.temp }}/sboms/example-image-pause.spdx.json
+            ${{ runner.temp }}/sboms/example-directory.spdx.json
+            ${{ runner.temp }}/sboms/example-directory.spdx
+            ${{ runner.temp }}/sboms/example-file.spdx.json

@@ -35,6 +35,7 @@ type Document struct {
 	Packages             []Package             `json:"packages"`
 	Relationships        []Relationship        `json:"relationships"`
 	ExternalDocumentRefs []ExternalDocumentRef `json:"externalDocumentRefs,omitempty"`
+	ExtractedLicenses    []ExtractedLicense    `json:"hasExtractedLicensingInfos,omitempty"`
 }
 
 func (d *Document) GetVersion() string                     { return d.Version }
@@ -75,6 +76,14 @@ func (d *Document) GetExternalDocumentRefs() []document.ExternalDocumentRef {
 		externalDocumentRefs[i] = &d.ExternalDocumentRefs[i]
 	}
 	return externalDocumentRefs
+}
+
+// ExtractedLicense describes a license not on the SPDX license list,
+// referenced from the document by its LicenseRef- identifier.
+type ExtractedLicense struct {
+	ID            string `json:"licenseId"`
+	ExtractedText string `json:"extractedText"`
+	Name          string `json:"name,omitempty"`
 }
 
 type CreationInfo struct {

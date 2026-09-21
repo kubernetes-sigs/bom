@@ -64,7 +64,7 @@ func addDirectories(ctx context.Context, doc *sbom.Document, opts *Options) erro
 			if err != nil {
 				return fmt.Errorf("scanning directory %q: %w", path, err)
 			}
-			doc.GetNodeList().Add(nl)
+			addSourceNodeList(doc, nl)
 		}
 	}
 	return nil
@@ -84,9 +84,12 @@ func directoryNodeList(ctx context.Context, dir string, opts *Options) (*sbom.No
 // package node. Trees holding no recognized codebase root a plain
 // package named fallbackName, as the legacy generator produced.
 func treeNodeList(ctx context.Context, dir, fallbackName string, opts *Options) (*sbom.NodeList, error) {
-	nl, err := codebaseNodeList(ctx, dir, opts)
-	if err != nil {
-		return nil, err
+	var nl *sbom.NodeList
+	if !opts.NoDependencies {
+		var err error
+		if nl, err = codebaseNodeList(ctx, dir, opts); err != nil {
+			return nil, err
+		}
 	}
 	if nl == nil {
 		nl = &sbom.NodeList{}
@@ -135,6 +138,10 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 	unpacker.Options.Networking = networkLevel(opts)
 	unpacker.Options.IndexFiles = false
 	unpacker.Options.IgnorePatterns = append(unpacker.Options.IgnorePatterns, opts.IgnorePatterns...)
+	// unpack matches the .gitignore patterns against the whole walked path
+	// rather than the path below dir, so a pattern matching one of the
+	// parent directories hides the codebases (an unpack bug).
+	unpacker.Options.UseGitIgnore = !opts.NoGitignore
 
 	codebases, err := unpacker.ListCodebases(ctx, dir)
 	if err != nil {

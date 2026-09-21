@@ -43,8 +43,8 @@ import (
 // values are dropped and license expressions are kept whole rather
 // than split. Legacy data protobom cannot express is dropped: package
 // verification codes, licenses found in files at the package level,
-// FilesAnalyzed, the document license list version, and relationship
-// comments.
+// FilesAnalyzed, the document license list version, external document
+// references, and relationship comments.
 func ToProtobom(doc *Document) (*sbom.Document, error) {
 	if doc == nil {
 		return nil, errors.New("document is nil")
@@ -267,7 +267,9 @@ func referencesFromExternalRefs(refs []ExternalRef) (map[int32]string, []*sbom.E
 }
 
 // extRefTypeFromSPDX mirrors protobom's unserializer mapping of SPDX
-// external reference types (extRefToProtobomEnum, unexported there).
+// external reference types (extRefToProtobomEnum, unexported there),
+// and maps back the protobom type names extRefType writes for the
+// types SPDX does not define.
 func extRefTypeFromSPDX(refType string) sbom.ExternalReference_ExternalReferenceType {
 	switch refType {
 	case "bower":
@@ -287,6 +289,9 @@ func extRefTypeFromSPDX(refType string) sbom.ExternalReference_ExternalReference
 	case "url":
 		return sbom.ExternalReference_SECURITY_OTHER
 	default:
+		if t, ok := sbom.ExternalReference_ExternalReferenceType_value[strings.ToUpper(strings.ReplaceAll(refType, "-", "_"))]; ok {
+			return sbom.ExternalReference_ExternalReferenceType(t)
+		}
 		return sbom.ExternalReference_OTHER
 	}
 }

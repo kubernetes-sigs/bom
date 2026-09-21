@@ -152,6 +152,37 @@ func TestImageArchives(t *testing.T) {
 	}
 	require.ElementsMatch(t, []string{"base-files", "libssl3"}, names,
 		"the dpkg inventory reads from the squashed filesystem")
+	ids := make([]string, 0, len(packages))
+	for _, pkg := range packages {
+		ids = append(ids, pkg.GetId())
+	}
+	require.ElementsMatch(t, []string{
+		"Package-base-files-12.4C43deb12u5-amd64-debian-12",
+		"Package-libssl3-3.0.11-1C126deb12u2-amd64-debian-12",
+	}, ids, "OS package ids derive from the package, not from unpack's uuids")
+}
+
+// TestImageArchivesSameImage checks that scanning the same image twice
+// yields two image packages rather than one merged one.
+func TestImageArchivesSameImage(t *testing.T) {
+	img := fixtureImage(t)
+	tag, err := name.NewTag("registry.k8s.io/bom-test:v1.0.0")
+	require.NoError(t, err)
+	archives := make([]string, 0, 2)
+	for _, archiveName := range []string{"a.tar", "b.tar"} {
+		archive := filepath.Join(t.TempDir(), archiveName)
+		require.NoError(t, tarball.MultiWriteToFile(archive, map[name.Tag]v1.Image{tag: img}))
+		archives = append(archives, archive)
+	}
+
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		ImageArchives: archives,
+	})
+	require.NoError(t, err)
+	require.Equal(t, []string{
+		"Package-registry.k8s.io-bom-test-v1.0.0",
+		"Package-registry.k8s.io-bom-test-v1.0.0-0001",
+	}, doc.GetNodeList().GetRootElements())
 }
 
 func TestImages(t *testing.T) {

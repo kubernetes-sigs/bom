@@ -29,14 +29,16 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"html/template"
 	"log"
 	"maps"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
+	"text/template"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	intoto "github.com/in-toto/attestation/go/v1"
@@ -63,7 +65,8 @@ DataLicense: CC0-1.0
 {{ end -}}
 {{- if .ExternalDocRefs -}}
 {{- range $key, $value := .ExternalDocRefs -}}
-ExternalDocumentRef:{{ extDocFormat $value }}
+{{ with extDocFormat $value }}ExternalDocumentRef: {{ . }}
+{{ end -}}
 {{ end -}}
 {{- end -}}
 {{ if .Creator -}}
@@ -106,13 +109,17 @@ type Document struct {
 	Packages           map[string]*Package
 	Files              map[string]*File      // List of files
 	ExternalDocRefs    []ExternalDocumentRef // List of related external documents
+	ExtractedLicenses  []ExtractedLicense    // Licenses not on the SPDX list referenced by the document
 }
+
+// textTagRe matches the tags delimiting multi-line tag-value text.
+var textTagRe = regexp.MustCompile(`(?i)</?text>`)
 
 // ExternalDocumentRef is a pointer to an external, related document.
 type ExternalDocumentRef struct {
-	ID        string            `yaml:"id"`        // Identifier for the external doc (eg "external-source-bom")
-	URI       string            `yaml:"uri"`       // URI where the doc can be retrieved
-	Checksums map[string]string `yaml:"checksums"` // Document checksums
+	ID        string            `json:"id"        yaml:"id"`        // Identifier for the external doc (eg "external-source-bom")
+	URI       string            `json:"uri"       yaml:"uri"`       // URI where the doc can be retrieved
+	Checksums map[string]string `json:"checksums" yaml:"checksums"` // Document checksums
 }
 
 // Example: cpe23Type cpe:2.3:a:base-files:base-files:10.3+deb10u9:*:*:*:*:*:*:*.
@@ -136,20 +143,65 @@ type DrawingOptions struct {
 	Find        string
 }
 
-// String returns the SPDX string of the external document ref.
+// String returns the SPDX string of the external document ref, or an
+// empty string when the reference is not valid.
 func (ed *ExternalDocumentRef) String() string {
-	if len(ed.Checksums) == 0 || ed.ID == "" || ed.URI == "" {
+	if ed.Validate() != nil {
 		return ""
 	}
-	var csAlgo, csHash string
-	for csAlgo, csHash = range ed.Checksums {
-		break
-	}
-
-	return fmt.Sprintf("DocumentRef-%s %s %s: %s", ed.ID, ed.URI, csAlgo, csHash)
+	_, value := ed.Checksum()
+	return fmt.Sprintf("%s %s SHA1: %s", ed.DocumentRefID(), ed.URI, value)
 }
 
-// ReadSourceFile populates the external reference data (the sha256 checksum)
+// DocumentRefID returns the identifier of the external document with
+// its DocumentRef- prefix, whether or not the ID carries it already.
+func (ed *ExternalDocumentRef) DocumentRefID() string {
+	return "DocumentRef-" + strings.TrimPrefix(ed.ID, "DocumentRef-")
+}
+
+var (
+	externalDocIDRe   = regexp.MustCompile(`^[A-Za-z0-9.+-]+$`)
+	externalDocSHA1Re = regexp.MustCompile(`^[0-9a-f]{40}$`)
+)
+
+// Checksum returns the SHA1 checksum of the external document in
+// lowercase, or empty strings when the reference has none. bom only
+// records SHA1, the algorithm the SPDX 2 examples use and every
+// consumer accepts.
+func (ed *ExternalDocumentRef) Checksum() (algorithm, value string) {
+	for _, algo := range slices.Sorted(maps.Keys(ed.Checksums)) {
+		if v := ed.Checksums[algo]; strings.EqualFold(algo, "SHA1") && v != "" {
+			return "SHA1", strings.ToLower(v)
+		}
+	}
+	return "", ""
+}
+
+// Validate checks that the reference can be written to an SPDX
+// document: an ID made of letters, digits, dots, dashes and plus signs,
+// a URI without whitespace and a SHA1 checksum of 40 hex digits.
+func (ed *ExternalDocumentRef) Validate() error {
+	id := strings.TrimPrefix(ed.ID, "DocumentRef-")
+	if !externalDocIDRe.MatchString(id) {
+		return fmt.Errorf("invalid external document ID %q", ed.ID)
+	}
+	if ed.URI == "" || strings.ContainsFunc(ed.URI, unicode.IsSpace) {
+		return fmt.Errorf("invalid URI %q for external document %s", ed.URI, ed.ID)
+	}
+	algo, value := ed.Checksum()
+	if algo == "" {
+		return fmt.Errorf("external document %s has no SHA1 checksum", ed.ID)
+	}
+	if !externalDocSHA1Re.MatchString(value) {
+		return fmt.Errorf(
+			"external document %s has an invalid SHA1 checksum %q (quote checksums in YAML files)",
+			ed.ID, value,
+		)
+	}
+	return nil
+}
+
+// ReadSourceFile populates the external reference data (the SHA1 checksum)
 // from a given path.
 func (ed *ExternalDocumentRef) ReadSourceFile(path string) error {
 	if ed.Checksums == nil {
@@ -159,7 +211,7 @@ func (ed *ExternalDocumentRef) ReadSourceFile(path string) error {
 	// ref https://github.com/spdx/tools-java/issues/21
 	val, err := hash.SHA1ForFile(path)
 	if err != nil {
-		return fmt.Errorf("while calculating the sha256 checksum of the external reference: %w", err)
+		return fmt.Errorf("while calculating the SHA1 checksum of the external reference: %w", err)
 	}
 	ed.Checksums["SHA1"] = val
 	return nil
@@ -284,6 +336,19 @@ func (d *Document) Render() (doc string, err error) {
 		fmt.Fprintf(&docSb266, "Relationship: %s DESCRIBES %s\n\n", d.ID, pkg.ID)
 	}
 	doc += docSb266.String()
+
+	// Licenses referenced with LicenseRef- identifiers close the
+	// document, in the other licensing information section.
+	// Single-line fields cannot hold line breaks and text fields end
+	// at the first closing tag, so both are defused.
+	var licenses strings.Builder
+	for _, lic := range d.ExtractedLicenses {
+		fmt.Fprintf(&licenses,
+			"##### Other license: %s\n\nLicenseID: %s\nExtractedText: <text>%s</text>\nLicenseName: %s\n\n",
+			lic.ID, lic.ID, textTagRe.ReplaceAllString(lic.Text, ""), strings.Join(strings.Fields(lic.Name), " "),
+		)
+	}
+	doc += licenses.String()
 
 	return doc, err
 }
@@ -417,13 +482,13 @@ func (d *Document) ToProvenanceStatement(opts *ProvenanceOptions) *provenance.St
 	subs := make([]*intoto.ResourceDescriptor, 0, len(d.Packages)+len(d.Files))
 	seen := &map[string]struct{}{}
 
-	for _, p := range d.Packages {
-		subsubs := p.getProvenanceSubjects(opts, seen)
+	for _, id := range slices.Sorted(maps.Keys(d.Packages)) {
+		subsubs := d.Packages[id].getProvenanceSubjects(opts, seen)
 		subs = append(subs, subsubs...)
 	}
 
-	for _, f := range d.Files {
-		subsubs := f.getProvenanceSubjects(opts, seen)
+	for _, id := range slices.Sorted(maps.Keys(d.Files)) {
+		subsubs := d.Files[id].getProvenanceSubjects(opts, seen)
 		subs = append(subs, subsubs...)
 	}
 	statement.Subject = subs

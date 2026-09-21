@@ -1,0 +1,104 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: bom-golden-directory-gomodule-deps
+DocumentNamespace: https://sbom.k8s.io/golden/directory-gomodule-deps
+Creator: Person: Kubernetes Release Managers (release-managers@kubernetes.io)
+Creator: Organization: Kubernetes Release Engineering
+Creator: Tool: bom-golden-fixture
+LicenseListVersion: 3.28
+Created: 2026-01-01T00:00:00Z
+
+FileName: LICENSE
+SPDXID: SPDXRef-File-example.com-bom-golden-deps-LICENSE
+FileChecksum: SHA1: 92170cdc034b2ff819323ff670d3b7266c8bffcd
+FileChecksum: SHA256: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
+FileChecksum: SHA512: 389080b6132d3eaae780648d6998390d8cc71908561bce09578e27c542aa1a9f3122e01f640c5b01bee73004c23aa4e9f2066fe5ee0ca2072c2420578b28d71f
+FileType: TEXT
+FileType: DOCUMENTATION
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: NOASSERTION
+
+FileName: README.md
+SPDXID: SPDXRef-File-example.com-bom-golden-deps-README.md
+FileChecksum: SHA1: 163ee9f6d4730023a2e204201a1edf34bf65f23d
+FileChecksum: SHA256: 737c1e5df94af0b00b3f1dba73708e2c627c1cf5eab45b624d0a7a268b572b81
+FileChecksum: SHA512: 3bd2baf74a620af66e6918c7b48a2ccf15885a16a94b2103c15ad6a6740c6740e63fe23661bde6514b64a2802be2abd24d14ed64256d2d07a33f75b5e9658ce2
+FileType: TEXT
+FileType: DOCUMENTATION
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: NONE
+FileCopyrightText: NOASSERTION
+
+FileName: go.mod
+SPDXID: SPDXRef-File-example.com-bom-golden-deps-go.mod
+FileChecksum: SHA1: 17bc91e10f7cc8d75b80e68d496fec3f600d6b47
+FileChecksum: SHA256: 096489088f3feef624da7449b2cf3621d3b5d79771510057c489af4e2c31b42b
+FileChecksum: SHA512: cc9f577afb43b56b905920bd97664cf3059f01849564584ab0de558b43e47eef474117848ef4e0e4c6fafbd3c7f6798a6fcb8c27c6eff5e2650fc6fb872f9f65
+FileType: OTHER
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: NONE
+FileCopyrightText: NOASSERTION
+
+FileName: main.go
+SPDXID: SPDXRef-File-example.com-bom-golden-deps-main.go
+FileChecksum: SHA1: 189ec3717c06221ea42f0b905f2a228546f9d3fb
+FileChecksum: SHA256: 1b73bfc07613aefa742bababbf7724da3a214cd476fc5310b3dad1a674896a12
+FileChecksum: SHA512: a7103a5f081a523bd3709b85fda7ab2be3cdf43177d3ffc2238ae7e002dd3e57379f22e4c32945a60952b44a145f6b463ba4519ecbf6c20a89a05efa9be7c8e8
+FileType: SOURCE
+LicenseConcluded: Apache-2.0
+LicenseInfoInFile: NONE
+FileCopyrightText: NOASSERTION
+
+PackageName: example.com/bom-golden-deps
+SPDXID: SPDXRef-Package-example.com-bom-golden-deps
+PackageDownloadLocation: NONE
+FilesAnalyzed: true
+PackageVerificationCode: 7e511d301b600e5901084c22590c34e92af5b3b5
+PackageLicenseConcluded: Apache-2.0
+ExternalRef: PACKAGE-MANAGER purl pkg:golang/example.com/bom-golden-deps
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: github.com/google/uuid
+SPDXID: SPDXRef-Package-github.com-google-uuid-v1.6.0
+PackageDownloadLocation: https://proxy.golang.org/github.com/google/uuid/@v/v1.6.0.zip
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: v1.6.0
+PrimaryPackagePurpose: LIBRARY
+ExternalRef: PACKAGE-MANAGER purl pkg:golang/github.com/google/uuid@v1.6.0
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: golang.org/x/mod
+SPDXID: SPDXRef-Package-golang.org-x-mod-v0.17.0
+PackageDownloadLocation: https://proxy.golang.org/golang.org/x/mod/@v/v0.17.0.zip
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: v0.17.0
+PrimaryPackagePurpose: LIBRARY
+ExternalRef: PACKAGE-MANAGER purl pkg:golang/golang.org/x/mod@v0.17.0
+PackageLicenseDeclared: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+PackageName: stdlib
+SPDXID: SPDXRef-Package-stdlib-1.21
+PackageDownloadLocation: NONE
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageVersion: 1.21
+PrimaryPackagePurpose: LIBRARY
+ExternalRef: PACKAGE-MANAGER purl pkg:golang/stdlib@1.21
+PackageLicenseDeclared: BSD-3-Clause
+PackageCopyrightText: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-example.com-bom-golden-deps
+Relationship: SPDXRef-Package-example.com-bom-golden-deps CONTAINS SPDXRef-File-example.com-bom-golden-deps-LICENSE
+Relationship: SPDXRef-Package-example.com-bom-golden-deps CONTAINS SPDXRef-File-example.com-bom-golden-deps-README.md
+Relationship: SPDXRef-Package-example.com-bom-golden-deps CONTAINS SPDXRef-File-example.com-bom-golden-deps-go.mod
+Relationship: SPDXRef-Package-example.com-bom-golden-deps CONTAINS SPDXRef-File-example.com-bom-golden-deps-main.go
+Relationship: SPDXRef-Package-example.com-bom-golden-deps DEPENDS_ON SPDXRef-Package-github.com-google-uuid-v1.6.0
+Relationship: SPDXRef-Package-example.com-bom-golden-deps DEPENDS_ON SPDXRef-Package-golang.org-x-mod-v0.17.0
+Relationship: SPDXRef-Package-example.com-bom-golden-deps DEPENDS_ON SPDXRef-Package-stdlib-1.21

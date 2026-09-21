@@ -167,18 +167,54 @@ func TestAddGoBinarySharesModules(t *testing.T) {
 			GoVersion: "go1.26.1",
 			Main:      debug.Module{Path: "example.com/app", Version: "(devel)"},
 			Deps:      []*debug.Module{dep},
-		}, path)
+		}, path, "")
 		require.Equal(t, path, main.GetFileName())
 		mains[main.GetId()] = struct{}{}
 	}
 
 	require.Len(t, mains, 2, "one package per binary")
 	require.Len(t, nl.GetNodes(), 4, "two binaries sharing a module and the stdlib")
+	ids := make([]string, 0, len(nl.GetNodes()))
+	for _, node := range nl.GetNodes() {
+		ids = append(ids, node.GetId())
+	}
+	require.ElementsMatch(t, []string{
+		"Package-bin-a-example.com-app-C40develC41",
+		"Package-bin-b-example.com-app-C40develC41",
+		"Package-example.com-dep-v1.0.0",
+		"Package-stdlib-1.26.1",
+	}, ids, "identifiers derive from the binaries and modules")
 	for id := range mains {
 		edge := nl.GetEdgeByType(id, sbom.Edge_dependsOn)
 		require.NotNil(t, edge)
 		require.Len(t, edge.GetTo(), 2)
 	}
+}
+
+// TestAddGoBinaryDigest checks that binaries at the same path built from
+// the same module, as in the platform images of an index, keep apart
+// when their contents differ and merge when they are identical.
+func TestAddGoBinaryDigest(t *testing.T) {
+	bin := &debug.BuildInfo{Main: debug.Module{Path: "example.com/app", Version: "v1.0.0"}}
+	amd64 := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	arm64 := "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+
+	doc := sbom.NewDocument()
+	for _, digest := range []string{amd64, arm64, amd64} {
+		// Each image scans into a node list of its own.
+		nl := sbom.NewNodeList()
+		main := addGoBinary(nl, map[string]*sbom.Node{}, bin, "/usr/bin/app", digest)
+		nl.RootElements = append(nl.RootElements, main.GetId())
+		doc.GetNodeList().Add(nl)
+	}
+	ids := make([]string, 0, len(doc.GetNodeList().GetNodes()))
+	for _, node := range doc.GetNodeList().GetNodes() {
+		ids = append(ids, node.GetId())
+	}
+	require.ElementsMatch(t, []string{
+		"Package-usr-bin-app-example.com-app-v1.0.0-0123456789ab",
+		"Package-usr-bin-app-example.com-app-v1.0.0-fedcba987654",
+	}, ids)
 }
 
 func TestAddGoBinaryKeepsModuleVariantsApart(t *testing.T) {
@@ -198,7 +234,7 @@ func TestAddGoBinaryKeepsModuleVariantsApart(t *testing.T) {
 		addGoBinary(nl, modules, &debug.BuildInfo{
 			Main: debug.Module{Path: "example.com/app"},
 			Deps: []*debug.Module{dep},
-		}, "/bin/app")
+		}, "/bin/app", "")
 	}
 
 	comments := map[string][]string{}
@@ -211,6 +247,13 @@ func TestAddGoBinaryKeepsModuleVariantsApart(t *testing.T) {
 	require.ElementsMatch(t, []string{
 		"replaced by local directory ../lib", "replaced by local directory ../other/lib",
 	}, comments["example.com/lib"])
+
+	seen := map[string]struct{}{}
+	for _, node := range nl.GetNodes() {
+		_, dup := seen[node.GetId()]
+		require.False(t, dup, "identifier %q is not unique", node.GetId())
+		seen[node.GetId()] = struct{}{}
+	}
 }
 
 // failingFS fails reading the files opened after the first failAfter

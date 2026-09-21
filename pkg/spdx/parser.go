@@ -43,7 +43,7 @@ func OpenDoc(path string) (*Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc, err := FromProtobom(pdoc)
+	doc, err := fromParsedProtobom(pdoc)
 	if err != nil {
 		return nil, fmt.Errorf("converting document: %w", err)
 	}

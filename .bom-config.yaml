@@ -1,6 +1,4 @@
 ---
-namespace: https://sigs.k8s.io/bom
-license: Apache-2.0
 name: bom
 creator:
  person: The Kubernetes Authors

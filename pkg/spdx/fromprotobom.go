@@ -64,7 +64,27 @@ const (
 // summaries, descriptions, source info, attribution texts, properties,
 // per-node dates, identifiers on file nodes, and edges whose type
 // protobom does not know.
+//
+// License data is normalized to valid SPDX license expressions: names
+// package managers declare are mapped to SPDX identifiers where they
+// have one, the others become LicenseRef- identifiers listed in the
+// document's extracted licensing information, and the licenses a
+// package declares are joined with the operator its ecosystem gives
+// such lists (see declaredLicenseOperator).
 func FromProtobom(doc *sbom.Document) (*Document, error) {
+	return fromProtobom(doc, newLicenseRefs())
+}
+
+// fromParsedProtobom converts a protobom document read from an SPDX
+// document, keeping its license data as it is: the expressions are
+// valid already, and the extracted licensing information of the
+// original, which protobom does not model, cannot be recreated from
+// the identifiers alone.
+func fromParsedProtobom(doc *sbom.Document) (*Document, error) {
+	return fromProtobom(doc, &licenseRefs{verbatim: true})
+}
+
+func fromProtobom(doc *sbom.Document, refs *licenseRefs) (*Document, error) {
 	if doc == nil {
 		return nil, errors.New("document is nil")
 	}
@@ -78,13 +98,21 @@ func FromProtobom(doc *sbom.Document) (*Document, error) {
 	nodes := doc.GetNodeList().GetNodes()
 	objects := make([]Object, len(nodes))
 	byID := map[string]int{}
+	// A first pass collects the license names needing LicenseRef-
+	// identifiers, so they can be assigned independently of the node
+	// order.
+	refs.collecting = true
+	for _, node := range nodes {
+		nodeLicenses(node, refs)
+	}
+	refs.assign()
 	for i, node := range nodes {
-		objects[i] = nodeToObject(node)
+		objects[i] = nodeToObject(node, refs)
 		if node.GetId() != "" {
 			byID[node.GetId()] = i
 		}
 	}
-	outgoing := expandEdges(doc.GetNodeList().GetEdges(), byID)
+	outgoing := expandEdges(doc.GetNodeList().GetEdges(), byID, nodes)
 
 	// Breadth-first walk from the roots, attaching each node's outgoing
 	// relationships once and flagging the first edge that reaches a
@@ -164,6 +192,7 @@ func FromProtobom(doc *sbom.Document) (*Document, error) {
 			pkg.FilesAnalyzed = true
 		}
 	}
+	ldoc.ExtractedLicenses = refs.extracted()
 
 	return ldoc, nil
 }
@@ -206,8 +235,10 @@ type triple struct {
 
 // expandEdges expands the edge list into per-source-node triples,
 // dropping edges that do not connect two known nodes or whose type has
-// no SPDX relationship.
-func expandEdges(edges []*sbom.Edge, byID map[string]int) map[int][]triple {
+// no SPDX relationship. The triples of each node are sorted by
+// relationship type and target identifier: protobom does not keep the
+// order of edge targets stable, and the order decides the output.
+func expandEdges(edges []*sbom.Edge, byID map[string]int, nodes []*sbom.Node) map[int][]triple {
 	outgoing := map[int][]triple{}
 	for _, edge := range edges {
 		from, ok := byID[edge.GetFrom()]
@@ -223,6 +254,14 @@ func expandEdges(edges []*sbom.Edge, byID map[string]int) map[int][]triple {
 				outgoing[from] = append(outgoing[from], triple{relType: relType, to: to})
 			}
 		}
+	}
+	for _, triples := range outgoing {
+		slices.SortStableFunc(triples, func(a, b triple) int {
+			if c := strings.Compare(string(a.relType), string(b.relType)); c != 0 {
+				return c
+			}
+			return strings.Compare(nodes[a.to].GetId(), nodes[b.to].GetId())
+		})
 	}
 	return outgoing
 }
@@ -258,14 +297,14 @@ func spdxID(id string) string {
 	return "SPDXRef-" + id
 }
 
-func nodeToObject(node *sbom.Node) Object {
+func nodeToObject(node *sbom.Node, refs *licenseRefs) Object {
 	if node.GetType() == sbom.Node_FILE {
-		return nodeToFile(node)
+		return nodeToFile(node, refs)
 	}
-	return nodeToPackage(node)
+	return nodeToPackage(node, refs)
 }
 
-func nodeToPackage(node *sbom.Node) *Package {
+func nodeToPackage(node *sbom.Node, refs *licenseRefs) *Package {
 	p := NewPackage()
 	p.SetSPDXID(spdxID(node.GetId()))
 	p.Name = node.GetName()
@@ -273,8 +312,7 @@ func nodeToPackage(node *sbom.Node) *Package {
 	p.FileName = node.GetFileName()
 	p.DownloadLocation = node.GetUrlDownload()
 	p.HomePage = node.GetUrlHome()
-	p.LicenseConcluded = node.GetLicenseConcluded()
-	p.LicenseDeclared = strings.Join(node.GetLicenses(), " OR ")
+	p.LicenseConcluded, p.LicenseDeclared = nodeLicenses(node, refs)
 	p.LicenseComments = node.GetLicenseComments()
 	p.CopyrightText = strings.TrimSpace(node.GetCopyright())
 	p.Comment = node.GetComment()
@@ -299,7 +337,7 @@ func nodeToPackage(node *sbom.Node) *Package {
 	return p
 }
 
-func nodeToFile(node *sbom.Node) *File {
+func nodeToFile(node *sbom.Node, refs *licenseRefs) *File {
 	f := NewFile()
 	f.SetSPDXID(spdxID(node.GetId()))
 	f.Name = node.GetName()
@@ -310,15 +348,24 @@ func nodeToFile(node *sbom.Node) *File {
 		f.FileName = node.GetName()
 	}
 	f.FileType = node.GetFileTypes()
-	f.LicenseConcluded = node.GetLicenseConcluded()
-	// The legacy model stores the license info found in the file as a
-	// single expression; bom's JSON parser joins multiple entries the
-	// same way.
-	f.LicenseInfoInFile = strings.Join(node.GetLicenses(), " AND ")
+	// The legacy model stores the licenses found in the file as a
+	// single conjunction; bom's JSON parser joins multiple entries the
+	// same way, and the serializers list its licenses one by one.
+	f.LicenseConcluded, f.LicenseInfoInFile = nodeLicenses(node, refs)
 	f.LicenseComments = node.GetLicenseComments()
 	f.CopyrightText = strings.TrimSpace(node.GetCopyright())
 	f.Checksum = checksums(node.GetHashes())
 	return f
+}
+
+// nodeLicenses returns the concluded license of a node and the licenses
+// it declares (packages) or holds (files) as SPDX license expressions.
+func nodeLicenses(node *sbom.Node, refs *licenseRefs) (concluded, licenses string) {
+	operator := licenseAnd
+	if node.GetType() != sbom.Node_FILE {
+		operator = declaredLicenseOperator(string(node.Purl()))
+	}
+	return refs.normalize(node.GetLicenseConcluded()), refs.expression(node.GetLicenses(), operator)
 }
 
 // checksums converts a protobom hash map to the legacy algorithm-name
@@ -385,7 +432,8 @@ func extRefCategory(t sbom.ExternalReference_ExternalReferenceType) string {
 		return CatPackageManager
 	case sbom.ExternalReference_SECURITY_ADVISORY,
 		sbom.ExternalReference_SECURITY_FIX,
-		sbom.ExternalReference_SECURITY_OTHER:
+		sbom.ExternalReference_SECURITY_OTHER,
+		sbom.ExternalReference_SECURITY_SWID:
 		return "SECURITY"
 	default:
 		return purposeOther
@@ -393,7 +441,10 @@ func extRefCategory(t sbom.ExternalReference_ExternalReferenceType) string {
 }
 
 // extRefType mirrors protobom's external reference type mapping
-// (extRefTypeFromProtobomExtRef, unexported there).
+// (extRefTypeFromProtobomExtRef, unexported there) for the types SPDX
+// defines. Other types fall in the OTHER category, which admits any
+// type name: they keep their protobom name (vcs, website, ...) rather
+// than collapsing into an uninformative OTHER.
 func extRefType(t sbom.ExternalReference_ExternalReferenceType) string {
 	switch t {
 	case sbom.ExternalReference_BOWER:
@@ -410,8 +461,12 @@ func extRefType(t sbom.ExternalReference_ExternalReferenceType) string {
 		return "fix"
 	case sbom.ExternalReference_SECURITY_OTHER:
 		return "url"
-	default:
+	case sbom.ExternalReference_SECURITY_SWID:
+		return "swid"
+	case sbom.ExternalReference_UNKNOWN, sbom.ExternalReference_OTHER:
 		return purposeOther
+	default:
+		return strings.ToLower(strings.ReplaceAll(t.String(), "_", "-"))
 	}
 }
 

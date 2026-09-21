@@ -29,6 +29,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -249,19 +250,15 @@ func (p *Package) ComputeLicenseList() error {
 		return errors.New("unable to compute license list, package has no files")
 	}
 
+	// Collect the individual licenses found in the files
 	filesTagList := []string{}
 	for _, f := range files {
-		// Collect the license tags
-		if f.LicenseInfoInFile != "" {
-			collected := false
-			for _, tag := range filesTagList {
-				if tag == f.LicenseInfoInFile {
-					collected = true
-					break
-				}
-			}
-			if !collected {
-				filesTagList = append(filesTagList, f.LicenseInfoInFile)
+		if f.LicenseInfoInFile == "" {
+			continue
+		}
+		for _, tag := range f.LicenseInfoInFiles() {
+			if !slices.Contains(filesTagList, tag) {
+				filesTagList = append(filesTagList, tag)
 			}
 		}
 	}
@@ -318,9 +315,12 @@ func (p *Package) Render() (docFragment string, err error) {
 
 	docFragment = buf.String()
 
-	// Add the output from all related files
+	// Add the output from all related objects. In tag-value, a file
+	// belongs to the package listed last before it, so the files this
+	// package holds render first: rendered after a related package,
+	// they would be attributed to that package instead.
 	var docFragmentSb322 strings.Builder
-	for _, rel := range p.Relationships {
+	for _, rel := range filesFirst(p.Relationships) {
 		fragment, err := rel.Render(p)
 		if err != nil {
 			return "", fmt.Errorf("rendering relationship: %w", err)
@@ -330,6 +330,23 @@ func (p *Package) Render() (docFragment string, err error) {
 	docFragment += docFragmentSb322.String()
 	docFragment += "\n"
 	return docFragment, nil
+}
+
+// filesFirst returns the relationships with those pointing to files
+// moved to the front, keeping the relative order of both groups.
+func filesFirst(rels []*Relationship) []*Relationship {
+	sorted := make([]*Relationship, 0, len(rels))
+	for _, rel := range rels {
+		if _, ok := rel.Peer.(*File); ok {
+			sorted = append(sorted, rel)
+		}
+	}
+	for _, rel := range rels {
+		if _, ok := rel.Peer.(*File); !ok {
+			sorted = append(sorted, rel)
+		}
+	}
+	return sorted
 }
 
 // CheckRelationships ensures al linked relationships are complete

@@ -105,12 +105,15 @@ func AddGenerate(parent *cobra.Command) {
 
 generate is the bom subcommand to generate SPDX manifests.
 
-Currently supports creating SBOM from files, images, and docker
-archives (images in tarballs). It supports pulling images from
-remote registries for analysis.
+Currently supports creating SBOM from directories, files, images,
+archives and docker archives (images in tarballs). It supports
+pulling images from remote registries for analysis.
 
-bom can take a deeper look into images using a growing number
-of analyzers designed to add more sense to common base images.
+The operating system packages installed in images (Alpine, Debian
+and RPM based distributions) are listed in the SBOM, together with
+the image layers. Directories are scanned for the codebases they
+hold, like Go modules, whose dependencies are resolved and listed
+with their licenses unless --no-gomod is passed.
 
 Go binaries found in images and in files passed with --file are
 listed with the Go modules they were built from, as recorded in
@@ -128,8 +131,6 @@ completed by a later stage in your CI/CD pipeline. See the
 		SilenceErrors:     true,
 		PersistentPreRunE: initLogging,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			warnRetiredFlags(cmd)
-
 			for i, arg := range args {
 				if !helpers.Exists(arg) {
 					continue
@@ -212,7 +213,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.ignorePatterns,
 		"ignore",
 		[]string{},
-		"list of regexp patterns to ignore when scanning directories",
+		"list of gitignore-style patterns to ignore when scanning directories",
 	)
 
 	generateCmd.PersistentFlags().StringVarP(
@@ -234,7 +235,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.noGoModules,
 		"no-gomod",
 		false,
-		"don't perform go.mod analysis, sbom will not include data about go packages",
+		"don't extract the dependencies of the codebases found in directories and archives",
 	)
 
 	generateCmd.PersistentFlags().BoolVar(
@@ -316,7 +317,7 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.licenseListVer,
 		"license-list-version",
 		license.DefaultCatalogOpts.Version,
-		"version of the SPDX list to use (or 'latest')",
+		"version of the SPDX license list to record in the document",
 	)
 
 	if err := generateCmd.MarkPersistentFlagDirname("dirs"); err != nil {
@@ -340,27 +341,12 @@ completed by a later stage in your CI/CD pipeline. See the
 }
 
 // retiredFlags name options the generation engine no longer honors.
-// Scanning images and resolving a codebase's dependencies are now part
-// of every run, deep image layer analysis has no equivalent, and the
-// document license was never applied. They stay accepted, and hidden,
-// so existing invocations keep working.
-var retiredFlags = []string{"license", "no-gomod", "scan-images", "analyze-images"}
-
-// warnRetiredFlags tells the caller when they asked for something that
-// no longer has an effect, rather than silently ignoring it.
-//
-// analyze-images is left out: the document builder warns about it
-// already, which also reaches callers using the package directly.
-func warnRetiredFlags(cmd *cobra.Command) {
-	for _, name := range retiredFlags {
-		if name == "analyze-images" {
-			continue
-		}
-		if cmd.Flags().Changed(name) {
-			logrus.Warnf("--%s is no longer supported and has no effect", name)
-		}
-	}
-}
+// Scanning images is now part of every run, deep image layer analysis
+// has no equivalent, and the document license was never applied. They
+// stay accepted, and hidden, so existing invocations keep working; the
+// document builder warns when they are asked for, which also reaches
+// callers using the package directly.
+var retiredFlags = []string{"license", "scan-images", "analyze-images"}
 
 func generateBOM(opts *generateOptions) error {
 	logrus.Infof(

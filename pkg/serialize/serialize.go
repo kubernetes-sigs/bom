@@ -20,6 +20,8 @@ import (
 	gojson "encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"time"
 
 	"sigs.k8s.io/release-utils/version"
@@ -51,12 +53,18 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 		return "", fmt.Errorf("pre-rendering the document: %w", err)
 	}
 
+	// The document creation date is kept when the generator set one,
+	// so documents can be reproduced (SOURCE_DATE_EPOCH, for one).
+	created := doc.Created
+	if created.IsZero() {
+		created = time.Now()
+	}
 	jsonDoc := spdxJSON.Document{
 		ID:      doc.ID,
 		Name:    doc.Name,
 		Version: spdxJSON.Version,
 		CreationInfo: spdxJSON.CreationInfo{
-			Created: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+			Created: created.UTC().Format("2006-01-02T15:04:05Z07:00"),
 			Creators: []string{
 				fmt.Sprintf("Tool: %s-%s", "bom", version.GetVersionInfo().GitVersion),
 			},
@@ -69,13 +77,27 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 		Relationships:     []spdxJSON.Relationship{},
 	}
 
-	// Generate the array for the cycler
-	for _, p := range doc.Packages {
-		jsonDoc.DocumentDescribes = append(jsonDoc.DocumentDescribes, p.SPDXID())
+	for _, ref := range doc.ExternalDocRefs {
+		if ref.Validate() != nil {
+			continue
+		}
+		algo, value := ref.Checksum()
+		jsonDoc.ExternalDocumentRefs = append(jsonDoc.ExternalDocumentRefs, spdxJSON.ExternalDocumentRef{
+			ExternalDocumentID: ref.DocumentRefID(),
+			SPDXDocument:       ref.URI,
+			Checksum:           spdxJSON.Checksum{Algorithm: algo, Value: value},
+		})
 	}
 
-	for _, p := range doc.Files {
-		jsonDoc.DocumentDescribes = append(jsonDoc.DocumentDescribes, p.SPDXID())
+	// Generate the array for the cycler. The document holds its
+	// elements in maps: they are listed sorted by ID to keep the
+	// output stable.
+	for _, id := range slices.Sorted(maps.Keys(doc.Packages)) {
+		jsonDoc.DocumentDescribes = append(jsonDoc.DocumentDescribes, doc.Packages[id].SPDXID())
+	}
+
+	for _, id := range slices.Sorted(maps.Keys(doc.Files)) {
+		jsonDoc.DocumentDescribes = append(jsonDoc.DocumentDescribes, doc.Files[id].SPDXID())
 	}
 
 	for _, o := range allObjects(doc) {
@@ -114,6 +136,14 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 		}
 	}
 
+	for _, lic := range doc.ExtractedLicenses {
+		jsonDoc.ExtractedLicenses = append(jsonDoc.ExtractedLicenses, spdxJSON.ExtractedLicense{
+			ID:            lic.ID,
+			ExtractedText: lic.Text,
+			Name:          lic.Name,
+		})
+	}
+
 	output, err := gojson.MarshalIndent(jsonDoc, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("marshaling document json: %w", err)
@@ -121,34 +151,48 @@ func (json *JSON) Serialize(doc *spdx.Document) (string, error) {
 	return string(output), nil
 }
 
-// allObjects returns every element of the document keyed by its SPDX
-// identifier: the top-level packages and files plus everything
-// reachable from them through relationships.
-func allObjects(doc *spdx.Document) map[string]spdx.Object {
-	objects := map[string]spdx.Object{}
+// allObjects returns every element of the document: the top-level
+// packages and files plus everything reachable from them through
+// relationships, each once, in a stable order. Top-level elements are
+// walked sorted by identifier, and their relationships depth first in
+// the order they were recorded.
+func allObjects(doc *spdx.Document) []spdx.Object {
+	objects := []spdx.Object{}
+	seen := map[string]struct{}{}
 	var walk func(spdx.Object)
 	walk = func(o spdx.Object) {
 		id := o.SPDXID()
 		if id == "" {
 			return
 		}
-		if _, seen := objects[id]; seen {
+		if _, ok := seen[id]; ok {
 			return
 		}
-		objects[id] = o
+		seen[id] = struct{}{}
+		objects = append(objects, o)
 		for _, r := range *o.GetRelationships() {
 			if r.Peer != nil {
 				walk(r.Peer)
 			}
 		}
 	}
-	for _, p := range doc.Packages {
-		walk(p)
+	for _, id := range slices.Sorted(maps.Keys(doc.Packages)) {
+		walk(doc.Packages[id])
 	}
-	for _, f := range doc.Files {
-		walk(f)
+	for _, id := range slices.Sorted(maps.Keys(doc.Files)) {
+		walk(doc.Files[id])
 	}
 	return objects
+}
+
+// sortedChecksums converts a checksum map to the JSON list, sorted by
+// algorithm to keep the output stable.
+func sortedChecksums(checksums map[string]string) []spdxJSON.Checksum {
+	ret := make([]spdxJSON.Checksum, 0, len(checksums))
+	for _, algo := range slices.Sorted(maps.Keys(checksums)) {
+		ret = append(ret, spdxJSON.Checksum{Algorithm: algo, Value: checksums[algo]})
+	}
+	return ret
 }
 
 // buildJSONPackage converts a SPDX package struct to a json package
@@ -183,7 +227,7 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 		PrimaryPurpose:       p.PrimaryPurpose,
 		CopyrightText:        p.CopyrightText,
 		HasFiles:             []string{},
-		Checksums:            []spdxJSON.Checksum{},
+		Checksums:            sortedChecksums(p.Checksum),
 		ExternalRefs:         externalRefs,
 	}
 
@@ -225,13 +269,6 @@ func (json *JSON) buildJSONPackage(p *spdx.Package) (jsonPackage spdxJSON.Packag
 		jsonPackage.DownloadLocation = spdx.NONE
 	}
 
-	for algo, value := range p.Checksum {
-		jsonPackage.Checksums = append(jsonPackage.Checksums, spdxJSON.Checksum{
-			Algorithm: algo,
-			Value:     value,
-		})
-	}
-
 	// If the package has files, we need to add them top hasFiles
 	files := p.Files()
 	if len(files) > 0 {
@@ -261,8 +298,8 @@ func (json *JSON) buildJSONFile(f *spdx.File) (jsonFile spdxJSON.File, err error
 		LicenseConcluded: f.LicenseConcluded,
 		// Description:       f.Description,
 		FileTypes:         f.FileType,
-		LicenseInfoInFile: []string{f.LicenseInfoInFile},
-		Checksums:         []spdxJSON.Checksum{},
+		LicenseInfoInFile: f.LicenseInfoInFiles(),
+		Checksums:         sortedChecksums(f.Checksum),
 	}
 
 	if spdxJSON.Version == "SPDX-2.2" {
@@ -279,11 +316,5 @@ func (json *JSON) buildJSONFile(f *spdx.File) (jsonFile spdxJSON.File, err error
 		jsonFile.CopyrightText = spdx.NOASSERTION
 	}
 
-	for algo, value := range f.Checksum {
-		jsonFile.Checksums = append(jsonFile.Checksums, spdxJSON.Checksum{
-			Algorithm: algo,
-			Value:     value,
-		})
-	}
 	return jsonFile, nil
 }

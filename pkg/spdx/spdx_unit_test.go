@@ -136,12 +136,31 @@ func TestExternalDocRef(t *testing.T) {
 		{ExternalDocumentRef{ID: "", URI: "http://example.com/", Checksums: map[string]string{"SHA256": "d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8"}}, ""},
 		{ExternalDocumentRef{ID: "test-id", URI: "", Checksums: map[string]string{"SHA256": "d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8"}}, ""},
 		{ExternalDocumentRef{ID: "test-id", URI: "http://example.com/", Checksums: map[string]string{}}, ""},
+		// SPDX only allows a SHA1 checksum for external documents.
 		{
 			ExternalDocumentRef{
 				ID: "test-id", URI: "http://example.com/", Checksums: map[string]string{"SHA256": "d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8"},
 			},
-			"DocumentRef-test-id http://example.com/ SHA256: d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8",
+			"",
 		},
+		{
+			ExternalDocumentRef{
+				ID: "test-id", URI: "http://example.com/", Checksums: map[string]string{"SHA1": "5f341d31f6b6a8b15bc4e6704830bf37f99511d1"},
+			},
+			"DocumentRef-test-id http://example.com/ SHA1: 5f341d31f6b6a8b15bc4e6704830bf37f99511d1",
+		},
+		// An ID that carries the prefix already keeps it once, and the
+		// checksum is written in lowercase.
+		{
+			ExternalDocumentRef{
+				ID: "DocumentRef-test-id", URI: "http://example.com/", Checksums: map[string]string{"sha1": "5F341D31F6B6A8B15BC4E6704830BF37F99511D1", "SHA256": "ff"},
+			},
+			"DocumentRef-test-id http://example.com/ SHA1: 5f341d31f6b6a8b15bc4e6704830bf37f99511d1",
+		},
+		// YAML turns unquoted all-digit checksums into numbers.
+		{ExternalDocumentRef{ID: "test-id", URI: "http://example.com/", Checksums: map[string]string{"SHA1": "1.234567e+38"}}, ""},
+		{ExternalDocumentRef{ID: "test_id", URI: "http://example.com/", Checksums: map[string]string{"SHA1": "5f341d31f6b6a8b15bc4e6704830bf37f99511d1"}}, ""},
+		{ExternalDocumentRef{ID: "test-id", URI: "http://example.com/ x", Checksums: map[string]string{"SHA1": "5f341d31f6b6a8b15bc4e6704830bf37f99511d1"}}, ""},
 	}
 	for _, tc := range cases {
 		require.Equal(t, tc.StringVal, tc.DocRef.String())
@@ -274,6 +293,9 @@ var sampleManifest = `[{"Config":"386bcf5c63de46c7066c42d4ae1c38af0689836e88fed3
 `
 
 func TestGetImageReferences(t *testing.T) {
+	if testing.Short() {
+		t.Skip("reads images from registry.k8s.io, skipped with -short")
+	}
 	references, err := getImageReferences("registry.k8s.io/kube-apiserver:v1.23.0-alpha.3")
 	images := map[string]struct {
 		arch string
@@ -320,6 +342,9 @@ func TestGetImageReferences(t *testing.T) {
 }
 
 func TestPullImagesToArchive(t *testing.T) {
+	if testing.Short() {
+		t.Skip("pulls images from registry.k8s.io, skipped with -short")
+	}
 	impl := spdxDefaultImplementation{}
 
 	// First. If the tag does not represent an image, expect an error

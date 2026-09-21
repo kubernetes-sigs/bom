@@ -20,15 +20,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/blang/semver/v4"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/bom/internal/generate"
-	"sigs.k8s.io/bom/pkg/license"
 )
 
 type DocBuilderImplementation interface {
@@ -47,8 +44,16 @@ type defaultDocBuilderImpl struct {
 // GenerateDocument runs the protobom-native generation engine over the
 // requested artifacts and converts the result to the legacy model.
 func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptions) (*Document, error) {
+	// Tell callers when they ask for something the engine does not
+	// offer anymore, rather than silently ignoring it.
 	if genopts.AnalyseLayers {
 		logrus.Warn("Deep image layer analysis is no longer supported, ignoring AnalyseLayers")
+	}
+	if !genopts.ScanImages && len(genopts.Images)+len(genopts.Tarballs) > 0 {
+		logrus.Warn("Images are always scanned for their packages, ignoring ScanImages")
+	}
+	if genopts.License != "" {
+		logrus.Warnf("A document license cannot be declared, ignoring license %q", genopts.License)
 	}
 
 	pdoc, err := generate.Document(context.Background(), &generate.Options{
@@ -63,6 +68,7 @@ func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptio
 		IgnorePatterns: genopts.IgnorePatterns,
 		NoGitignore:    genopts.NoGitignore,
 		OnlyDirectDeps: genopts.OnlyDirectDeps,
+		NoDependencies: !genopts.ProcessGoModules,
 		Offline:        genopts.Offline,
 	})
 	if err != nil {
@@ -77,16 +83,23 @@ func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptio
 	// Fill in the document fields the protobom metadata does not
 	// carry. The license list version comes from the embedded catalog
 	// unless one was specified, trimmed to major.minor.
-	ver := strings.TrimPrefix(license.DefaultCatalogOpts.Version, "v")
-	if genopts.LicenseListVersion != "" {
-		ver = strings.TrimPrefix(genopts.LicenseListVersion, "v")
-	}
-	v, err := semver.New(ver)
+	doc.LicenseListVersion, err = licenseListVersion(genopts.LicenseListVersion)
 	if err != nil {
-		return nil, fmt.Errorf("parsing license list semver string %q: %w", ver, err)
+		return nil, err
 	}
-	doc.LicenseListVersion = fmt.Sprintf("%d.%d", v.Major, v.Minor)
-	doc.ExternalDocRefs = genopts.ExternalDocumentRef
+	seen := map[string]bool{}
+	for _, ref := range genopts.ExternalDocumentRef {
+		if err := ref.Validate(); err != nil {
+			logrus.Warnf("Skipping external document reference: %v", err)
+			continue
+		}
+		if seen[ref.DocumentRefID()] {
+			logrus.Warnf("Skipping duplicate external document reference %s", ref.DocumentRefID())
+			continue
+		}
+		seen[ref.DocumentRefID()] = true
+		doc.ExternalDocRefs = append(doc.ExternalDocRefs, ref)
+	}
 	// The organization credit is fixed in the legacy model; the engine
 	// records only the creator person and the tool.
 	doc.Creator.Organization = "Kubernetes Release Engineering"
@@ -130,6 +143,10 @@ func (builder *defaultDocBuilderImpl) ReadYamlConfiguration(
 	}
 
 	genopts.ExternalDocumentRef = conf.ExternalDocRefs
+	if len(conf.LegacyExternalDocRefs) > 0 {
+		logrus.Warn("The externalDocRefs configuration key is deprecated, use external-docs")
+		genopts.ExternalDocumentRef = append(genopts.ExternalDocumentRef, conf.LegacyExternalDocRefs...)
+	}
 
 	// Add all the artifacts
 	for _, artifact := range conf.Artifacts {
@@ -152,10 +169,7 @@ func (builder *defaultDocBuilderImpl) ReadYamlConfiguration(
 }
 
 func (builder *defaultDocBuilderImpl) ValidateOptions(genopts *DocGenerateOptions) error {
-	if err := genopts.Validate(); err != nil {
-		return fmt.Errorf("checking build options: %w", err)
-	}
-	return nil
+	return genopts.Validate()
 }
 
 // WriteDoc renders the document to a file.
