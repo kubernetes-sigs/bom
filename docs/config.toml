@@ -3,9 +3,6 @@ title = "BOM"
 
 enableRobotsTXT = true
 
-# Hugo allows theme composition (and inheritance). The precedence is from left to right.
-theme = ["github.com/google/docsy"]
-
 # Will give values to .Lastmod etc.
 enableGitInfo = true
 
@@ -33,23 +30,10 @@ pygmentsStyle = "tango"
 [permalinks]
 blog = "/:section/:year/:month/:day/:slug/"
 
-## Configuration for BlackFriday markdown parser: https://github.com/russross/blackfriday
-[blackfriday]
-plainIDAnchors = true
-hrefTargetBlank = true
-angledQuotes = false
-latexDashes = true
-
 # Image processing configuration.
 [imaging]
 resampleFilter = "CatmullRom"
-quality = 75
 anchor = "smart"
-
-[services]
-[services.googleAnalytics]
-# Comment out the next line to disable GA tracking. Also disables the feature described in [params.ui.feedback].
-id = "UA-00000000-0"
 
 # Language configuration
 
@@ -57,7 +41,7 @@ id = "UA-00000000-0"
 [languages.en]
 title = ""
 description = "Utility to generate SBOM"
-languageName ="English"
+label = "English"
 # Weight used for sorting.
 weight = 1
 
@@ -66,14 +50,11 @@ weight = 1
 
 [module]
   # uncomment line below for temporary local development of module
-  # replacements = "github.com/google/docsy -> ../../docsy"
+  # replacements = "github.com/google/docsy/theme -> ../../docsy/theme"
 
   [[module.imports]]
-    path = "github.com/google/docsy"
+    path = "github.com/google/docsy/theme"
     disable = false
-  [[module.imports]]
-    path = "github.com/google/docsy/dependencies"
-    disable = false    
 
 [markup]
   [markup.goldmark]
@@ -116,9 +97,6 @@ github_project_repo = "https://github.com/kubernetes-sigs/bom"
 # Google Custom Search Engine ID. Remove or comment out to disable search.
 #gcs_engine_id = "011737558837375720776:fsdu1nryfng"
 
-# Enable Algolia DocSearch
-algolia_docsearch = false
-
 # Enable Lunr.js offline search
 offlineSearch = false
 
@@ -132,8 +110,8 @@ breadcrumb_disable = false
 sidebar_search_disable = false
 #  Set to false if you don't want to display a logo (/assets/icons/logo.svg) in the top nav bar
 navbar_logo = true
-# Set to true to disable the About link in the site footer
-footer_about_disable = false
+# Set to false to disable the About link in the site footer
+footer_about_enable = true
 
 # Adds a H2 section titled "Feedback" to the bottom of each doc. The responses are sent to Google Analytics as events.
 # This feature depends on [services.googleAnalytics] and will be disabled if "services.googleAnalytics.id" is not set.

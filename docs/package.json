@@ -4,7 +4,8 @@
   "description": "Hugo theme for technical documentation.",
   "main": "none.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "hugo --minify",
+    "serve": "hugo serve"
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,10 @@
   },
   "homepage": "https://github.com/google/docsy-example#readme",
   "devDependencies": {
-    "autoprefixer": "^9.8.8",
-    "postcss-cli": "^7.1.2"
+    "@fortawesome/fontawesome-free": "7.3.1",
+    "autoprefixer": "10.5.4",
+    "bootstrap": "5.3.8",
+    "postcss-cli": "11.0.1",
+    "sass-embedded": "1.103.1"
   }
 }

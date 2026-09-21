@@ -20,7 +20,7 @@ npm install
 Build website and serve it.
 
 ```
-hugo serve
+npm run serve
 ```
 
 This will by default serve the doc website at `http://localhost:1313`

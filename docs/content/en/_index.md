@@ -7,20 +7,20 @@ tags: ["intro"]
 weight: 20
 
 cascade:
-- _target:
+- target:
     path: "/blog/**"
   type: "blog"
   # set to false to include a blog section in the section nav along with docs
   toc_root: true
-- _target:
+- target:
     path: "/**"
     kind: "page"
   type: "docs"
-- _target:
+- target:
     path: "/**"
     kind: "section"
   type: "docs"
-- _target:
+- target:
     path: "/**"
     kind: "section"
   type: "home"
