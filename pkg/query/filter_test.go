@@ -130,3 +130,151 @@ func TestPurl(t *testing.T) {
 		require.Len(t, newResults.Objects, tc.num, tc.descr)
 	}
 }
+
+// cycleDocument builds a document whose single root leads nowhere
+// while two packages depend on each other: no root reaches the pair,
+// and neither is unreferenced.
+func cycleDocument() *sbom.Document {
+	nl := &sbom.NodeList{}
+	nl.AddRootNode(&sbom.Node{Id: "root", Type: sbom.Node_PACKAGE, Name: "root"})
+	nl.AddNode(&sbom.Node{Id: "left", Type: sbom.Node_PACKAGE, Name: "left"})
+	nl.AddNode(&sbom.Node{Id: "right", Type: sbom.Node_PACKAGE, Name: "right"})
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_dependsOn, From: "left", To: []string{"right"}})
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_dependsOn, From: "right", To: []string{"left"}})
+	return &sbom.Document{Metadata: &sbom.Metadata{}, NodeList: nl}
+}
+
+func TestUnreachableCycle(t *testing.T) {
+	results := func() FilterResults {
+		return (&defaultEngineImplementation{}).resultsFromDocument(cycleDocument())
+	}
+
+	// The first element of the cycle stands in as a top-level element.
+	fr := results()
+	fr.Apply(&DepthFilter{TargetDepth: 0})
+	require.NoError(t, fr.Error)
+	require.ElementsMatch(t, []string{"root", "left"}, objectIDs(fr.Objects))
+
+	fr = results()
+	fr.Apply(&DepthFilter{TargetDepth: 1})
+	require.NoError(t, fr.Error)
+	require.ElementsMatch(t, []string{"right"}, objectIDs(fr.Objects))
+
+	for _, name := range []string{"left", "right"} {
+		fr = results()
+		fr.Apply(&NameFilter{Pattern: "^" + name + "$"})
+		require.NoError(t, fr.Error)
+		require.ElementsMatch(t, []string{name}, objectIDs(fr.Objects))
+	}
+
+	fr = results()
+	fr.Apply(&AllFilter{})
+	require.NoError(t, fr.Error)
+	require.ElementsMatch(t, []string{"root", "left", "right"}, objectIDs(fr.Objects))
+}
+
+func TestUnreachableCycleWithTail(t *testing.T) {
+	// A cycle that leads to another element is entered at the cycle,
+	// even when that element comes first in the document.
+	nl := &sbom.NodeList{}
+	nl.AddNode(&sbom.Node{Id: "tail", Type: sbom.Node_PACKAGE, Name: "tail"})
+	nl.AddNode(&sbom.Node{Id: "a", Type: sbom.Node_PACKAGE, Name: "a"})
+	nl.AddNode(&sbom.Node{Id: "b", Type: sbom.Node_PACKAGE, Name: "b"})
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_contains, From: "a", To: []string{"b"}})
+	nl.AddEdge(&sbom.Edge{Type: sbom.Edge_contains, From: "b", To: []string{"a", "tail"}})
+	doc := &sbom.Document{Metadata: &sbom.Metadata{}, NodeList: nl}
+
+	fr := (&defaultEngineImplementation{}).resultsFromDocument(doc)
+	fr.Apply(&DepthFilter{TargetDepth: 0})
+	require.NoError(t, fr.Error)
+	require.ElementsMatch(t, []string{"a"}, objectIDs(fr.Objects))
+}
+
+func objectIDs(objects map[string]*sbom.Node) []string {
+	ids := make([]string, 0, len(objects))
+	for id := range objects {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func TestPurlGolang(t *testing.T) {
+	// A module and its dependencies, all top-level so that a match on
+	// one does not hide the others from the query.
+	nl := &sbom.NodeList{}
+	for id, p := range map[string]string{
+		"bom":     "pkg:golang/sigs.k8s.io/bom@v0.8.0",
+		"cobra":   "pkg:golang/github.com/spf13/cobra@v1.10.1",
+		"md2man":  "pkg:golang/github.com/cpuguy83/go-md2man/v2@v2.0.6",
+		"yaml":    "pkg:golang/go.yaml.in/yaml/v3@v3.0.4",
+		"nons":    "pkg:golang/stdlib@1.25.0",
+		"generic": "pkg:generic/github.com/spf13/cobra@v1.10.1",
+	} {
+		nl.AddRootNode(&sbom.Node{
+			Id: id, Type: sbom.Node_PACKAGE, Name: id,
+			Identifiers: map[int32]string{int32(sbom.SoftwareIdentifierType_PURL): p},
+		})
+	}
+	doc := &sbom.Document{Metadata: &sbom.Metadata{}, NodeList: nl}
+
+	for _, tc := range []struct {
+		pattern string
+		expect  []string
+	}{
+		{"pkg:golang/*", []string{"bom", "cobra", "md2man", "yaml", "nons"}},
+		{"pkg:golang/*/*", []string{"bom", "cobra", "md2man", "yaml", "nons"}},
+		{"pkg:golang/github.com/*", []string{"cobra", "md2man"}},
+		{"pkg:golang/github.com/*/*", []string{"cobra", "md2man"}},
+		{"pkg:golang/github.com/spf13/*", []string{"cobra"}},
+		{"pkg:golang/github.com/*/cobra", []string{"cobra"}},
+		{"pkg:golang/github.com/cpuguy83/go-md2man/v2", []string{"md2man"}},
+		{"pkg:golang/github.com/cpuguy83/*", []string{"md2man"}},
+		{"pkg:golang/*/v3", []string{"yaml"}},
+		{"pkg:golang/go.yaml.in/*@v3.0.4", []string{"yaml"}},
+		{"pkg:golang/*.k8s.io/*", []string{"bom"}},
+		{"pkg:golang/sigs.k8s.io/bom", []string{"bom"}},
+		{"pkg:golang/github.com/spf13", nil},
+	} {
+		fr := (&defaultEngineImplementation{}).resultsFromDocument(doc)
+		fr.Apply(&PurlFilter{Pattern: tc.pattern})
+		require.NoError(t, fr.Error, tc.pattern)
+		require.ElementsMatch(t, tc.expect, objectIDs(fr.Objects), tc.pattern)
+	}
+}
+
+func TestPurlLiteralAndSubpath(t *testing.T) {
+	nl := &sbom.NodeList{}
+	for id, p := range map[string]string{
+		"bracket":   "pkg:generic/example/lib%5Bx%5D@1.0",
+		"backslash": "pkg:generic/example/back%5Cslash@1.0",
+		"subpath":   "pkg:golang/github.com/example/repo@v1.0.0#tools/cmd",
+		"plain":     "pkg:golang/github.com/example/repo@v1.0.0",
+	} {
+		nl.AddRootNode(&sbom.Node{
+			Id: id, Type: sbom.Node_PACKAGE, Name: id,
+			Identifiers: map[int32]string{int32(sbom.SoftwareIdentifierType_PURL): p},
+		})
+	}
+	doc := &sbom.Document{Metadata: &sbom.Metadata{}, NodeList: nl}
+
+	for _, tc := range []struct {
+		pattern string
+		expect  []string
+	}{
+		// Segments that are not patterns match themselves, even when
+		// path.Match would reject or reinterpret them.
+		{"pkg:generic/example/lib%5Bx%5D", []string{"bracket"}},
+		{"pkg:generic/example/back%5Cslash", []string{"backslash"}},
+		{"pkg:generic/example/lib*", []string{"bracket"}},
+		{"pkg:generic/example/*slash", []string{"backslash"}},
+		// A subpath left out matches any.
+		{"pkg:golang/github.com/example/repo", []string{"subpath", "plain"}},
+		{"pkg:golang/github.com/example/repo#tools/cmd", []string{"subpath"}},
+		{"pkg:golang/github.com/example/repo#other", nil},
+	} {
+		fr := (&defaultEngineImplementation{}).resultsFromDocument(doc)
+		fr.Apply(&PurlFilter{Pattern: tc.pattern})
+		require.NoError(t, fr.Error, tc.pattern)
+		require.ElementsMatch(t, tc.expect, objectIDs(fr.Objects), tc.pattern)
+	}
+}

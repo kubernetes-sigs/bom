@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/bom/internal/dot"
-	"sigs.k8s.io/bom/pkg/spdx"
+	"sigs.k8s.io/bom/pkg/bom"
 )
 
 func AddDot(parent *cobra.Command) {
@@ -63,7 +63,7 @@ by specifying the path as a dash (-) or omitting it.
 			if len(args) == 0 {
 				args = append(args, "")
 			}
-			doc, err := spdx.OpenProtobom(args[0])
+			doc, err := bom.Open(args[0])
 			if err != nil {
 				return fmt.Errorf("opening doc: %w", err)
 			}

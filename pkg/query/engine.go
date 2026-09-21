@@ -22,7 +22,8 @@ import (
 
 	"github.com/protobom/protobom/pkg/sbom"
 
-	"sigs.k8s.io/bom/pkg/spdx"
+	"sigs.k8s.io/bom/internal/sbomgraph"
+	"sigs.k8s.io/bom/internal/sbomio"
 )
 
 type Engine struct {
@@ -39,7 +40,7 @@ func New() *Engine {
 
 // Open reads a document from the specified path.
 func (e *Engine) Open(path string) error {
-	doc, err := spdx.OpenProtobom(path)
+	doc, err := sbomio.Open(path)
 	if err != nil {
 		return fmt.Errorf("opening doc: %w", err)
 	}
@@ -89,9 +90,7 @@ func (di *defaultEngineImplementation) resultsFromDocument(doc *sbom.Document) F
 // protobom keeps the relationships in a separate edge list, so the
 // filters need an adjacency index to walk the document.
 type Graph struct {
-	nodes map[string]*sbom.Node
-	edges map[string][]string
-	roots []string
+	g *sbomgraph.Graph
 }
 
 // NewGraph indexes a node list. Edges pointing at nodes the list does
@@ -99,88 +98,32 @@ type Graph struct {
 // protobom expresses a relationship to another document by naming an
 // element this document does not define, they are not ours to follow.
 func NewGraph(nl *sbom.NodeList) *Graph {
-	g := &Graph{
-		nodes: map[string]*sbom.Node{},
-		edges: map[string][]string{},
-	}
-	for _, node := range nl.GetNodes() {
-		if node.GetId() == "" {
-			continue
-		}
-		g.nodes[node.GetId()] = node
-	}
-
-	referenced := map[string]struct{}{}
-	for _, edge := range nl.GetEdges() {
-		from := edge.GetFrom()
-		if _, ok := g.nodes[from]; !ok {
-			continue
-		}
-		seen := map[string]struct{}{}
-		for _, id := range g.edges[from] {
-			seen[id] = struct{}{}
-		}
-		for _, to := range edge.GetTo() {
-			if _, ok := g.nodes[to]; !ok {
-				continue
-			}
-			referenced[to] = struct{}{}
-			if _, dup := seen[to]; dup {
-				continue
-			}
-			seen[to] = struct{}{}
-			g.edges[from] = append(g.edges[from], to)
-		}
-	}
-
-	// The document's declared roots, plus any node no relationship
-	// reaches. bom's parser surfaced those unreferenced elements as
-	// top-level entries too, and dropping them here would hide them
-	// from every query.
-	for _, id := range nl.GetRootElements() {
-		if _, ok := g.nodes[id]; ok {
-			g.roots = append(g.roots, id)
-		}
-	}
-	declared := map[string]struct{}{}
-	for _, id := range g.roots {
-		declared[id] = struct{}{}
-	}
-	for _, node := range nl.GetNodes() {
-		id := node.GetId()
-		if id == "" {
-			continue
-		}
-		if _, isRoot := declared[id]; isRoot {
-			continue
-		}
-		if _, isReferenced := referenced[id]; !isReferenced {
-			g.roots = append(g.roots, id)
-		}
-	}
-	return g
+	return &Graph{g: sbomgraph.New(nl, nil)}
 }
 
 // Node returns the node with the given identifier, nil when the graph
 // does not hold it.
 func (g *Graph) Node(id string) *sbom.Node {
-	return g.nodes[id]
+	return g.g.Node(id)
 }
 
-// Roots returns the document's top-level nodes.
+// Roots returns the document's top-level nodes: the ones it declares,
+// any node no relationship reaches (bom's parser surfaced those as
+// top-level entries too), and one node of each relationship cycle no
+// other root leads into, so that every node is reachable from them.
 func (g *Graph) Roots() []*sbom.Node {
-	nodes := make([]*sbom.Node, 0, len(g.roots))
-	for _, id := range g.roots {
-		nodes = append(nodes, g.nodes[id])
-	}
-	return nodes
+	return g.nodes(g.g.Roots())
 }
 
 // Related returns the nodes reachable from id in a single step.
 func (g *Graph) Related(id string) []*sbom.Node {
-	nodes := make([]*sbom.Node, 0, len(g.edges[id]))
-	for _, to := range g.edges[id] {
-		nodes = append(nodes, g.nodes[to])
+	return g.nodes(g.g.Next(id))
+}
+
+func (g *Graph) nodes(ids []string) []*sbom.Node {
+	nodes := make([]*sbom.Node, 0, len(ids))
+	for _, id := range ids {
+		nodes = append(nodes, g.g.Node(id))
 	}
 	return nodes
 }

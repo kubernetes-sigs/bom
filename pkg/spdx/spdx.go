@@ -176,8 +176,8 @@ func buildIDString(seeds ...string) string {
 // SPDX package describing its contents.
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error) {
 	pkg, err = spdx.impl.PackageFromDirectory(spdx.options, dirPath)
 	if err != nil {
@@ -206,8 +206,8 @@ func (spdx *SPDX) PackageFromDirectory(dirPath string) (pkg *Package, err error)
 // PackageFromImageTarball returns a SPDX package from a tarball.
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) PackageFromImageTarball(tarPath string) (imagePackage *Package, err error) {
 	return spdx.impl.PackageFromImageTarball(spdx.Options(), tarPath)
 }
@@ -215,8 +215,8 @@ func (spdx *SPDX) PackageFromImageTarball(tarPath string) (imagePackage *Package
 // PackageFromArchive returns a SPDX package from a tarball.
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) PackageFromArchive(archivePath string) (imagePackage *Package, err error) {
 	if strings.HasSuffix(archivePath, "tar") || strings.HasSuffix(archivePath, "tar.gz") {
 		return spdx.impl.PackageFromTarball(
@@ -246,8 +246,8 @@ func (spdx *SPDX) FileFromPath(filePath string) (*File, error) {
 //	enriched with more information
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) AnalyzeImageLayer(layerPath string, pkg *Package) error {
 	return spdx.impl.AnalyzeImageLayer(layerPath, pkg)
 }
@@ -255,8 +255,8 @@ func (spdx *SPDX) AnalyzeImageLayer(layerPath string, pkg *Package) error {
 // ExtractTarballTmp extracts a tarball to a temp file.
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) ExtractTarballTmp(tarPath string) (tmpDir string, err error) {
 	return spdx.impl.ExtractTarballTmp(tarPath)
 }
@@ -264,8 +264,8 @@ func (spdx *SPDX) ExtractTarballTmp(tarPath string) (tmpDir string, err error) {
 // PullImagesToArchive downloads all the images found from a reference to disk.
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) PullImagesToArchive(reference, path string) (*ImageReferenceInfo, error) {
 	return spdx.impl.PullImagesToArchive(reference, path)
 }
@@ -279,8 +279,8 @@ func (spdx *SPDX) PullImagesToArchive(reference, path string) (*ImageReferenceIn
 //     All subpackages are returned with a relationship of VARIANT_OF
 //
 // Deprecated: superseded by the protobom-native generation engine. Use
-// DocBuilder.Generate, or bom.Generate in sigs.k8s.io/bom/pkg/bom for a
-// protobom document. This will be removed in a future major version.
+// bom.Generate in sigs.k8s.io/bom/pkg/bom, and bom.Write to render the
+// document as SPDX. This will be removed in a future major version.
 func (spdx *SPDX) ImageRefToPackage(reference string) (pkg *Package, err error) {
 	return spdx.impl.ImageRefToPackage(reference, spdx.Options())
 }

@@ -18,6 +18,7 @@ package spdx
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -93,33 +94,76 @@ func TestDetectSBOMEncoding(t *testing.T) {
 	}
 }
 
-// TestOpenDocRejectsNonConformant records a deliberate behavior change:
-// documents are now parsed by protobom, which validates them against the
-// SPDX schema, where the previous hand-rolled parser read the fields it
-// recognized and ignored everything else. Both fixtures are real-world
-// documents that violate the specification — one omits spdxVersion, the
-// other carries package originators that are neither NOASSERTION nor a
-// "Person:"/"Organization:" value — and both used to parse.
-func TestOpenDocRejectsNonConformant(t *testing.T) {
+// TestOpenDocNonConformant opens real-world documents that violate
+// the SPDX specification. protobom, which documents are now parsed
+// with, validates them against the schema and rejects both, where the
+// previous hand-rolled parser read the fields it recognized: one omits
+// spdxVersion and the SPDXRef- prefix of its identifiers, the other
+// carries package originators that are neither NOASSERTION nor a
+// "Person:"/"Organization:" value. The reader retries such documents
+// with those violations repaired, so they still open.
+func TestOpenDocNonConformant(t *testing.T) {
 	for _, tc := range []struct {
-		name   string
-		path   string
-		expect string
+		path     string
+		packages int
 	}{
-		{
-			name:   "originator is not a valid SPDX actor",
-			path:   "testdata/images.spdx.json",
-			expect: "failed to parse Originator",
-		},
-		{
-			name:   "document declares no SPDX version",
-			path:   "testdata/external-references.spdx.json",
-			expect: "unknown SBOM format",
-		},
+		{path: "testdata/images.spdx.json", packages: 1},
+		{path: "testdata/external-references.spdx.json", packages: 1},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := OpenDoc(tc.path)
-			require.ErrorContains(t, err, tc.expect)
+		t.Run(tc.path, func(t *testing.T) {
+			doc, err := OpenDoc(tc.path)
+			require.NoError(t, err)
+			require.Len(t, doc.Packages, tc.packages)
+		})
+	}
+}
+
+// TestOpenDocLegacyRendering reads documents rendered by the legacy
+// template renderer, which lists the files of a package right after
+// it: the files must come back related to their package, in both SPDX
+// versions bom has published (Kubernetes release SBOMs declared 2.2 up
+// to 1.23).
+func TestOpenDocLegacyRendering(t *testing.T) {
+	for _, version := range []string{"SPDX-2.2", "SPDX-2.3"} {
+		t.Run(version, func(t *testing.T) {
+			ldoc := NewDocument()
+			ldoc.Version = version
+			ldoc.Name = "legacy-doc"
+			ldoc.Namespace = "https://sbom.k8s.io/test/legacy"
+
+			pkg := NewPackage()
+			pkg.SetSPDXID("SPDXRef-Package-kubectl")
+			pkg.Name = "kubectl"
+			pkg.Version = "v1.33.0"
+			pkg.LicenseConcluded = "Apache-2.0"
+			require.NoError(t, ldoc.AddPackage(pkg))
+
+			file := NewFile()
+			file.SetSPDXID("SPDXRef-File-kubectl-bin")
+			file.Name = "bin/kubectl"
+			file.Checksum = map[string]string{
+				"SHA256": "e5f7a7ed445673057c73686cb846e0c33ff0d5701fd43bf6aff16bb39ae14de2",
+			}
+			require.NoError(t, pkg.AddFile(file))
+
+			tv, err := ldoc.Render()
+			require.NoError(t, err)
+			require.Contains(t, tv, "SPDXVersion: "+version+"\n")
+			path := filepath.Join(t.TempDir(), "legacy.spdx")
+			require.NoError(t, os.WriteFile(path, []byte(tv), 0o600))
+
+			doc, err := OpenDoc(path)
+			require.NoError(t, err)
+			require.Equal(t, "legacy-doc", doc.Name)
+			require.Len(t, doc.Packages, 1)
+			for _, p := range doc.Packages {
+				require.Equal(t, "kubectl", p.Name)
+				require.Equal(t, "v1.33.0", p.Version)
+				files := p.Files()
+				require.Len(t, files, 1)
+				require.Equal(t, "bin/kubectl", files[0].Name)
+				require.Equal(t, file.Checksum["SHA256"], files[0].Checksum["SHA256"])
+			}
 		})
 	}
 }

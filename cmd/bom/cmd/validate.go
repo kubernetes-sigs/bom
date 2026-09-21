@@ -41,13 +41,20 @@ func AddValidate(parent *cobra.Command) {
 		Long: `bom validate → Check artifacts against an sbom
 
 validate is the bom subcommand to check artifacts against SPDX
-manifests.
+manifests: the checksums of each file are compared to those the
+SBOM records for it.
+
+The first argument is the SBOM, any further ones files to check.
+With --dir, every file in a directory is checked against the files
+of the package describing it, as bom generate --dirs records them:
+
+  bom validate sbom.spdx.json --dir .
 
 This is an experimental command. The first iteration has support
 for checking files.
 
 `,
-		Use:               "validate",
+		Use:               "validate SBOM_FILE [FILE...]",
 		SilenceUsage:      true,
 		SilenceErrors:     true,
 		PersistentPreRunE: initLogging,
@@ -134,9 +141,9 @@ func validateArtifacts(opts validateOptions) error {
 	if !opts.exitCode {
 		logrus.Info("Checking files against SPDX Bill of Materials")
 	}
-	doc, err := spdx.OpenDoc(opts.sbomPath)
+	doc, err := openLegacyDoc(opts.sbomPath)
 	if err != nil {
-		return fmt.Errorf("opening doc: %w", err)
+		return err
 	}
 
 	files := []string{}
@@ -151,7 +158,9 @@ func validateArtifacts(opts validateOptions) error {
 					return err
 				}
 
-				if info.IsDir() {
+				// bom generate records neither directories nor
+				// symbolic links or other special files.
+				if !info.Mode().IsRegular() {
 					return nil
 				}
 
@@ -164,9 +173,11 @@ func validateArtifacts(opts validateOptions) error {
 	}
 	files = append(files, opts.files...)
 
-	res, err := doc.ValidateFiles(files)
-	if err != nil {
-		return fmt.Errorf("validating files: %w", err)
+	// Files that could not be checked show up in the results, which
+	// are printed before a validation error is returned.
+	res, validateErr := doc.ValidateFiles(files)
+	if validateErr != nil && len(res) == 0 {
+		return fmt.Errorf("validating files: %w", validateErr)
 	}
 
 	data := [][]string{}
@@ -196,6 +207,9 @@ func validateArtifacts(opts validateOptions) error {
 	_ = table.Bulk(data) //nolint: errcheck
 	_ = table.Render()   //nolint: errcheck
 
+	if validateErr != nil {
+		return fmt.Errorf("validating files: %w", validateErr)
+	}
 	if errored {
 		return errors.New("failed to validate all files")
 	}

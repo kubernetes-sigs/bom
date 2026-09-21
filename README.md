@@ -23,8 +23,12 @@ directories, container images, single files, and other sources. The utility
 has a built-in license classifier that recognizes the 400+ licenses in
 the SPDX catalog.
 
-Other features include Golang dependency analysis and full `.gitignore`
-support when scanning git repositories.
+Other features include Golang dependency analysis, operating system package
+discovery in container images and full `.gitignore` support when scanning git
+repositories.
+
+`bom` can also be used as a Go library: see
+[Using bom as a library](#using-bom-as-a-library).
 
 For more in-depth instructions on how to create an SBOM for your project, see
 ["Generating a Bill of Materials for Your Project"](https://kubernetes-sigs.github.io/bom/tutorials/creating_bill_of_materials/).
@@ -37,10 +41,12 @@ other sources to your SBOM.
 - [Usage](#usage)
   - [`bom generate`](#bom-generate)
   - [`bom document`](#bom-document)
+  - [`bom validate`](#bom-validate)
 - [Examples](#examples)
   - [Generate a SBOM from the Current Directory](#generate-a-sbom-from-the-current-directory)
   - [Process a Container Image](#process-a-container-image)
   - [Generate a SBOM to describe files](#generate-a-sbom-to-describe-files)
+- [Using bom as a library](#using-bom-as-a-library)
 - [Code of conduct](#code-of-conduct)
 
 ## Installation
@@ -56,18 +62,23 @@ go install sigs.k8s.io/bom/cmd/bom@latest
 - completion: generate the autocompletion script for the specified shell
 - [document](#bom-document): Work with SPDX documents
 - [generate](#bom-generate): Create SPDX manifests
+- [validate](#bom-validate): Check artifacts against an SBOM
 - help: Help about any command
+- version: Print the version
 
 ### `bom generate`
 
 `bom generate` is the `bom` subcommand to generate SPDX manifests.
 
-Currently supports creating SBOM from files, images, and docker
-archives (images in tarballs). It supports pulling images from
-remote registries for analysis.
+Currently supports creating SBOM from directories, files, images,
+archives and docker archives (images in tarballs). It supports pulling
+images from remote registries for analysis.
 
-bom can take a deeper look into images using a growing number
-of analyzers designed to add more sense to common base images.
+The operating system packages installed in images (Alpine, Debian and
+RPM based distributions) are listed in the SBOM, together with the
+image layers. Directories are scanned for the codebases they hold, like
+Go modules, whose dependencies are resolved and listed with their
+licenses.
 
 Go binaries found in images and in files passed with --file are
 listed with the Go modules they were built from, as recorded in
@@ -90,10 +101,10 @@ Flags:
   -f, --file strings                  list of files to include
       --format string                 format of the document (supports json, tag-value) (default "json")
   -h, --help                          help for generate
-      --ignore strings                list of regexp patterns to ignore when scanning directories
+      --ignore strings                list of gitignore-style patterns to ignore when scanning directories
   -i, --image strings                 list of images
       --image-archive strings         list of docker archive tarballs to include in the manifest
-      --license-list-version string   version of the SPDX list to use (or 'latest')
+      --license-list-version string   version of the SPDX license list to record in the document (default "v3.28.0")
       --name string                   name for the document, in contrast to URLs, intended for humans
   -n, --namespace string              an URI that serves as namespace for the SPDX doc
       --no-gitignore                  don't use exclusions from .gitignore files
@@ -106,6 +117,11 @@ Global Flags:
       --log-level string   the logging verbosity, either 'panic', 'fatal', 'error', 'warning', 'info', 'debug', 'trace' (default "info")
 
 ```
+
+Directories are scanned honoring the `.gitignore` files they contain. The
+`--ignore` flag adds more patterns, written in the same gitignore syntax (for
+example `--ignore '*.log' --ignore 'testdata/'`), and `--no-gitignore` stops
+bom from reading the `.gitignore` files.
 
 ### `bom document`
 
@@ -131,10 +147,10 @@ information they contain is structured. Here is an example rendering the
 `debian:bookworm-slim` image for amd64:
 
 ```
-bom generate --output=debian.spdx --image \
+bom generate --name debian --output=debian.spdx.json --image \
   debian@sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491
 
-bom document outline debian.spdx
+bom document outline debian.spdx.json
 
                _
  ___ _ __   __| |_  __
@@ -143,37 +159,43 @@ bom document outline debian.spdx
 |___/ .__/ \__,_/_/\_\
     |_|
 
- 📂 SPDX Document SBOM-SPDX-71f1009c-dc17-4f4d-b4ec-72210c1a8d7f
+ 📂 SPDX Document debian
   │
   │ 📦 DESCRIBES 1 Packages
   │
-  ├ sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491
-  │  │ 🔗 1 Relationships
-  │  └ CONTAINS PACKAGE sha256:b37cbf60a964400132f658413bf66b67e5e67da35b9c080be137ff3c37cc7f65
-  │  │  │ 🔗 86 Relationships
-  │  │  ├ CONTAINS PACKAGE apt@2.5.4
-  │  │  ├ CONTAINS PACKAGE base-files@12.3
-  │  │  ├ CONTAINS PACKAGE base-passwd@3.6.1
-  │  │  ├ CONTAINS PACKAGE bash@5.2.15-2
-  │  │  ├ CONTAINS PACKAGE bsdutils@1:2.38.1-4
-  │  │  ├ CONTAINS PACKAGE coreutils@9.1-1
-  │  │  ├ CONTAINS PACKAGE dash@0.5.11+git20210903+057cd650a4ed-9
-  │  │  ├ CONTAINS PACKAGE debconf@1.5.81
-  │  │  ├ CONTAINS PACKAGE debian-archive-keyring@2021.1.1
-  │  │  ├ CONTAINS PACKAGE debianutils@5.7-0.4
-  │  │  ├ CONTAINS PACKAGE diffutils@1:3.8-3
-  │  │  ├ CONTAINS PACKAGE dpkg@1.21.13
-  │  │  ├ CONTAINS PACKAGE e2fsprogs@1.46.6~rc1-1+b1
-  │  │  ├ CONTAINS PACKAGE findutils@4.9.0-3
-  │  │  ├ CONTAINS PACKAGE gcc-12-base@12.2.0-13
-  │  │  ├ CONTAINS PACKAGE gpgv@2.2.40-1
-  │  │  ├ CONTAINS PACKAGE grep@3.8-3
-  │  │  ├ CONTAINS PACKAGE gzip@1.12-1
-  │  │  ├ CONTAINS PACKAGE hostname@3.23+nmu1
-  │  │  ├ CONTAINS PACKAGE init-system-helpers@1.65.2
+  ├ debian@sha256:0aac521df91463e54189d82fe820b6d36b4a0992751c8339fbdd42e2bc1aa491
+  │  │ 🔗 88 Relationships
+  │  ├ CONTAINS PACKAGE apt@2.5.4
+  │  ├ CONTAINS PACKAGE base-files@12.3
+  │  ├ CONTAINS PACKAGE base-passwd@3.6.1
+  │  ├ CONTAINS PACKAGE bash@5.2.15-2
+  │  ├ CONTAINS PACKAGE bsdutils@1:2.38.1-4
+  │  ├ CONTAINS PACKAGE coreutils@9.1-1
+  │  ├ CONTAINS PACKAGE dash@0.5.11+git20210903+057cd650a4ed-9
+  │  ├ CONTAINS PACKAGE debconf@1.5.81
+  │  ├ CONTAINS PACKAGE debian-archive-keyring@2021.1.1
+  │  ├ CONTAINS PACKAGE debianutils@5.7-0.4
 
 [trimmed]
 
+  │  ├ CONTAINS PACKAGE sha256:79356561b2368d4930234f8f5bb82fcc280504cd9f21cd0b1a423599b32f4de9
+
+[trimmed]
+
+```
+
+Use `--purl` to label packages with their package URLs, `--depth` to limit how
+deep the tree is drawn and `--find` to draw only the branches leading to a
+package, which shows where it comes from.
+
+### `bom document query`
+
+`bom document query` searches an SBOM for elements matching a set of filters
+by depth, name or package URL. For example, to list the Go modules hosted on
+GitHub that a project depends on:
+
+```
+bom document query sbom.spdx.json 'purl:pkg:golang/github.com/*'
 ```
 
 ### `bom document dot`
@@ -185,12 +207,22 @@ even when several others relate to it, and every edge is labelled with its
 SPDX relationship types:
 
 ```
-bom document dot debian.spdx | dot -Tsvg > debian.svg
+bom document dot debian.spdx.json | dot -Tsvg > debian.svg
 ```
 
 Use `--root` to render only the graph reachable from one element, `--depth` to
 limit how many relationship steps are followed and `--no-files` to leave file
 elements out.
+
+### `bom validate`
+
+`bom validate` checks files against the checksums an SBOM records for them.
+With `--dir`, every file in a directory is checked against the package
+describing it:
+
+```
+bom validate sbom.spdx.json --dir .
+```
 
 ## Examples
 
@@ -203,19 +235,44 @@ describing different packages.
 To process a directory as a source for your SBOM, use the `-d` flag or simply pass
 the path (or current dir) as the first argument to `bom generate`:
 
-```bash
-bom generate .
+```console
+$ bom generate --name hello --output hello.spdx.json .
+$ bom document outline hello.spdx.json
+
+[...]
+
+ 📂 SPDX Document hello
+  │
+  │ 📦 DESCRIBES 1 Packages
+  │
+  ├ example.com/hello
+  │  │ 🔗 5 Relationships
+  │  ├ DEPENDS_ON PACKAGE github.com/google/uuid@v1.6.0
+  │  ├ DEPENDS_ON PACKAGE stdlib@1.24
+  │  ├ CONTAINS FILE go.mod (go.mod)
+  │  ├ CONTAINS FILE go.sum (go.sum)
+  │  └ CONTAINS FILE main.go (main.go)
+  │
+  └ 📄 DESCRIBES 0 Files
 ```
+
+A directory holding a Go module is described by a package named after the
+module path, which depends on the modules the code requires. The licenses of
+those modules are looked up online and recorded as their declared license; with
+`--offline`, bom does not reach the network and only reads the dependency data
+available locally.
 
 ### Process a Container Image
 
-This example pulls the `kube-apiserver` image, analyzes it, and describes in the
-SBOM. Each of its layers are then expressed as a subpackage in the resulting
-document, and the Go binaries in the image (`kube-apiserver` and `go-runner`)
-are listed with the Go modules they depend on:
+This example pulls the `kube-apiserver` image, analyzes it, and describes it in
+the SBOM. The operating system packages found in the image and its layers are
+listed in the resulting document, and the Go binaries in the image
+(`kube-apiserver` and `go-runner`) are listed with the Go modules they depend
+on:
 
 ```console
-bom generate -n http://example.com/ --image registry.k8s.io/kube-apiserver:v1.34.0
+bom generate -n http://example.com/ --output kube-apiserver.spdx.json \
+  --image registry.k8s.io/kube-apiserver:v1.34.0
 ```
 
 ### Generate a SBOM to describe files
@@ -224,12 +281,34 @@ You can create an SBOM with just files in the manifest. For that, use `-f`.
 Files that are Go binaries are listed with the Go modules they were built from:
 
 ```console
-bom generate -n http://example.com/ \
+bom generate -n http://example.com/ --output files.spdx.json \
   -f Makefile \
   -f file1.exe \
   -f document.md \
   -f other/file.txt
 ```
+
+## Using bom as a library
+
+The `sigs.k8s.io/bom/pkg/bom` package generates, reads and writes SBOMs as
+[protobom](https://github.com/protobom/protobom) documents, a format-neutral
+model that protobom can also serialize to other SPDX and CycloneDX formats:
+
+```go
+doc, err := bom.Generate(ctx, &bom.GenerateOptions{
+    Name:        "my-project",
+    Directories: []string{"."},
+})
+if err != nil {
+    return err
+}
+return bom.Write(os.Stdout, doc, &bom.WriteOptions{Format: bom.FormatJSON})
+```
+
+The object model in `sigs.k8s.io/bom/pkg/spdx` is deprecated. See the
+[migration guide](https://kubernetes-sigs.github.io/bom/tutorials/migrating_to_pkg_bom/)
+for how to move to `pkg/bom` and for the changes in v0.8.0 that affect library
+users and the generated SBOMs.
 
 ## Code of conduct
 
