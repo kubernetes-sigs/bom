@@ -236,7 +236,7 @@ func NewDocument() *Document {
 			Tool         []string
 		}{
 			Person:       defaultDocumentAuthor,
-			Organization: "Kubernetes Release Engineering",
+			Organization: defaultDocumentOrganization,
 			Tool: []string{
 				fmt.Sprintf("%s-%s", "bom", version.GetVersionInfo().GitVersion),
 			},

@@ -48,6 +48,7 @@ func TestDocumentMetadata(t *testing.T) {
 	require.Len(t, md.GetAuthors(), 1)
 	require.Equal(t, "Jane Doe", md.GetAuthors()[0].GetName())
 	require.Equal(t, "jane@example.com", md.GetAuthors()[0].GetEmail())
+	require.Empty(t, md.GetDocumentTypes(), "nothing was scanned")
 	require.Len(t, md.GetTools(), 1)
 	require.Equal(t, "bom", md.GetTools()[0].GetName())
 }
@@ -58,6 +59,10 @@ func TestDocumentDefaultNamespace(t *testing.T) {
 	require.True(t,
 		strings.HasPrefix(doc.GetMetadata().GetId(), "https://spdx.org/spdxdocs/k8s-releng-bom-"),
 		"default namespace must keep the legacy shape, got %q", doc.GetMetadata().GetId(),
+	)
+	require.True(t,
+		strings.HasPrefix(doc.GetMetadata().GetName(), "SBOM-SPDX-"),
+		"default name must keep the legacy shape, got %q", doc.GetMetadata().GetName(),
 	)
 	require.Empty(t, doc.GetMetadata().GetAuthors())
 }
@@ -79,6 +84,9 @@ func TestDocumentFiles(t *testing.T) {
 	require.Equal(t, strings.TrimPrefix(path, "/"), node.GetFileName())
 	require.Contains(t, doc.GetNodeList().GetRootElements(), node.GetId())
 	require.True(t, strings.HasPrefix(node.GetId(), "File-"), "id %q", node.GetId())
+	require.Equal(t, []sbom.Purpose{sbom.Purpose_DOCUMENTATION}, node.GetPrimaryPurpose())
+	require.Len(t, doc.GetMetadata().GetDocumentTypes(), 1)
+	require.Equal(t, sbom.DocumentType_ANALYZED, doc.GetMetadata().GetDocumentTypes()[0].GetType())
 
 	sum1 := sha1.Sum(content) //nolint:gosec // SPDX requires SHA1 file checksums
 	sum256 := sha256.Sum256(content)
@@ -104,6 +112,33 @@ func TestDocumentFileGlobs(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, doc.GetNodeList().GetNodes(), 2)
 	require.Len(t, doc.GetNodeList().GetRootElements(), 2)
+}
+
+// TestDocumentTypesFound checks that only the inputs which matched
+// something decide the kind of SBOM.
+func TestDocumentTypesFound(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.txt")
+	require.NoError(t, os.WriteFile(path, []byte("a"), os.FileMode(0o644)))
+
+	doc, err := generate.Document(t.Context(), &generate.Options{
+		Files:    []string{filepath.Join(dir, "nope-*")},
+		Archives: []string{filepath.Join(dir, "nope-*.tar")},
+	})
+	require.NoError(t, err)
+	require.Empty(t, doc.GetMetadata().GetDocumentTypes())
+
+	doc, err = generate.Document(t.Context(), &generate.Options{
+		Directories: []string{dir},
+		Files:       []string{path},
+		Offline:     true,
+	})
+	require.NoError(t, err)
+	types := make([]sbom.DocumentType_SBOMType, 0, 2)
+	for _, dt := range doc.GetMetadata().GetDocumentTypes() {
+		types = append(types, dt.GetType())
+	}
+	require.Equal(t, []sbom.DocumentType_SBOMType{sbom.DocumentType_SOURCE, sbom.DocumentType_ANALYZED}, types)
 }
 
 // TestDocumentConverts runs an engine document through the legacy

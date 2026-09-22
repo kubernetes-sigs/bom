@@ -56,8 +56,8 @@ import (
 // Options steers a generation run. The zero value produces an empty
 // document with default metadata.
 type Options struct {
-	// Name is the document name. Left empty, downstream serializers
-	// generate one, as the legacy renderer always did.
+	// Name is the document name. Left empty, the engine generates the
+	// same UUID-based default name the legacy renderer used.
 	Name string
 
 	// Namespace is the document namespace URI. Left empty, the engine
@@ -127,21 +127,31 @@ func Document(ctx context.Context, opts *Options) (*sbom.Document, error) {
 		opts = &Options{}
 	}
 	doc := newDocument(opts)
-	if err := addDirectories(ctx, doc, opts); err != nil {
-		return nil, err
+	// Each source kind is added in turn, noting whether it added a top
+	// level element to tell the kind of SBOM produced: directories and
+	// archives, which are extracted and scanned like directories, are
+	// source code, images and files are analyzed artifacts.
+	var source, analyzed bool
+	for _, step := range []struct {
+		add    func() error
+		source bool
+	}{
+		{func() error { return addDirectories(ctx, doc, opts) }, true},
+		{func() error { return addImages(ctx, doc, opts) }, false},
+		{func() error { return addImageArchives(ctx, doc, opts) }, false},
+		{func() error { return addArchives(ctx, doc, opts) }, true},
+		{func() error { return addFiles(doc, opts.Files) }, false},
+	} {
+		roots := len(doc.GetNodeList().GetRootElements())
+		if err := step.add(); err != nil {
+			return nil, err
+		}
+		if len(doc.GetNodeList().GetRootElements()) > roots {
+			source = source || step.source
+			analyzed = analyzed || !step.source
+		}
 	}
-	if err := addImages(ctx, doc, opts); err != nil {
-		return nil, err
-	}
-	if err := addImageArchives(ctx, doc, opts); err != nil {
-		return nil, err
-	}
-	if err := addArchives(ctx, doc, opts); err != nil {
-		return nil, err
-	}
-	if err := addFiles(doc, opts.Files); err != nil {
-		return nil, err
-	}
+	doc.GetMetadata().DocumentTypes = documentTypes(source, analyzed)
 	encodePurls(doc.GetNodeList())
 	return doc, nil
 }
@@ -235,6 +245,9 @@ func newDocument(opts *Options) *sbom.Document {
 	doc := sbom.NewDocument()
 	md := doc.GetMetadata()
 	md.Name = opts.Name
+	if md.GetName() == "" {
+		md.Name = "SBOM-SPDX-" + uuid.NewString()
+	}
 	namespace := opts.Namespace
 	if namespace == "" {
 		namespace = "https://spdx.org/spdxdocs/k8s-releng-bom-" + uuid.NewString()
@@ -328,6 +341,7 @@ func fileNode(path string) (*sbom.Node, error) {
 		FileName:  name,
 		FileTypes: fileTypes(os.DirFS(filepath.Dir(abs)), filepath.Base(abs)),
 	}
+	node.PrimaryPurpose = filePurposes(node.GetFileTypes())
 	if err := hashFileInto(node, path); err != nil {
 		return nil, err
 	}

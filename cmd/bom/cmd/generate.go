@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -67,9 +68,9 @@ func (opts *generateOptions) Validate() error {
 		return errors.New("to generate a SPDX BOM you have to provide at least one image or file")
 	}
 
-	if opts.format != spdx.FormatTagValue && opts.format != spdx.FormatJSON {
-		return fmt.Errorf("unknown format provided, must be one of [%s, %s]: %s",
-			spdx.FormatTagValue, spdx.FormatJSON, opts.format)
+	if opts.format != spdx.FormatTagValue && opts.format != spdx.FormatJSON && opts.format != spdx.FormatSPDX3JSON {
+		return fmt.Errorf("unknown format provided, must be one of [%s, %s, %s]: %s",
+			spdx.FormatTagValue, spdx.FormatJSON, spdx.FormatSPDX3JSON, opts.format)
 	}
 
 	// Check if specified local files exist
@@ -118,6 +119,12 @@ with their licenses unless --no-gomod is passed.
 Go binaries found in images and in files passed with --file are
 listed with the Go modules they were built from, as recorded in
 their embedded build information.
+
+Documents are written as SPDX 2.3 JSON by default, or as SPDX 2.3
+tag-value. SPDX 3.0.1 JSON-LD output (--format spdx3-json) is
+experimental: it is written by protobom, which does not yet keep
+the order of the hashes and identifiers of an element stable between
+runs.
 
 The SBOM data can also be exported to an in-toto provenance
 attestation. The output will produce a provenance statement listing all
@@ -264,8 +271,8 @@ completed by a later stage in your CI/CD pipeline. See the
 		&genOpts.format,
 		"format",
 		spdx.FormatJSON,
-		fmt.Sprintf("format of the document (supports %s, %s)",
-			spdx.FormatJSON, spdx.FormatTagValue),
+		fmt.Sprintf("format of the document (supports %s, %s, and %s, which is experimental)",
+			spdx.FormatJSON, spdx.FormatTagValue, spdx.FormatSPDX3JSON),
 	)
 
 	generateCmd.PersistentFlags().StringVarP(
@@ -381,6 +388,10 @@ func generateBOM(opts *generateOptions) error {
 	if len(opts.ignorePatterns) > 0 {
 		builderOpts.IgnorePatterns = opts.ignorePatterns
 	}
+	if opts.format == spdx.FormatSPDX3JSON {
+		return generateSPDX3(opts, builder, builderOpts)
+	}
+
 	doc, err := builder.Generate(builderOpts)
 	if err != nil {
 		return fmt.Errorf("generating doc: %w", err)
@@ -413,5 +424,43 @@ func generateBOM(opts *generateOptions) error {
 		}
 	}
 
+	return nil
+}
+
+// generateSPDX3 generates the SBOM as a protobom document and writes it
+// as SPDX 3. The provenance statement is built from the same document
+// converted to the legacy model, so it lists the same subjects as it
+// does for SPDX 2.3 output.
+func generateSPDX3(opts *generateOptions, builder *spdx.DocBuilder, builderOpts *spdx.DocGenerateOptions) error {
+	pdoc, err := builder.GenerateProtobom(builderOpts)
+	if err != nil {
+		return fmt.Errorf("generating doc: %w", err)
+	}
+
+	// The document is written in full before it is output, so an error
+	// leaves no partial file behind.
+	var buf bytes.Buffer
+	if err := spdx.WriteSPDX3(&buf, pdoc); err != nil {
+		return fmt.Errorf("writing SBOM: %w", err)
+	}
+	if opts.outputFile == "" {
+		if _, err := os.Stdout.Write(buf.Bytes()); err != nil {
+			return fmt.Errorf("writing SBOM: %w", err)
+		}
+	} else if err := os.WriteFile(opts.outputFile, buf.Bytes(), 0o664); err != nil { //nolint:gosec // G306: Expect WriteFile
+		return fmt.Errorf("writing SBOM: %w", err)
+	}
+
+	if opts.provenancePath != "" {
+		doc, err := spdx.FromProtobom(pdoc)
+		if err != nil {
+			return fmt.Errorf("converting document for the provenance statement: %w", err)
+		}
+		if err := doc.WriteProvenanceStatement(
+			spdx.DefaultProvenanceOptions, opts.provenancePath,
+		); err != nil {
+			return fmt.Errorf("writing SBOM as provenance statement: %w", err)
+		}
+	}
 	return nil
 }

@@ -475,6 +475,7 @@ func indexFiles(dir, prefix string, opts *Options) (*sbom.NodeList, error) {
 	for _, node := range nodes {
 		node.Id = elementID("File", prefix+"-"+node.GetName())
 		node.FileTypes = fileTypes(os.DirFS(dir), node.GetName())
+		node.PrimaryPurpose = filePurposes(node.GetFileTypes())
 		roots = append(roots, node.GetId())
 	}
 	nl.RootElements = roots

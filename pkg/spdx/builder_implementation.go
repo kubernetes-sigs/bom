@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/protobom/protobom/pkg/sbom"
 	"github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/yaml"
@@ -41,9 +42,15 @@ type defaultDocBuilderImpl struct {
 	format Format
 }
 
-// GenerateDocument runs the protobom-native generation engine over the
-// requested artifacts and converts the result to the legacy model.
-func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptions) (*Document, error) {
+// defaultDocumentOrganization is the organization credited as author
+// of the documents the DocBuilder generates, as it always did.
+const defaultDocumentOrganization = "Kubernetes Release Engineering"
+
+// generateProtobom runs the protobom-native generation engine over the
+// requested artifacts. The engine records only the creator person and
+// the tool: the organization is credited here, for the documents of the
+// DocBuilder in all formats, but not for pkg/bom callers of the engine.
+func generateProtobom(genopts *DocGenerateOptions) (*sbom.Document, error) {
 	// Tell callers when they ask for something the engine does not
 	// offer anymore, rather than silently ignoring it.
 	if genopts.AnalyseLayers {
@@ -74,6 +81,19 @@ func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptio
 	if err != nil {
 		return nil, fmt.Errorf("generating document: %w", err)
 	}
+	pdoc.GetMetadata().Authors = append(pdoc.GetMetadata().GetAuthors(), &sbom.Person{
+		Name: defaultDocumentOrganization, IsOrg: true,
+	})
+	return pdoc, nil
+}
+
+// GenerateDocument runs the protobom-native generation engine over the
+// requested artifacts and converts the result to the legacy model.
+func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptions) (*Document, error) {
+	pdoc, err := generateProtobom(genopts)
+	if err != nil {
+		return nil, err
+	}
 
 	doc, err := FromProtobom(pdoc)
 	if err != nil {
@@ -81,8 +101,10 @@ func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptio
 	}
 
 	// Fill in the document fields the protobom metadata does not
-	// carry. The license list version comes from the embedded catalog
-	// unless one was specified, trimmed to major.minor.
+	// carry; the organization credit is part of it, see
+	// generateProtobom. The license list version comes from the
+	// embedded catalog unless one was specified, trimmed to
+	// major.minor.
 	doc.LicenseListVersion, err = licenseListVersion(genopts.LicenseListVersion)
 	if err != nil {
 		return nil, err
@@ -100,9 +122,6 @@ func (builder *defaultDocBuilderImpl) GenerateDocument(genopts *DocGenerateOptio
 		seen[ref.DocumentRefID()] = true
 		doc.ExternalDocRefs = append(doc.ExternalDocRefs, ref)
 	}
-	// The organization credit is fixed in the legacy model; the engine
-	// records only the creator person and the tool.
-	doc.Creator.Organization = "Kubernetes Release Engineering"
 	return doc, nil
 }
 
