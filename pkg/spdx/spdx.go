@@ -48,6 +48,9 @@ const (
 	entTool         = "Tool"
 	entOrganization = "Organization"
 
+	HashAlgoSHA1   = "SHA1"
+	HashAlgoSHA256 = "SHA256"
+
 	CatPackageManager = "PACKAGE-MANAGER"
 	ExtRefTypePurl    = "purl"
 
@@ -59,7 +62,7 @@ CiAgICB8X3wgICAgICAgICAgICAgICAK`
 var (
 	// https://spdx.github.io/spdx-spec/3-package-information/#32-package-spdx-identifier
 	validIDCharsRe          = regexp.MustCompile(`[^a-zA-Z0-9-.]+`)
-	SupportedHashAlgorithms = []string{"SHA1", "SHA256", "SHA25"}
+	SupportedHashAlgorithms = []string{HashAlgoSHA1, HashAlgoSHA256, "SHA512"}
 )
 
 type SPDX struct {

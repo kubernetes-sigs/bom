@@ -136,12 +136,12 @@ func TestExternalDocRef(t *testing.T) {
 		{ExternalDocumentRef{ID: "", URI: "http://example.com/", Checksums: map[string]string{"SHA256": "d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8"}}, ""},
 		{ExternalDocumentRef{ID: "test-id", URI: "", Checksums: map[string]string{"SHA256": "d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8"}}, ""},
 		{ExternalDocumentRef{ID: "test-id", URI: "http://example.com/", Checksums: map[string]string{}}, ""},
-		// SPDX only allows a SHA1 checksum for external documents.
+		// SHA256 is preferred over SHA1.
 		{
 			ExternalDocumentRef{
 				ID: "test-id", URI: "http://example.com/", Checksums: map[string]string{"SHA256": "d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8"},
 			},
-			"",
+			"DocumentRef-test-id http://example.com/ SHA256: d3b53860aa08e5c7ea868629800eaf78856f6ef3bcd4a2f8c5c865b75f6837c8",
 		},
 		{
 			ExternalDocumentRef{
@@ -149,8 +149,9 @@ func TestExternalDocRef(t *testing.T) {
 			},
 			"DocumentRef-test-id http://example.com/ SHA1: 5f341d31f6b6a8b15bc4e6704830bf37f99511d1",
 		},
-		// An ID that carries the prefix already keeps it once, and the
-		// checksum is written in lowercase.
+		// An ID that carries the prefix already keeps it once, the
+		// checksum is written in lowercase, and an invalid SHA256
+		// falls back to SHA1.
 		{
 			ExternalDocumentRef{
 				ID: "DocumentRef-test-id", URI: "http://example.com/", Checksums: map[string]string{"sha1": "5F341D31F6B6A8B15BC4E6704830BF37F99511D1", "SHA256": "ff"},
@@ -178,7 +179,8 @@ func TestExtDocReadSourceFile(t *testing.T) {
 	require.Error(t, ed.ReadSourceFile("/kjfhg/skjdfkjh"))
 	require.NoError(t, ed.ReadSourceFile(f.Name()))
 	require.NotNil(t, ed.Checksums)
-	require.Len(t, ed.Checksums, 1)
+	require.Len(t, ed.Checksums, 2)
+	require.Equal(t, "b652f076fb4feeb1f934ac9b8c0606852e93d3a73fb2596a51c92e480e246897", ed.Checksums["SHA256"])
 	require.Equal(t, "5f341d31f6b6a8b15bc4e6704830bf37f99511d1", ed.Checksums["SHA1"])
 }
 
