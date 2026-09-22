@@ -56,11 +56,11 @@ PackageLicenseDeclared: NOASSERTION
 PackageCopyrightText: NOASSERTION
 
 LicenseID: LicenseRef-GPL-3-or-later-with-Autoconf-data-exception
-ExtractedText: <text>The license declared as "GPL-3+ with Autoconf-data exception" is not on the SPDX license list; its text was not collected.</text>
+ExtractedText: <text>NOASSERTION</text>
 LicenseName: GPL-3+ with Autoconf-data exception
 
 LicenseID: LicenseRef-public-domain
-ExtractedText: <text>The license declared as "public-domain" is not on the SPDX license list; its text was not collected.</text>
+ExtractedText: <text>NOASSERTION</text>
 LicenseName: public-domain
 
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-registry.k8s.io-bom-golden-v1.0.0

@@ -168,14 +168,9 @@ func (o *DocGenerateOptions) Validate() error {
 		return fmt.Errorf("parsing the namespace URL: %w", err)
 	}
 
-	// Licenses are matched against the SPDX license list embedded in
-	// bom, and the version only labels the document: it has to name a
-	// release.
+	// "latest" maps to the version of the embedded catalog.
 	if strings.EqualFold(o.LicenseListVersion, "latest") {
-		return errors.New(
-			"the license list version must name a release (eg " + license.DefaultCatalogOpts.Version +
-				"), fetching the latest SPDX license list is no longer supported",
-		)
+		o.LicenseListVersion = license.DefaultCatalogOpts.Version
 	}
 	if _, err := licenseListVersion(o.LicenseListVersion); err != nil {
 		return err

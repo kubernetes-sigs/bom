@@ -149,8 +149,8 @@ func (ed *ExternalDocumentRef) String() string {
 	if ed.Validate() != nil {
 		return ""
 	}
-	_, value := ed.Checksum()
-	return fmt.Sprintf("%s %s SHA1: %s", ed.DocumentRefID(), ed.URI, value)
+	algo, value := ed.Checksum()
+	return fmt.Sprintf("%s %s %s: %s", ed.DocumentRefID(), ed.URI, algo, value)
 }
 
 // DocumentRefID returns the identifier of the external document with
@@ -160,18 +160,27 @@ func (ed *ExternalDocumentRef) DocumentRefID() string {
 }
 
 var (
-	externalDocIDRe   = regexp.MustCompile(`^[A-Za-z0-9.+-]+$`)
-	externalDocSHA1Re = regexp.MustCompile(`^[0-9a-f]{40}$`)
+	externalDocIDRe     = regexp.MustCompile(`^[A-Za-z0-9.+-]+$`)
+	externalDocSHA1Re   = regexp.MustCompile(`^[0-9a-f]{40}$`)
+	externalDocSHA256Re = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
-// Checksum returns the SHA1 checksum of the external document in
-// lowercase, or empty strings when the reference has none. bom only
-// records SHA1, the algorithm the SPDX 2 examples use and every
-// consumer accepts.
+// Checksum returns the strongest checksum of the external document in
+// lowercase, preferring SHA256 over SHA1 for SPDX 3 compatibility.
+// Only checksums that match the expected hex length are returned.
 func (ed *ExternalDocumentRef) Checksum() (algorithm, value string) {
-	for _, algo := range slices.Sorted(maps.Keys(ed.Checksums)) {
-		if v := ed.Checksums[algo]; strings.EqualFold(algo, "SHA1") && v != "" {
-			return "SHA1", strings.ToLower(v)
+	for _, pref := range []struct {
+		name string
+		re   *regexp.Regexp
+	}{
+		{HashAlgoSHA256, externalDocSHA256Re},
+		{HashAlgoSHA1, externalDocSHA1Re},
+	} {
+		for algo, v := range ed.Checksums {
+			lower := strings.ToLower(v)
+			if strings.EqualFold(algo, pref.name) && pref.re.MatchString(lower) {
+				return pref.name, lower
+			}
 		}
 	}
 	return "", ""
@@ -179,7 +188,7 @@ func (ed *ExternalDocumentRef) Checksum() (algorithm, value string) {
 
 // Validate checks that the reference can be written to an SPDX
 // document: an ID made of letters, digits, dots, dashes and plus signs,
-// a URI without whitespace and a SHA1 checksum of 40 hex digits.
+// a URI without whitespace and a valid SHA256 or SHA1 checksum.
 func (ed *ExternalDocumentRef) Validate() error {
 	id := strings.TrimPrefix(ed.ID, "DocumentRef-")
 	if !externalDocIDRe.MatchString(id) {
@@ -188,32 +197,29 @@ func (ed *ExternalDocumentRef) Validate() error {
 	if ed.URI == "" || strings.ContainsFunc(ed.URI, unicode.IsSpace) {
 		return fmt.Errorf("invalid URI %q for external document %s", ed.URI, ed.ID)
 	}
-	algo, value := ed.Checksum()
+	algo, _ := ed.Checksum()
 	if algo == "" {
-		return fmt.Errorf("external document %s has no SHA1 checksum", ed.ID)
-	}
-	if !externalDocSHA1Re.MatchString(value) {
-		return fmt.Errorf(
-			"external document %s has an invalid SHA1 checksum %q (quote checksums in YAML files)",
-			ed.ID, value,
-		)
+		return fmt.Errorf("external document %s has no SHA256 or SHA1 checksum", ed.ID)
 	}
 	return nil
 }
 
-// ReadSourceFile populates the external reference data (the SHA1 checksum)
-// from a given path.
+// ReadSourceFile populates the external reference checksums from a
+// given path, computing both SHA256 and SHA1.
 func (ed *ExternalDocumentRef) ReadSourceFile(path string) error {
 	if ed.Checksums == nil {
 		ed.Checksums = map[string]string{}
 	}
-	// The SPDX validator tools are broken and cannot validate non SHA1 checksums
-	// ref https://github.com/spdx/tools-java/issues/21
-	val, err := hash.SHA1ForFile(path)
+	sha256Val, err := hash.SHA256ForFile(path)
 	if err != nil {
-		return fmt.Errorf("while calculating the SHA1 checksum of the external reference: %w", err)
+		return fmt.Errorf("calculating the SHA256 checksum of the external reference: %w", err)
 	}
-	ed.Checksums["SHA1"] = val
+	ed.Checksums[HashAlgoSHA256] = sha256Val
+	sha1Val, err := hash.SHA1ForFile(path)
+	if err != nil {
+		return fmt.Errorf("calculating the SHA1 checksum of the external reference: %w", err)
+	}
+	ed.Checksums[HashAlgoSHA1] = sha1Val
 	return nil
 }
 

@@ -21,6 +21,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"sigs.k8s.io/bom/pkg/license"
 )
 
 var testConfig = `---
@@ -99,7 +101,8 @@ func TestValidateLicenseListVersion(t *testing.T) {
 	}
 	for _, ver := range []string{"latest", "LATEST"} {
 		opts.LicenseListVersion = ver
-		require.ErrorContains(t, opts.Validate(), "must name a release", "version %q", ver)
+		require.NoError(t, opts.Validate(), "version %q", ver)
+		require.Equal(t, license.DefaultCatalogOpts.Version, opts.LicenseListVersion, "version %q", ver)
 	}
 	for _, ver := range []string{"foo", "v3.x"} {
 		opts.LicenseListVersion = ver

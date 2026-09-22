@@ -342,7 +342,7 @@ func (r *licenseRefs) extracted() []ExtractedLicense {
 		ret = append(ret, ExtractedLicense{
 			ID:   id,
 			Name: r.byID[id],
-			Text: fmt.Sprintf("The license declared as %q is not on the SPDX license list; its text was not collected.", r.byID[id]),
+			Text: NOASSERTION,
 		})
 	}
 	return ret

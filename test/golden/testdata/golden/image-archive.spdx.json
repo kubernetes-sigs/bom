@@ -14,12 +14,12 @@
   "documentNamespace": "https://sbom.k8s.io/golden/image-archive",
   "hasExtractedLicensingInfos": [
     {
-      "extractedText": "The license declared as \"GPL-3+ with Autoconf-data exception\" is not on the SPDX license list; its text was not collected.",
+      "extractedText": "NOASSERTION",
       "licenseId": "LicenseRef-GPL-3-or-later-with-Autoconf-data-exception",
       "name": "GPL-3+ with Autoconf-data exception"
     },
     {
-      "extractedText": "The license declared as \"public-domain\" is not on the SPDX license list; its text was not collected.",
+      "extractedText": "NOASSERTION",
       "licenseId": "LicenseRef-public-domain",
       "name": "public-domain"
     }
