@@ -638,27 +638,29 @@ func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error
 	baseDir := filepath.Base(cwd)
 
 	allFiles := make(map[string]*File)
+	// Search for the package describing the directory. Older bom
+	// releases named it after the directory; it is now named after
+	// what the directory holds (the module path of a Go module, for
+	// example), so failing a match by name, the files of every
+	// top-level package are candidates, next to the top-level files.
 	var pkg *Package
-	// Search for the package describing the directory
 	for _, p := range d.Packages {
 		if p.Name == baseDir {
 			pkg = p
 			break
 		}
 	}
-	if pkg == nil {
-		if len(d.Packages) > 0 {
-			return results, errors.New("directory not found in SBOM packages")
-		}
-
-		// No packages specified, use the root files
-		for k, v := range d.Files {
-			allFiles[k] = v
-		}
-	} else {
+	if pkg != nil {
 		for _, file := range pkg.Files() {
 			allFiles[file.ID] = file
 		}
+	} else {
+		for _, p := range d.Packages {
+			for _, file := range p.Files() {
+				allFiles[file.ID] = file
+			}
+		}
+		maps.Copy(allFiles, d.Files)
 	}
 
 	if len(allFiles) == 0 {
@@ -678,63 +680,77 @@ func (d *Document) ValidateFiles(filePaths []string) ([]ValidationResults, error
 			continue
 		}
 
-		// Create a new SPDX file from the path
+		// Create a new SPDX file from the path. A path that cannot be
+		// read as a file fails validation like any other mismatch, so
+		// that it shows up next to the other results.
 		testFile, err := spdxObject.FileFromPath(path)
 		if err != nil {
-			e := fmt.Errorf("unable to create SPDX File from path: %w", err)
-			res.Message = e.Error()
+			res.FileName = path
+			res.Message = fmt.Sprintf("unable to create SPDX File from path: %v", err)
+			results = append(results, res)
 			continue
 		}
 
-		// Look for the file in the document
-		valid := false
-		message := "file path not found in document"
+		// Look for the file in the document. Several packages may
+		// list the same path; they are checked in a stable order and
+		// a mismatch with any of them fails the file.
 		res.FileName = path
-
+		res.Message = "file path not found in document"
+		var candidates []*File
 		for _, docFile := range allFiles {
-			if docFile.FileName != path {
-				continue
-			}
-
-			if len(docFile.Checksum) == 0 {
-				valid = false
-				message = "no hashes found for file in SBOM"
-				break
-			}
-
-			// File found, check it
-			checks := 0
-			for algo, documentHashValue := range docFile.Checksum {
-				if artifactHashValue, ok := testFile.Checksum[algo]; ok {
-					if artifactHashValue == documentHashValue {
-						checks++
-						valid = true
-					} else {
-						message = MessageHashMismatch
-						res.FailedAlgorithms = append(res.FailedAlgorithms, algo)
-					}
-				} else {
-					logrus.Warnf("document has hash in %s, which is not supported yet", algo)
-				}
-			}
-			if checks == 0 {
-				res.Message = "unable to find compatible algorithm in document"
-				break
-			}
-			if len(res.FailedAlgorithms) > 0 {
-				message = "some hash values don't match"
-				valid = false
-				break
-			}
-
-			res.Success = valid
-			if valid {
-				message = "File validated successfully"
+			if docFile.FileName == path {
+				candidates = append(candidates, docFile)
 			}
 		}
-		res.Message = message
-		res.Success = valid
+		slices.SortFunc(candidates, func(a, b *File) int {
+			return strings.Compare(a.ID, b.ID)
+		})
+		for i, docFile := range candidates {
+			check := validateChecksums(docFile, testFile)
+			check.FileName = path
+			if i == 0 || len(check.FailedAlgorithms) > 0 || (check.Success && !res.Success) {
+				res = check
+			}
+			if len(check.FailedAlgorithms) > 0 {
+				break
+			}
+		}
 		results = append(results, res)
 	}
 	return results, e
+}
+
+// validateChecksums compares the checksums the document records for a
+// file to those of the file read from disk.
+func validateChecksums(docFile, testFile *File) ValidationResults {
+	res := ValidationResults{FailedAlgorithms: []string{}}
+	if len(docFile.Checksum) == 0 {
+		res.Message = "no hashes found for file in SBOM"
+		return res
+	}
+	checks := 0
+	for _, algo := range slices.Sorted(maps.Keys(docFile.Checksum)) {
+		artifactHashValue, ok := testFile.Checksum[algo]
+		if !ok {
+			logrus.Warnf("document has hash in %s, which is not supported yet", algo)
+			continue
+		}
+		if artifactHashValue == docFile.Checksum[algo] {
+			checks++
+		} else {
+			res.FailedAlgorithms = append(res.FailedAlgorithms, algo)
+		}
+	}
+	switch {
+	case len(res.FailedAlgorithms) > 0 && checks == 0:
+		res.Message = MessageHashMismatch
+	case len(res.FailedAlgorithms) > 0:
+		res.Message = "some hash values don't match"
+	case checks == 0:
+		res.Message = "unable to find compatible algorithm in document"
+	default:
+		res.Success = true
+		res.Message = "File validated successfully"
+	}
+	return res
 }

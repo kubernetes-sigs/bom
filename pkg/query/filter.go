@@ -18,7 +18,9 @@ package query
 
 import (
 	"fmt"
+	"path"
 	"regexp"
+	"strings"
 
 	purl "github.com/package-url/packageurl-go"
 	"github.com/protobom/protobom/pkg/sbom"
@@ -132,6 +134,10 @@ func (f *PurlFilter) Apply(graph *Graph, objects map[string]*sbom.Node) (map[str
 	if patternPurl.Namespace == "" {
 		patternPurl.Namespace = "*"
 	}
+
+	if patternPurl.Subpath == "" {
+		patternPurl.Subpath = "*"
+	}
 	cycler := ObjectCycler{}
 	return cycler.Cycle(graph, objects, func(node *sbom.Node) bool {
 		return purlMatches(&patternPurl, node)
@@ -155,10 +161,16 @@ func purlMatches(spec *purl.PackageURL, node *sbom.Node) bool {
 	if spec.Type != "*" && spec.Type != nodePurl.Type {
 		return false
 	}
-	if spec.Namespace != "*" && spec.Namespace != nodePurl.Namespace {
-		return false
-	}
-	if spec.Name != "*" && spec.Name != nodePurl.Name {
+	if spec.Namespace == "*" {
+		// A bare wildcard namespace matches any namespace, empty
+		// ones included, leaving only the name to compare.
+		if !segmentsMatch([]string{spec.Name}, []string{nodePurl.Name}) {
+			return false
+		}
+	} else if !segmentsMatch(
+		strings.Split(spec.Namespace+"/"+spec.Name, "/"),
+		strings.Split(strings.TrimPrefix(nodePurl.Namespace+"/"+nodePurl.Name, "/"), "/"),
+	) {
 		return false
 	}
 	if spec.Version != "*" && spec.Version != nodePurl.Version {
@@ -181,6 +193,34 @@ func purlMatches(spec *purl.PackageURL, node *sbom.Node) bool {
 		}
 	}
 	return true
+}
+
+// segmentsMatch reports whether a purl path, its namespace and name
+// split at the slashes, matches a pattern split the same way. Pattern
+// segments holding * or ? are shell patterns (see path.Match) matched
+// against one segment each, others match only the same segment, and a
+// segment that is just "*" matches one or more: namespaces like those of golang purls have any number of
+// segments, and pkg:golang/github.com/* should match all of them.
+func segmentsMatch(pattern, segments []string) bool {
+	if len(pattern) == 0 || len(segments) == 0 {
+		return len(pattern) == len(segments)
+	}
+	head, tail := pattern[0], pattern[1:]
+	if head == "*" {
+		for rest := segments; len(rest) > 0; {
+			rest = rest[1:]
+			if segmentsMatch(tail, rest) {
+				return true
+			}
+		}
+		return false
+	}
+	ok := head == segments[0]
+	if !ok && strings.ContainsAny(head, "*?") {
+		// A malformed pattern matches only itself.
+		ok, _ = path.Match(head, segments[0]) //nolint:errcheck // false on error
+	}
+	return ok && segmentsMatch(tail, segments[1:])
 }
 
 type MatcherFunction func(*sbom.Node) bool

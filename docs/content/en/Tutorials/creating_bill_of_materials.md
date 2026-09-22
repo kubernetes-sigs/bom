@@ -60,8 +60,9 @@ SBOM can express all of them in the same document.
 
 As part of the effort to produce a bill of materials for Kubernetes, SIG
 Release developed a set of libraries to produce fully compliant SPDX SBOMs.
-Our tools support license scanning, image layer analyzers, processing of
-golang dependencies, and other features. These libraries are available for
+Our tools support license scanning, discovery of the operating system
+packages installed in container images, processing of golang dependencies,
+and other features. These libraries are available for
 other projects to automate the production of their own Bills of Materials.
 
 For simpler use cases, all of our SBOM automation is also available in
@@ -201,7 +202,8 @@ generating names for packages and files.
 Generally, an SPDX bill of materials will include more than one package. You can pass `bom`
 more sources to add to the document. These can be container images, other directories, container
 archives, etc. When you add other sources, bom will add them as top-level packages in the
-document. Some of these will include sub-packages: layers of images, dependencies, etc.
+document. Some of these will include other packages: the layers and operating system
+packages of images, the dependencies of Go modules, etc.
 Go binaries, both inside images and passed as files, are listed with the Go modules
 recorded in their build information.
 
@@ -218,42 +220,45 @@ to your bill of materials:
 
 #### Example: Generate an SBOM for etcd
 
-Let us say you want to generate a bill of materials for etcd, which is at version v3.4.16
-as I write this. If you only want to build an SBOM describing only the source in the
-repository, do the following:
+Let us say you want to generate a bill of materials for etcd v3.4.16. If you only
+want to build an SBOM describing the source in the repository, check out that
+release and do the following:
 
 ```console
-git clone https://github.com/etcd-io/etcd
+git clone --branch v3.4.16 --depth 1 https://github.com/etcd-io/etcd
 cd etcd
-bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
+bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx.json \
   --dirs=.
 ```
 
 This will produce a manifest describing the repo and its golang dependencies
-in `etcd-v3.4.16.spdx`.
+in `etcd-v3.4.16.spdx.json`. The package describing the repository is named
+after its Go module path, `go.etcd.io/etcd` (later releases moved to
+`go.etcd.io/etcd/v3`), and its version is `v3.4.16`, the tag checked out.
 
 Now, to make your SBOM more complete, you may want to include a container image.
 To do that run the same invocation, but this time adding the image with the
 `--image` flag:
 
 ```console
-bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
-  --dirs=.\
+bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx.json \
+  --dirs=. \
   --image=quay.io/coreos/etcd:v3.4.16
 ```
 
 This command will fetch the container image from the coreos repo and add it as a
 package. At this point, your bom will contain two top-level Packages: the directory
-and the image. If you inspect it, you will see the image's layers as subpackages too.
+and the image. If you inspect it, you will see the image's layers and the operating
+system packages installed in it too.
 
 Finally, perhaps you want to add a binary distribution file. Download the compressed
 artifact from Github and add it to the SBOM:
 
 ```console
 curl -L https://github.com/etcd-io/etcd/releases/download/v3.4.16/etcd-v3.4.16-darwin-amd64.zip \
-  -O /tmp/etcd-v3.4.16-darwin-amd64.zip
+  -o /tmp/etcd-v3.4.16-darwin-amd64.zip
 
-bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
+bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx.json \
   --dirs=. \
   --image=quay.io/coreos/etcd:v3.4.16 \
   --file=/tmp/etcd-v3.4.16-darwin-amd64.zip
@@ -262,4 +267,4 @@ bom generate -n https://etcd.io/etcd-v3.4.16.spdx -o etcd-v3.4.16.spdx \
 The resulting sbom from the last invocation will include at the top level of the SBOM
 three things: two `Package`s (the directory and the image) and one `File`: the binary
 distribution. Note that when listing the zip file as a single file, `bom` did not perform
-any special treatment to it. You can see a copy of the resulting file: `etcd-v3.4.16.spdx`
+any special treatment to it. You can see a copy of the resulting file: `etcd-v3.4.16.spdx.json`

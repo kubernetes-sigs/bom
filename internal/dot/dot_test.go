@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/bom/internal/dot"
-	"sigs.k8s.io/bom/pkg/spdx"
+	"sigs.k8s.io/bom/internal/sbomio"
 )
 
 // diamondDocument builds the graph from the feature request: two
@@ -202,7 +202,7 @@ func TestWriteEmpty(t *testing.T) {
 
 func TestWriteSPDX(t *testing.T) {
 	t.Parallel()
-	doc, err := spdx.OpenProtobom("../../pkg/spdx/testdata/nginx.spdx")
+	doc, err := sbomio.Open("../../pkg/spdx/testdata/nginx.spdx")
 	require.NoError(t, err)
 	out := render(t, doc, &dot.Options{Depth: 1})
 	require.Contains(t, out, `"DOCUMENT" -> "Package-nginx" [label="DESCRIBES"];`)

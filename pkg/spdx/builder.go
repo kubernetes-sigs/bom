@@ -67,6 +67,11 @@ func WithFormat(format Format) NewDocBuilderOption {
 	}
 }
 
+// NewDocBuilder returns a DocBuilder configured with options.
+//
+// Deprecated: use bom.Generate in sigs.k8s.io/bom/pkg/bom, which returns
+// the generated SBOM as a protobom document, and bom.Write to render it
+// as SPDX like bom generate does.
 func NewDocBuilder(options ...NewDocBuilderOption) *DocBuilder {
 	settings := &newDocBuilderSettings{
 		format: FormatTagValue,
@@ -87,6 +92,10 @@ func NewDocBuilder(options ...NewDocBuilderOption) *DocBuilder {
 // defining values in its DocBuilderOptions. Options to customize the
 // generated document are passed to the Generate() method in DocGenerateOptions
 // struct.
+//
+// Deprecated: use bom.Generate in sigs.k8s.io/bom/pkg/bom, which returns
+// the generated SBOM as a protobom document, and bom.Write to render it
+// as SPDX like bom generate does.
 type DocBuilder struct {
 	options *DocBuilderOptions
 	impl    DocBuilderImplementation
@@ -94,6 +103,10 @@ type DocBuilder struct {
 
 // Generate creates a new SPDX SBOM. The resulting document will describe the all
 // artifacts specified in the DocGenerateOptions struct passed.
+//
+// Deprecated: use bom.Generate in sigs.k8s.io/bom/pkg/bom, which returns
+// the generated SBOM as a protobom document, and bom.Write to render it
+// as SPDX like bom generate does.
 func (db *DocBuilder) Generate(genopts *DocGenerateOptions) (*Document, error) {
 	if err := db.impl.ReadYamlConfiguration(genopts.ConfigFile, genopts); err != nil {
 		return nil, fmt.Errorf("parsing configuration file: %w", err)

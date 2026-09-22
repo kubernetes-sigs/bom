@@ -63,11 +63,20 @@ over time. The following filters are available:
 
                 bom document query sbom.spdx.json 'name:lib.*c'
 
-  purl:pattern  Matchess all elements in the document that match
-                fragments of a purl. For example, to get all container
+  purl:pattern  Matches all elements in the document that match
+                fragments of a purl. Components left out or set to *
+                match anything, and a * in the namespace matches one or
+                more of its segments. For example, to get all container
                 images listed in an SBOM you can issue a query like this:
 
-                bom document query sbom.spdx.json 'purl:pkg:/oci/*'
+                bom document query sbom.spdx.json 'purl:pkg:oci/*'
+
+                or to get all Go modules hosted on GitHub:
+
+                bom document query sbom.spdx.json 'purl:pkg:golang/github.com/*'
+
+The name and purl filters stop at the first element that matches on
+each branch of the document, so elements below a match are not searched.
 
 You can query files piped on STDIN by specifying the path as a dash (-) or
 omitting it completely. These are equivalent:
@@ -78,7 +87,7 @@ omitting it completely. These are equivalent:
 Example:
 
   # Match all second level elements with log4j in their name:
-  bom document query sbom.spdx "depth:2 name:log4j"
+  bom document query sbom.spdx.json "depth:2 name:log4j"
 
 `,
 		Use:           "query sbom.spdx.json \"query expression\" ",

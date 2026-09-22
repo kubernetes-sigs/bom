@@ -37,17 +37,19 @@ To process a directory as a source for your SBOM, use the `-d` flag or simply pa
 the path as the first argument to `bom`:
 
 ```bash
-bom generate -n http://example.com/ .
+bom generate -n http://example.com/ --output sbom.spdx.json .
 ```
 
 ### Process a Container Image
 
-This example pulls the `kube-apiserver` image, analyzes it, and describes in the
-SBOM. Each of its layers are then expressed as a subpackage in the resulting
-document:
+This example pulls the `kube-apiserver` image, analyzes it, and describes it in
+the SBOM. The operating system packages found in the image and its layers are
+listed in the resulting document, and the Go binaries in the image are listed
+with the Go modules they were built from:
 
 ```console
-bom generate -n http://example.com/ --image registry.k8s.io/kube-apiserver:v1.21.0
+bom generate -n http://example.com/ --output kube-apiserver.spdx.json \
+  --image registry.k8s.io/kube-apiserver:v1.34.0
 ```
 
 ### Generate a SBOM to describe files
@@ -55,7 +57,7 @@ bom generate -n http://example.com/ --image registry.k8s.io/kube-apiserver:v1.21
 You can create an SBOM with just files in the manifest. For that, use `-f`:
 
 ```console
-bom generate -n http://example.com/ \
+bom generate -n http://example.com/ --output files.spdx.json \
   -f Makefile \
   -f file1.exe \
   -f document.md \

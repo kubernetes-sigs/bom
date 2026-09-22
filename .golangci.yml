@@ -162,8 +162,14 @@ linters:
       - linters:
           - dupl
           - gocritic
-          - golint
         path: fake_.*\.go
+      # bom generate and its golden tests still build documents through
+      # the deprecated spdx.DocBuilder. Drop this once they move to
+      # bom.Generate and bom.Write.
+      - linters:
+          - staticcheck
+        path: (cmd/bom/cmd/generate\.go|test/golden/)
+        text: "SA1019: .*sigs.k8s.io/bom/pkg/spdx"
       - linters:
           - goconst
         path: _test\.go

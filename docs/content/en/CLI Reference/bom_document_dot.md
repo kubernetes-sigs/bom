@@ -37,6 +37,7 @@ SPDX documents in JSON or tag-value and CycloneDX documents are
 supported. The document can also be read from a URL or piped on STDIN
 by specifying the path as a dash (-) or omitting it.
 
+
 ```
 bom document dot SBOM_FILE|URL [flags]
 ```
@@ -60,3 +61,4 @@ bom document dot SBOM_FILE|URL [flags]
 ### SEE ALSO
 
 * [bom document](bom_document.md)	 - bom document → Work with SPDX documents
+

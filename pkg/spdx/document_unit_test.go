@@ -281,6 +281,83 @@ func TestValidateFiles(t *testing.T) {
 	require.Error(t, err)
 }
 
+// TestValidateFilesTopLevelPackage checks that the files of a
+// directory are found when the package describing it is not named
+// after the directory, as generated Go module packages are named after
+// the module path, and that a path which cannot be read as a file is
+// reported instead of dropped.
+func TestValidateFilesTopLevelPackage(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	require.NoError(t, os.WriteFile("main.go", []byte("abc"), 0o600))
+	require.NoError(t, os.Mkdir("subdir", 0o755))
+
+	doc := NewDocument()
+	pkg := NewPackage()
+	pkg.Name = "example.com/some/module"
+	pkg.BuildID(pkg.Name)
+	f := NewFile()
+	f.Name = "main.go"
+	f.FileName = "main.go"
+	f.Checksum = map[string]string{"SHA256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}
+	f.BuildID()
+	pkg.AddRelationship(&Relationship{
+		Peer: f, Type: CONTAINS, FullRender: true,
+	})
+	require.NoError(t, doc.AddPackage(pkg))
+
+	res, err := doc.ValidateFiles([]string{"main.go"})
+	require.NoError(t, err)
+	require.Len(t, res, 1)
+	require.True(t, res[0].Success, res[0].Message)
+
+	require.NoError(t, os.Symlink("subdir", "link"))
+	res, err = doc.ValidateFiles([]string{"main.go", "subdir", "link"})
+	require.NoError(t, err)
+	require.Len(t, res, 3)
+	require.True(t, res[0].Success, res[0].Message)
+	for i, name := range []string{"subdir", "link"} {
+		require.Equal(t, name, res[i+1].FileName)
+		require.False(t, res[i+1].Success)
+		require.Contains(t, res[i+1].Message, "unable to create SPDX File from path")
+	}
+}
+
+// TestValidateFilesSamePath checks that a path listed by several
+// packages with different checksums fails, whatever the order of the
+// packages.
+func TestValidateFilesSamePath(t *testing.T) {
+	t.Chdir(t.TempDir())
+	require.NoError(t, os.WriteFile("main.go", []byte("abc"), 0o600))
+
+	for _, hashes := range [][]string{
+		{"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "0000"},
+		{"0000", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"},
+	} {
+		doc := NewDocument()
+		for i, hash := range hashes {
+			pkg := NewPackage()
+			pkg.Name = fmt.Sprintf("example.com/module%d", i)
+			pkg.BuildID(pkg.Name)
+			f := NewFile()
+			f.Name = "main.go"
+			f.FileName = "main.go"
+			f.Checksum = map[string]string{"SHA256": hash}
+			f.BuildID(pkg.Name)
+			pkg.AddRelationship(&Relationship{Peer: f, Type: CONTAINS, FullRender: true})
+			require.NoError(t, doc.AddPackage(pkg))
+		}
+		for range 5 {
+			res, err := doc.ValidateFiles([]string{"main.go"})
+			require.NoError(t, err)
+			require.Len(t, res, 1)
+			require.False(t, res[0].Success)
+			require.Equal(t, MessageHashMismatch, res[0].Message)
+			require.Equal(t, []string{"SHA256"}, res[0].FailedAlgorithms)
+		}
+	}
+}
+
 func TestGetPackagesByPurl(t *testing.T) {
 	// Open the Nginx SBOM to test queries
 	doc, err := OpenDoc("testdata/nginx.spdx")
