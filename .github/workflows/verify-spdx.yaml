@@ -48,32 +48,32 @@ jobs:
           "${RUNNER_TEMP}/bom" generate --format=spdx3-json -i registry.k8s.io/pause -o "${out}/example-image-pause.spdx3.json"
           "${RUNNER_TEMP}/bom" generate --format=spdx3-json -f "${RUNNER_TEMP}/bom" -o "${out}/example-file.spdx3.json"
 
-      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+      - uses: chainguard-dev/actions/setup-spdx@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
         with:
           spdx-tools-version: 2.0.7
 
-      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+      - uses: chainguard-dev/actions/setup-spdx@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
         with:
           download: false
           spdx-tools-version: 2.0.7
           sbom-path: ${{ runner.temp }}/sboms/example-image-pause.spdx.json
           sbom-format: JSON
 
-      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+      - uses: chainguard-dev/actions/setup-spdx@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
         with:
           download: false
           spdx-tools-version: 2.0.7
           sbom-path: ${{ runner.temp }}/sboms/example-directory.spdx.json
           sbom-format: JSON
 
-      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+      - uses: chainguard-dev/actions/setup-spdx@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
         with:
           download: false
           spdx-tools-version: 2.0.7
           sbom-path: ${{ runner.temp }}/sboms/example-directory.spdx
           sbom-format: TAG
 
-      - uses: chainguard-dev/actions/setup-spdx@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
+      - uses: chainguard-dev/actions/setup-spdx@805da2efdffdc42b8afd8880e575a48b471ef544 # v1.6.37
         with:
           download: false
           spdx-tools-version: 2.0.7
