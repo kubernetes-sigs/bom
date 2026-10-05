@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	github.com/carabiner-dev/unpack v0.3.2
+	github.com/carabiner-dev/unpack v0.3.3
 	github.com/github/go-spdx/v2 v2.7.0
 	github.com/glebarez/go-sqlite v1.23.0
 	github.com/go-git/go-git/v5 v5.19.2
@@ -24,7 +24,7 @@ require (
 	golang.org/x/mod v0.41.0
 	golang.org/x/term v0.46.0
 	google.golang.org/protobuf v1.36.12
-	sigs.k8s.io/release-utils v0.12.4
+	sigs.k8s.io/release-utils v0.12.5-0.20260825061901-4f1f891011bb
 	sigs.k8s.io/yaml v1.6.0
 )
 
