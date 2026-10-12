@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/carabiner-dev/unpack v0.3.3
-	github.com/github/go-spdx/v2 v2.7.0
+	github.com/github/go-spdx/v2 v2.7.1
 	github.com/glebarez/go-sqlite v1.23.0
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/google/go-containerregistry v0.22.1
@@ -92,7 +92,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/sync v0.23.0
+	golang.org/x/sync v0.24.0
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/tools v0.50.0 // indirect
