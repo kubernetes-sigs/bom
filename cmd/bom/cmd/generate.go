@@ -27,8 +27,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/release-utils/helpers"
-	"sigs.k8s.io/release-utils/version"
 
+	"sigs.k8s.io/bom/internal/version"
 	"sigs.k8s.io/bom/pkg/license"
 	"sigs.k8s.io/bom/pkg/serialize"
 	"sigs.k8s.io/bom/pkg/spdx"
@@ -358,7 +358,7 @@ var retiredFlags = []string{"license", "scan-images", "analyze-images"}
 func generateBOM(opts *generateOptions) error {
 	logrus.Infof(
 		"bom %s: Generating SPDX Bill of Materials",
-		version.GetVersionInfo().GitVersion,
+		version.Version(),
 	)
 
 	newDocBuilderOpts := []spdx.NewDocBuilderOption{spdx.WithFormat(spdx.Format(opts.format))}
