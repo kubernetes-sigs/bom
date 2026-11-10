@@ -50,7 +50,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"sigs.k8s.io/release-utils/version"
+	"sigs.k8s.io/bom/internal/version"
 )
 
 // Options steers a generation run. The zero value produces an empty
@@ -258,7 +258,7 @@ func newDocument(opts *Options) *sbom.Document {
 		_, name, email := protospdx.ParseActorString(opts.CreatorPerson)
 		md.Authors = []*sbom.Person{{Name: name, Email: email}}
 	}
-	md.Tools = []*sbom.Tool{{Name: "bom", Version: version.GetVersionInfo().GitVersion}}
+	md.Tools = []*sbom.Tool{{Name: "bom", Version: version.Version()}}
 	return doc
 }
 

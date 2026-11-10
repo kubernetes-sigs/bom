@@ -49,8 +49,8 @@ import (
 
 	"sigs.k8s.io/release-utils/hash"
 	"sigs.k8s.io/release-utils/helpers"
-	"sigs.k8s.io/release-utils/version"
 
+	"sigs.k8s.io/bom/internal/version"
 	"sigs.k8s.io/bom/pkg/provenance"
 )
 
@@ -238,7 +238,7 @@ func NewDocument() *Document {
 			Person:       defaultDocumentAuthor,
 			Organization: defaultDocumentOrganization,
 			Tool: []string{
-				fmt.Sprintf("%s-%s", "bom", version.GetVersionInfo().GitVersion),
+				fmt.Sprintf("%s-%s", "bom", version.Version()),
 			},
 		},
 	}
