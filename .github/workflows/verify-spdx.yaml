@@ -23,7 +23,7 @@ jobs:
       - name: Extract version of Go to use
         run: echo "GOVERSION=$(awk -F'[:@]' '/FROM golang/{print $2; exit}' Dockerfile.dev)" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: '${{ env.GOVERSION }}'
           check-latest: true
@@ -48,32 +48,32 @@ jobs:
           "${RUNNER_TEMP}/bom" generate --format=spdx3-json -i registry.k8s.io/pause -o "${out}/example-image-pause.spdx3.json"
           "${RUNNER_TEMP}/bom" generate --format=spdx3-json -f "${RUNNER_TEMP}/bom" -o "${out}/example-file.spdx3.json"
 
-      - uses: chainguard-dev/actions/setup-spdx@a25ce483d875a46f4c837e85e32e0fda602693f5 # v1.8.1
+      - uses: chainguard-dev/actions/setup-spdx@d496b2ab65497cac13d77ccd5038b8aae7e8c43b # v1.8.2
         with:
           spdx-tools-version: 2.0.7
 
-      - uses: chainguard-dev/actions/setup-spdx@a25ce483d875a46f4c837e85e32e0fda602693f5 # v1.8.1
+      - uses: chainguard-dev/actions/setup-spdx@d496b2ab65497cac13d77ccd5038b8aae7e8c43b # v1.8.2
         with:
           download: false
           spdx-tools-version: 2.0.7
           sbom-path: ${{ runner.temp }}/sboms/example-image-pause.spdx.json
           sbom-format: JSON
 
-      - uses: chainguard-dev/actions/setup-spdx@a25ce483d875a46f4c837e85e32e0fda602693f5 # v1.8.1
+      - uses: chainguard-dev/actions/setup-spdx@d496b2ab65497cac13d77ccd5038b8aae7e8c43b # v1.8.2
         with:
           download: false
           spdx-tools-version: 2.0.7
           sbom-path: ${{ runner.temp }}/sboms/example-directory.spdx.json
           sbom-format: JSON
 
-      - uses: chainguard-dev/actions/setup-spdx@a25ce483d875a46f4c837e85e32e0fda602693f5 # v1.8.1
+      - uses: chainguard-dev/actions/setup-spdx@d496b2ab65497cac13d77ccd5038b8aae7e8c43b # v1.8.2
         with:
           download: false
           spdx-tools-version: 2.0.7
           sbom-path: ${{ runner.temp }}/sboms/example-directory.spdx
           sbom-format: TAG
 
-      - uses: chainguard-dev/actions/setup-spdx@a25ce483d875a46f4c837e85e32e0fda602693f5 # v1.8.1
+      - uses: chainguard-dev/actions/setup-spdx@d496b2ab65497cac13d77ccd5038b8aae7e8c43b # v1.8.2
         with:
           download: false
           spdx-tools-version: 2.0.7
