@@ -252,9 +252,9 @@ func TestDirectoriesNoGitignore(t *testing.T) {
 	require.Contains(t, names(doc), "keep.txt")
 }
 
-// TestDirectoriesNoGitignoreCodebases checks that NoGitignore also
-// reaches the codebase discovery: a manifest the .gitignore excludes is
-// found only when the file is not read.
+// TestDirectoriesNoGitignoreCodebases checks that the .gitignore plays
+// no part in the codebase discovery: a manifest it excludes is found
+// whether or not the file is read.
 func TestDirectoriesNoGitignoreCodebases(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".gitignore"),
@@ -262,7 +262,7 @@ func TestDirectoriesNoGitignoreCodebases(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "go.mod"),
 		[]byte("module example.com/ignored\n\ngo 1.22\n"), os.FileMode(0o644)))
 
-	for noGitignore, hasCodebase := range map[bool]bool{false: false, true: true} {
+	for _, noGitignore := range []bool{false, true} {
 		doc, err := generate.Document(t.Context(), &generate.Options{
 			Directories: []string{dir},
 			NoGitignore: noGitignore,
@@ -271,7 +271,7 @@ func TestDirectoriesNoGitignoreCodebases(t *testing.T) {
 		require.NoError(t, err)
 		root := doc.GetNodeList().GetNodeByID(doc.GetNodeList().GetRootElements()[0])
 		require.NotNil(t, root)
-		require.Equal(t, hasCodebase, root.Purl() != "", "NoGitignore %v", noGitignore)
+		require.NotEmpty(t, root.Purl(), "NoGitignore %v", noGitignore)
 	}
 }
 

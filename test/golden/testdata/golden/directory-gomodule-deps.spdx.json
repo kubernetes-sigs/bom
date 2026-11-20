@@ -166,6 +166,7 @@
       "filesAnalyzed": false,
       "name": "github.com/google/uuid",
       "primaryPackagePurpose": "LIBRARY",
+      "supplier": "Organization: google",
       "versionInfo": "v1.6.0"
     },
     {
@@ -183,6 +184,7 @@
       "filesAnalyzed": false,
       "name": "golang.org/x/mod",
       "primaryPackagePurpose": "LIBRARY",
+      "supplier": "Organization: golang.org",
       "versionInfo": "v0.17.0"
     },
     {
@@ -201,6 +203,7 @@
       "licenseDeclared": "BSD-3-Clause",
       "name": "stdlib",
       "primaryPackagePurpose": "LIBRARY",
+      "supplier": "Organization: The Go Authors",
       "versionInfo": "1.21"
     }
   ],
