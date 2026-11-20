@@ -65,6 +65,7 @@ PackageName: stdlib
 SPDXID: SPDXRef-Package-stdlib-1.21
 PackageDownloadLocation: NONE
 FilesAnalyzed: false
+PackageSupplier: Organization: The Go Authors
 PackageLicenseConcluded: NOASSERTION
 PackageVersion: 1.21
 PrimaryPackagePurpose: LIBRARY
