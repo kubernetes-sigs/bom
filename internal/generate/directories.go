@@ -108,7 +108,7 @@ func treeNodeList(ctx context.Context, dir, fallbackName string, opts *Options) 
 	if root := nl.GetNodeByID(rootID); root != nil && root.GetName() != "" {
 		prefix = root.GetName()
 	}
-	files, err := indexFiles(dir, prefix, opts)
+	files, err := indexFiles(ctx, dir, prefix, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -138,10 +138,8 @@ func codebaseNodeList(ctx context.Context, dir string, opts *Options) (*sbom.Nod
 	unpacker.Options.Networking = networkLevel(opts)
 	unpacker.Options.IndexFiles = false
 	unpacker.Options.IgnorePatterns = append(unpacker.Options.IgnorePatterns, opts.IgnorePatterns...)
-	// unpack matches the .gitignore patterns against the whole walked path
-	// rather than the path below dir, so a pattern matching one of the
-	// parent directories hides the codebases (an unpack bug).
-	unpacker.Options.UseGitIgnore = !opts.NoGitignore
+	// NoGitignore plays no part here: unpack never reads the .gitignore
+	// to detect codebases, only to index files, which indexFiles does.
 
 	codebases, err := unpacker.ListCodebases(ctx, dir)
 	if err != nil {
@@ -447,7 +445,7 @@ func assignCodebaseIDs(nl *sbom.NodeList) {
 // checksums the legacy generator recorded (SHA1, SHA256 and SHA512)
 // and each file's classified license, identified with legacy-style
 // IDs and sorted for deterministic output.
-func indexFiles(dir, prefix string, opts *Options) (*sbom.NodeList, error) {
+func indexFiles(ctx context.Context, dir, prefix string, opts *Options) (*sbom.NodeList, error) {
 	fsopts := []fsoptions.Function{
 		fsoptions.WithAlgorithms([]intoto.HashAlgorithm{
 			intoto.AlgorithmSHA1, intoto.AlgorithmSHA256, intoto.AlgorithmSHA512,
@@ -462,7 +460,7 @@ func indexFiles(dir, prefix string, opts *Options) (*sbom.NodeList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating filesystem indexer: %w", err)
 	}
-	nl, err := fsd.IndexFS(os.DirFS(dir))
+	nl, err := fsd.IndexFSWithContext(ctx, os.DirFS(dir))
 	if err != nil {
 		return nil, fmt.Errorf("indexing files in %q: %w", dir, err)
 	}

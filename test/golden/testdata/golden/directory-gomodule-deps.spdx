@@ -65,6 +65,7 @@ PackageName: github.com/google/uuid
 SPDXID: SPDXRef-Package-github.com-google-uuid-v1.6.0
 PackageDownloadLocation: https://proxy.golang.org/github.com/google/uuid/@v/v1.6.0.zip
 FilesAnalyzed: false
+PackageSupplier: Organization: google
 PackageLicenseConcluded: NOASSERTION
 PackageVersion: v1.6.0
 PrimaryPackagePurpose: LIBRARY
@@ -76,6 +77,7 @@ PackageName: golang.org/x/mod
 SPDXID: SPDXRef-Package-golang.org-x-mod-v0.17.0
 PackageDownloadLocation: https://proxy.golang.org/golang.org/x/mod/@v/v0.17.0.zip
 FilesAnalyzed: false
+PackageSupplier: Organization: golang.org
 PackageLicenseConcluded: NOASSERTION
 PackageVersion: v0.17.0
 PrimaryPackagePurpose: LIBRARY
@@ -87,6 +89,7 @@ PackageName: stdlib
 SPDXID: SPDXRef-Package-stdlib-1.21
 PackageDownloadLocation: NONE
 FilesAnalyzed: false
+PackageSupplier: Organization: The Go Authors
 PackageLicenseConcluded: NOASSERTION
 PackageVersion: 1.21
 PrimaryPackagePurpose: LIBRARY

@@ -167,6 +167,7 @@
       "licenseDeclared": "BSD-3-Clause",
       "name": "stdlib",
       "primaryPackagePurpose": "LIBRARY",
+      "supplier": "Organization: The Go Authors",
       "versionInfo": "1.21"
     }
   ],
